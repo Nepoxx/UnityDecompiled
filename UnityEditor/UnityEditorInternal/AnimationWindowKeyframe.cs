@@ -1,154 +1,155 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.AnimationWindowKeyframe
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEditor;
 using UnityEngine;
 
 namespace UnityEditorInternal
 {
-	internal class AnimationWindowKeyframe
-	{
-		public float m_InTangent;
+  internal class AnimationWindowKeyframe
+  {
+    public float m_InTangent;
+    public float m_OutTangent;
+    public int m_TangentMode;
+    public int m_TimeHash;
+    private int m_Hash;
+    private float m_time;
+    private object m_value;
+    private AnimationWindowCurve m_curve;
 
-		public float m_OutTangent;
+    public AnimationWindowKeyframe()
+    {
+    }
 
-		public int m_TangentMode;
+    public AnimationWindowKeyframe(AnimationWindowKeyframe key)
+    {
+      this.time = key.time;
+      this.value = key.value;
+      this.curve = key.curve;
+      this.m_InTangent = key.m_InTangent;
+      this.m_OutTangent = key.m_OutTangent;
+      this.m_TangentMode = key.m_TangentMode;
+      this.m_curve = key.m_curve;
+    }
 
-		public int m_TimeHash;
+    public AnimationWindowKeyframe(AnimationWindowCurve curve, Keyframe key)
+    {
+      this.time = key.time;
+      this.value = (object) key.value;
+      this.curve = curve;
+      this.m_InTangent = key.inTangent;
+      this.m_OutTangent = key.outTangent;
+      this.m_TangentMode = key.tangentMode;
+      this.m_curve = curve;
+    }
 
-		private int m_Hash;
+    public AnimationWindowKeyframe(AnimationWindowCurve curve, ObjectReferenceKeyframe key)
+    {
+      this.time = key.time;
+      this.value = (object) key.value;
+      this.curve = curve;
+    }
 
-		private float m_time;
+    public float time
+    {
+      get
+      {
+        return this.m_time;
+      }
+      set
+      {
+        this.m_time = value;
+        this.m_Hash = 0;
+        this.m_TimeHash = value.GetHashCode();
+      }
+    }
 
-		private object m_value;
+    public object value
+    {
+      get
+      {
+        return this.m_value;
+      }
+      set
+      {
+        this.m_value = value;
+      }
+    }
 
-		private AnimationWindowCurve m_curve;
+    public float inTangent
+    {
+      get
+      {
+        return this.m_InTangent;
+      }
+      set
+      {
+        this.m_InTangent = value;
+      }
+    }
 
-		public float time
-		{
-			get
-			{
-				return this.m_time;
-			}
-			set
-			{
-				this.m_time = value;
-				this.m_Hash = 0;
-				this.m_TimeHash = value.GetHashCode();
-			}
-		}
+    public float outTangent
+    {
+      get
+      {
+        return this.m_OutTangent;
+      }
+      set
+      {
+        this.m_OutTangent = value;
+      }
+    }
 
-		public object value
-		{
-			get
-			{
-				return this.m_value;
-			}
-			set
-			{
-				this.m_value = value;
-			}
-		}
+    public AnimationWindowCurve curve
+    {
+      get
+      {
+        return this.m_curve;
+      }
+      set
+      {
+        this.m_curve = value;
+        this.m_Hash = 0;
+      }
+    }
 
-		public float inTangent
-		{
-			get
-			{
-				return this.m_InTangent;
-			}
-			set
-			{
-				this.m_InTangent = value;
-			}
-		}
+    public bool isPPtrCurve
+    {
+      get
+      {
+        return this.curve.isPPtrCurve;
+      }
+    }
 
-		public float outTangent
-		{
-			get
-			{
-				return this.m_OutTangent;
-			}
-			set
-			{
-				this.m_OutTangent = value;
-			}
-		}
+    public bool isDiscreteCurve
+    {
+      get
+      {
+        return this.curve.isDiscreteCurve;
+      }
+    }
 
-		public AnimationWindowCurve curve
-		{
-			get
-			{
-				return this.m_curve;
-			}
-			set
-			{
-				this.m_curve = value;
-				this.m_Hash = 0;
-			}
-		}
+    public int GetHash()
+    {
+      if (this.m_Hash == 0)
+      {
+        this.m_Hash = this.curve.GetHashCode();
+        this.m_Hash = 33 * this.m_Hash + this.time.GetHashCode();
+      }
+      return this.m_Hash;
+    }
 
-		public bool isPPtrCurve
-		{
-			get
-			{
-				return this.curve.isPPtrCurve;
-			}
-		}
-
-		public AnimationWindowKeyframe()
-		{
-		}
-
-		public AnimationWindowKeyframe(AnimationWindowKeyframe key)
-		{
-			this.time = key.time;
-			this.value = key.value;
-			this.curve = key.curve;
-			this.m_InTangent = key.m_InTangent;
-			this.m_OutTangent = key.m_OutTangent;
-			this.m_TangentMode = key.m_TangentMode;
-			this.m_curve = key.m_curve;
-		}
-
-		public AnimationWindowKeyframe(AnimationWindowCurve curve, Keyframe key)
-		{
-			this.time = key.time;
-			this.value = key.value;
-			this.curve = curve;
-			this.m_InTangent = key.inTangent;
-			this.m_OutTangent = key.outTangent;
-			this.m_TangentMode = key.tangentMode;
-			this.m_curve = curve;
-		}
-
-		public AnimationWindowKeyframe(AnimationWindowCurve curve, ObjectReferenceKeyframe key)
-		{
-			this.time = key.time;
-			this.value = key.value;
-			this.curve = curve;
-		}
-
-		public int GetHash()
-		{
-			if (this.m_Hash == 0)
-			{
-				this.m_Hash = this.curve.GetHashCode();
-				this.m_Hash = 33 * this.m_Hash + this.time.GetHashCode();
-			}
-			return this.m_Hash;
-		}
-
-		public int GetIndex()
-		{
-			int result;
-			for (int i = 0; i < this.curve.m_Keyframes.Count; i++)
-			{
-				if (this.curve.m_Keyframes[i] == this)
-				{
-					result = i;
-					return result;
-				}
-			}
-			result = -1;
-			return result;
-		}
-	}
+    public int GetIndex()
+    {
+      for (int index = 0; index < this.curve.m_Keyframes.Count; ++index)
+      {
+        if (this.curve.m_Keyframes[index] == this)
+          return index;
+      }
+      return -1;
+    }
+  }
 }

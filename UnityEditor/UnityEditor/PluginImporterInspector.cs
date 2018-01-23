@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.PluginImporterInspector
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -10,646 +16,507 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	[CanEditMultipleObjects, CustomEditor(typeof(PluginImporter))]
-	internal class PluginImporterInspector : AssetImporterEditor
-	{
-		private delegate PluginImporterInspector.Compatibility ValueSwitcher(PluginImporterInspector.Compatibility value);
+  [CanEditMultipleObjects]
+  [CustomEditor(typeof (PluginImporter))]
+  internal class PluginImporterInspector : AssetImporterEditor
+  {
+    private static readonly BuildTarget[] m_StandaloneTargets = new BuildTarget[6]{ BuildTarget.StandaloneOSX, BuildTarget.StandaloneWindows, BuildTarget.StandaloneWindows64, BuildTarget.StandaloneLinux, BuildTarget.StandaloneLinux64, BuildTarget.StandaloneLinuxUniversal };
+    private PluginImporterInspector.Compatibility[] m_CompatibleWithPlatform = new PluginImporterInspector.Compatibility[PluginImporterInspector.GetPlatformGroupArraySize()];
+    private Vector2 m_InformationScrollPosition = Vector2.zero;
+    private EditorPluginImporterExtension m_EditorExtension = (EditorPluginImporterExtension) null;
+    private DesktopPluginImporterExtension m_DesktopExtension = (DesktopPluginImporterExtension) null;
+    private bool m_HasModified;
+    private PluginImporterInspector.Compatibility m_CompatibleWithAnyPlatform;
+    private PluginImporterInspector.Compatibility m_CompatibleWithEditor;
+    private Dictionary<string, string> m_PluginInformation;
 
-		internal enum Compatibility
-		{
-			Mixed = -1,
-			NotCompatible,
-			Compatible
-		}
+    public override bool showImportedObject
+    {
+      get
+      {
+        return false;
+      }
+    }
 
-		private delegate bool GetComptability(PluginImporter imp);
+    internal EditorPluginImporterExtension editorExtension
+    {
+      get
+      {
+        if (this.m_EditorExtension == null)
+          this.m_EditorExtension = new EditorPluginImporterExtension();
+        return this.m_EditorExtension;
+      }
+    }
 
-		private bool m_HasModified;
+    internal DesktopPluginImporterExtension desktopExtension
+    {
+      get
+      {
+        if (this.m_DesktopExtension == null)
+          this.m_DesktopExtension = new DesktopPluginImporterExtension();
+        return this.m_DesktopExtension;
+      }
+    }
 
-		private PluginImporterInspector.Compatibility m_CompatibleWithAnyPlatform;
+    internal IPluginImporterExtension[] additionalExtensions
+    {
+      get
+      {
+        return new IPluginImporterExtension[2]{ (IPluginImporterExtension) this.editorExtension, (IPluginImporterExtension) this.desktopExtension };
+      }
+    }
 
-		private PluginImporterInspector.Compatibility m_CompatibleWithEditor;
+    internal PluginImporter importer
+    {
+      get
+      {
+        return this.target as PluginImporter;
+      }
+    }
 
-		private PluginImporterInspector.Compatibility[] m_CompatibleWithPlatform = new PluginImporterInspector.Compatibility[PluginImporterInspector.GetPlatformGroupArraySize()];
+    internal PluginImporter[] importers
+    {
+      get
+      {
+        return this.targets.Cast<PluginImporter>().ToArray<PluginImporter>();
+      }
+    }
 
-		private static readonly BuildTarget[] m_StandaloneTargets = new BuildTarget[]
-		{
-			BuildTarget.StandaloneOSXIntel,
-			BuildTarget.StandaloneOSXIntel64,
-			BuildTarget.StandaloneOSXUniversal,
-			BuildTarget.StandaloneWindows,
-			BuildTarget.StandaloneWindows64,
-			BuildTarget.StandaloneLinux,
-			BuildTarget.StandaloneLinux64,
-			BuildTarget.StandaloneLinuxUniversal
-		};
+    private static bool IgnorePlatform(BuildTarget platform)
+    {
+      return false;
+    }
 
-		private Vector2 m_InformationScrollPosition = Vector2.zero;
+    private bool IsEditingPlatformSettingsSupported()
+    {
+      return this.targets.Length == 1;
+    }
 
-		private Dictionary<string, string> m_PluginInformation;
+    private static int GetPlatformGroupArraySize()
+    {
+      int num = 0;
+      foreach (BuildTarget nonObsoleteValue in typeof (BuildTarget).EnumGetNonObsoleteValues())
+      {
+        if ((BuildTarget) num < nonObsoleteValue + 1)
+          num = (int) (nonObsoleteValue + 1);
+      }
+      return num;
+    }
 
-		private EditorPluginImporterExtension m_EditorExtension = null;
+    private static bool IsStandaloneTarget(BuildTarget buildTarget)
+    {
+      return ((IEnumerable<BuildTarget>) PluginImporterInspector.m_StandaloneTargets).Contains<BuildTarget>(buildTarget);
+    }
 
-		private DesktopPluginImporterExtension m_DesktopExtension = null;
+    private PluginImporterInspector.Compatibility compatibleWithStandalone
+    {
+      get
+      {
+        bool flag = false;
+        foreach (BuildTarget standaloneTarget in PluginImporterInspector.m_StandaloneTargets)
+        {
+          if (this.m_CompatibleWithPlatform[(int) standaloneTarget] == PluginImporterInspector.Compatibility.Mixed)
+            return PluginImporterInspector.Compatibility.Mixed;
+          flag |= this.m_CompatibleWithPlatform[(int) standaloneTarget] > PluginImporterInspector.Compatibility.NotCompatible;
+        }
+        return !flag ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible;
+      }
+      set
+      {
+        foreach (int standaloneTarget in PluginImporterInspector.m_StandaloneTargets)
+          this.m_CompatibleWithPlatform[standaloneTarget] = value;
+      }
+    }
 
-		public override bool showImportedObject
-		{
-			get
-			{
-				return false;
-			}
-		}
+    internal static bool IsValidBuildTarget(BuildTarget buildTarget)
+    {
+      return buildTarget > ~BuildTarget.iPhone;
+    }
 
-		internal EditorPluginImporterExtension editorExtension
-		{
-			get
-			{
-				if (this.m_EditorExtension == null)
-				{
-					this.m_EditorExtension = new EditorPluginImporterExtension();
-				}
-				return this.m_EditorExtension;
-			}
-		}
+    internal PluginImporterInspector.Compatibility GetPlatformCompatibility(string platformName)
+    {
+      BuildTarget buildTargetByName = BuildPipeline.GetBuildTargetByName(platformName);
+      if (!PluginImporterInspector.IsValidBuildTarget(buildTargetByName))
+        return PluginImporterInspector.Compatibility.NotCompatible;
+      return this.m_CompatibleWithPlatform[(int) buildTargetByName];
+    }
 
-		internal DesktopPluginImporterExtension desktopExtension
-		{
-			get
-			{
-				if (this.m_DesktopExtension == null)
-				{
-					this.m_DesktopExtension = new DesktopPluginImporterExtension();
-				}
-				return this.m_DesktopExtension;
-			}
-		}
+    internal void SetPlatformCompatibility(string platformName, bool compatible)
+    {
+      this.SetPlatformCompatibility(platformName, !compatible ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible);
+    }
 
-		internal IPluginImporterExtension[] additionalExtensions
-		{
-			get
-			{
-				return new IPluginImporterExtension[]
-				{
-					this.editorExtension,
-					this.desktopExtension
-				};
-			}
-		}
+    internal void SetPlatformCompatibility(string platformName, PluginImporterInspector.Compatibility compatibility)
+    {
+      if (compatibility == PluginImporterInspector.Compatibility.Mixed)
+        throw new ArgumentException("compatibility value cannot be Mixed");
+      BuildTarget buildTargetByName = BuildPipeline.GetBuildTargetByName(platformName);
+      if (!PluginImporterInspector.IsValidBuildTarget(buildTargetByName) || this.m_CompatibleWithPlatform[(int) buildTargetByName] == compatibility)
+        return;
+      this.m_CompatibleWithPlatform[(int) buildTargetByName] = compatibility;
+      this.m_HasModified = true;
+    }
 
-		internal PluginImporter importer
-		{
-			get
-			{
-				return base.target as PluginImporter;
-			}
-		}
+    private static List<BuildTarget> GetValidBuildTargets()
+    {
+      List<BuildTarget> buildTargetList = new List<BuildTarget>();
+      foreach (BuildTarget nonObsoleteValue in typeof (BuildTarget).EnumGetNonObsoleteValues())
+      {
+        if (PluginImporterInspector.IsValidBuildTarget(nonObsoleteValue) && !PluginImporterInspector.IgnorePlatform(nonObsoleteValue) && (!ModuleManager.IsPlatformSupported(nonObsoleteValue) || ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(nonObsoleteValue)) || PluginImporterInspector.IsStandaloneTarget(nonObsoleteValue)))
+          buildTargetList.Add(nonObsoleteValue);
+      }
+      return buildTargetList;
+    }
 
-		internal PluginImporter[] importers
-		{
-			get
-			{
-				return base.targets.Cast<PluginImporter>().ToArray<PluginImporter>();
-			}
-		}
+    private BuildPlatform[] GetBuildPlayerValidPlatforms()
+    {
+      List<BuildPlatform> validPlatforms = BuildPlatforms.instance.GetValidPlatforms();
+      List<BuildPlatform> buildPlatformList = new List<BuildPlatform>();
+      if (this.m_CompatibleWithEditor > PluginImporterInspector.Compatibility.NotCompatible)
+        buildPlatformList.Add(new BuildPlatform("Editor settings", "Editor Settings", "BuildSettings.Editor", BuildTargetGroup.Unknown, true)
+        {
+          name = BuildPipeline.GetEditorTargetName()
+        });
+      foreach (BuildPlatform buildPlatform in validPlatforms)
+      {
+        if (!PluginImporterInspector.IgnorePlatform(buildPlatform.defaultTarget))
+        {
+          if (buildPlatform.targetGroup == BuildTargetGroup.Standalone)
+          {
+            if (this.compatibleWithStandalone < PluginImporterInspector.Compatibility.Compatible)
+              continue;
+          }
+          else if (this.m_CompatibleWithPlatform[(int) buildPlatform.defaultTarget] < PluginImporterInspector.Compatibility.Compatible || ModuleManager.GetPluginImporterExtension(buildPlatform.targetGroup) == null)
+            continue;
+          buildPlatformList.Add(buildPlatform);
+        }
+      }
+      return buildPlatformList.ToArray();
+    }
 
-		private PluginImporterInspector.Compatibility compatibleWithStandalone
-		{
-			get
-			{
-				bool flag = false;
-				BuildTarget[] standaloneTargets = PluginImporterInspector.m_StandaloneTargets;
-				PluginImporterInspector.Compatibility result;
-				for (int i = 0; i < standaloneTargets.Length; i++)
-				{
-					BuildTarget buildTarget = standaloneTargets[i];
-					if (this.m_CompatibleWithPlatform[(int)buildTarget] == PluginImporterInspector.Compatibility.Mixed)
-					{
-						result = PluginImporterInspector.Compatibility.Mixed;
-						return result;
-					}
-					flag |= (this.m_CompatibleWithPlatform[(int)buildTarget] > PluginImporterInspector.Compatibility.NotCompatible);
-				}
-				result = ((!flag) ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible);
-				return result;
-			}
-			set
-			{
-				BuildTarget[] standaloneTargets = PluginImporterInspector.m_StandaloneTargets;
-				for (int i = 0; i < standaloneTargets.Length; i++)
-				{
-					BuildTarget buildTarget = standaloneTargets[i];
-					this.m_CompatibleWithPlatform[(int)buildTarget] = value;
-				}
-			}
-		}
+    private void ResetCompatability(ref PluginImporterInspector.Compatibility value, PluginImporterInspector.GetComptability getComptability)
+    {
+      value = !getComptability(this.importer) ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible;
+      foreach (PluginImporter importer in this.importers)
+      {
+        if (value != (!getComptability(importer) ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible))
+        {
+          value = PluginImporterInspector.Compatibility.Mixed;
+          break;
+        }
+      }
+    }
 
-		private static bool IgnorePlatform(BuildTarget platform)
-		{
-			return false;
-		}
+    protected override void ResetValues()
+    {
+      base.ResetValues();
+      this.m_HasModified = false;
+      this.ResetCompatability(ref this.m_CompatibleWithAnyPlatform, (PluginImporterInspector.GetComptability) (imp => imp.GetCompatibleWithAnyPlatform()));
+      this.ResetCompatability(ref this.m_CompatibleWithEditor, (PluginImporterInspector.GetComptability) (imp => imp.GetCompatibleWithEditor()));
+      if (this.m_CompatibleWithAnyPlatform < PluginImporterInspector.Compatibility.Compatible)
+      {
+        this.ResetCompatability(ref this.m_CompatibleWithEditor, (PluginImporterInspector.GetComptability) (imp => imp.GetCompatibleWithEditor("", "")));
+        foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+        {
+          // ISSUE: object of a compiler-generated type is created
+          // ISSUE: variable of a compiler-generated type
+          PluginImporterInspector.\u003CResetValues\u003Ec__AnonStorey0 valuesCAnonStorey0 = new PluginImporterInspector.\u003CResetValues\u003Ec__AnonStorey0();
+          // ISSUE: reference to a compiler-generated field
+          valuesCAnonStorey0.platform = validBuildTarget;
+          // ISSUE: reference to a compiler-generated field
+          // ISSUE: reference to a compiler-generated method
+          this.ResetCompatability(ref this.m_CompatibleWithPlatform[(int) valuesCAnonStorey0.platform], new PluginImporterInspector.GetComptability(valuesCAnonStorey0.\u003C\u003Em__0));
+        }
+      }
+      else
+      {
+        this.ResetCompatability(ref this.m_CompatibleWithEditor, (PluginImporterInspector.GetComptability) (imp => !imp.GetExcludeEditorFromAnyPlatform()));
+        foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+        {
+          // ISSUE: object of a compiler-generated type is created
+          // ISSUE: variable of a compiler-generated type
+          PluginImporterInspector.\u003CResetValues\u003Ec__AnonStorey1 valuesCAnonStorey1 = new PluginImporterInspector.\u003CResetValues\u003Ec__AnonStorey1();
+          // ISSUE: reference to a compiler-generated field
+          valuesCAnonStorey1.platform = validBuildTarget;
+          // ISSUE: reference to a compiler-generated field
+          // ISSUE: reference to a compiler-generated method
+          this.ResetCompatability(ref this.m_CompatibleWithPlatform[(int) valuesCAnonStorey1.platform], new PluginImporterInspector.GetComptability(valuesCAnonStorey1.\u003C\u003Em__0));
+        }
+      }
+      if (!this.IsEditingPlatformSettingsSupported())
+        return;
+      foreach (IPluginImporterExtension additionalExtension in this.additionalExtensions)
+        additionalExtension.ResetValues(this);
+      foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+      {
+        IPluginImporterExtension importerExtension = ModuleManager.GetPluginImporterExtension(validBuildTarget);
+        if (importerExtension != null)
+          importerExtension.ResetValues(this);
+      }
+    }
 
-		private bool IsEditingPlatformSettingsSupported()
-		{
-			return base.targets.Length == 1;
-		}
+    public override bool HasModified()
+    {
+      bool flag = this.m_HasModified || base.HasModified();
+      if (!this.IsEditingPlatformSettingsSupported())
+        return flag;
+      foreach (IPluginImporterExtension additionalExtension in this.additionalExtensions)
+        flag |= additionalExtension.HasModified(this);
+      foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+      {
+        IPluginImporterExtension importerExtension = ModuleManager.GetPluginImporterExtension(validBuildTarget);
+        if (importerExtension != null)
+          flag |= importerExtension.HasModified(this);
+      }
+      return flag;
+    }
 
-		private static int GetPlatformGroupArraySize()
-		{
-			int num = 0;
-			using (List<Enum>.Enumerator enumerator = typeof(BuildTarget).EnumGetNonObsoleteValues().GetEnumerator())
-			{
-				while (enumerator.MoveNext())
-				{
-					BuildTarget buildTarget = (BuildTarget)enumerator.Current;
-					if (num < (int)(buildTarget + 1))
-					{
-						num = (int)(buildTarget + 1);
-					}
-				}
-			}
-			return num;
-		}
+    protected override void Apply()
+    {
+      base.Apply();
+      foreach (PluginImporter importer in this.importers)
+      {
+        if (this.m_CompatibleWithAnyPlatform > PluginImporterInspector.Compatibility.Mixed)
+          importer.SetCompatibleWithAnyPlatform(this.m_CompatibleWithAnyPlatform == PluginImporterInspector.Compatibility.Compatible);
+        if (this.m_CompatibleWithEditor > PluginImporterInspector.Compatibility.Mixed)
+          importer.SetCompatibleWithEditor(this.m_CompatibleWithEditor == PluginImporterInspector.Compatibility.Compatible);
+        foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+        {
+          if (this.m_CompatibleWithPlatform[(int) validBuildTarget] > PluginImporterInspector.Compatibility.Mixed)
+            importer.SetCompatibleWithPlatform(validBuildTarget, this.m_CompatibleWithPlatform[(int) validBuildTarget] == PluginImporterInspector.Compatibility.Compatible);
+        }
+        if (this.m_CompatibleWithEditor > PluginImporterInspector.Compatibility.Mixed)
+          importer.SetExcludeEditorFromAnyPlatform(this.m_CompatibleWithEditor == PluginImporterInspector.Compatibility.NotCompatible);
+        foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+        {
+          if (this.m_CompatibleWithPlatform[(int) validBuildTarget] > PluginImporterInspector.Compatibility.Mixed)
+            importer.SetExcludeFromAnyPlatform(validBuildTarget, this.m_CompatibleWithPlatform[(int) validBuildTarget] == PluginImporterInspector.Compatibility.NotCompatible);
+        }
+      }
+      if (!this.IsEditingPlatformSettingsSupported())
+        return;
+      foreach (IPluginImporterExtension additionalExtension in this.additionalExtensions)
+        additionalExtension.Apply(this);
+      foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+      {
+        IPluginImporterExtension importerExtension = ModuleManager.GetPluginImporterExtension(validBuildTarget);
+        if (importerExtension != null)
+          importerExtension.Apply(this);
+      }
+    }
 
-		private static bool IsStandaloneTarget(BuildTarget buildTarget)
-		{
-			return PluginImporterInspector.m_StandaloneTargets.Contains(buildTarget);
-		}
+    protected override void Awake()
+    {
+      this.m_EditorExtension = new EditorPluginImporterExtension();
+      this.m_DesktopExtension = new DesktopPluginImporterExtension();
+      base.Awake();
+    }
 
-		internal PluginImporterInspector.Compatibility GetPlatformCompatibility(string platformName)
-		{
-			return this.m_CompatibleWithPlatform[(int)BuildPipeline.GetBuildTargetByName(platformName)];
-		}
+    public override void OnEnable()
+    {
+      if (!this.IsEditingPlatformSettingsSupported())
+        return;
+      foreach (IPluginImporterExtension additionalExtension in this.additionalExtensions)
+        additionalExtension.OnEnable(this);
+      foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+      {
+        IPluginImporterExtension importerExtension = ModuleManager.GetPluginImporterExtension(validBuildTarget);
+        if (importerExtension != null)
+        {
+          importerExtension.OnEnable(this);
+          importerExtension.ResetValues(this);
+        }
+      }
+      this.m_PluginInformation = new Dictionary<string, string>();
+      this.m_PluginInformation["Path"] = this.importer.assetPath;
+      this.m_PluginInformation["Type"] = !this.importer.isNativePlugin ? "Managed" : "Native";
+      if (this.importer.isNativePlugin)
+        return;
+      string str;
+      switch (this.importer.dllType)
+      {
+        case DllType.UnknownManaged:
+          str = "Targets Unknown .NET";
+          break;
+        case DllType.ManagedNET35:
+          str = "Targets .NET 3.5";
+          break;
+        case DllType.ManagedNET40:
+          str = "Targets .NET 4.x";
+          break;
+        case DllType.WinMDNative:
+          str = "Native WinMD";
+          break;
+        case DllType.WinMDNET40:
+          str = "Managed WinMD";
+          break;
+        default:
+          throw new Exception("Unknown managed dll type: " + this.importer.dllType.ToString());
+      }
+      this.m_PluginInformation["Assembly Info"] = str;
+    }
 
-		internal void SetPlatformCompatibility(string platformName, bool compatible)
-		{
-			this.SetPlatformCompatibility(platformName, (!compatible) ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible);
-		}
+    private new void OnDisable()
+    {
+      base.OnDisable();
+      if (!this.IsEditingPlatformSettingsSupported())
+        return;
+      foreach (IPluginImporterExtension additionalExtension in this.additionalExtensions)
+        additionalExtension.OnDisable(this);
+      foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+      {
+        IPluginImporterExtension importerExtension = ModuleManager.GetPluginImporterExtension(validBuildTarget);
+        if (importerExtension != null)
+          importerExtension.OnDisable(this);
+      }
+    }
 
-		internal void SetPlatformCompatibility(string platformName, PluginImporterInspector.Compatibility compatibility)
-		{
-			if (compatibility == PluginImporterInspector.Compatibility.Mixed)
-			{
-				throw new ArgumentException("compatibility value cannot be Mixed");
-			}
-			int buildTargetByName = (int)BuildPipeline.GetBuildTargetByName(platformName);
-			if (this.m_CompatibleWithPlatform[buildTargetByName] != compatibility)
-			{
-				this.m_CompatibleWithPlatform[buildTargetByName] = compatibility;
-				this.m_HasModified = true;
-			}
-		}
+    private PluginImporterInspector.Compatibility ToggleWithMixedValue(PluginImporterInspector.Compatibility value, string title)
+    {
+      EditorGUI.showMixedValue = value == PluginImporterInspector.Compatibility.Mixed;
+      EditorGUI.BeginChangeCheck();
+      bool flag = EditorGUILayout.Toggle(title, value == PluginImporterInspector.Compatibility.Compatible, new GUILayoutOption[0]);
+      if (EditorGUI.EndChangeCheck())
+        return !flag ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible;
+      EditorGUI.showMixedValue = false;
+      return value;
+    }
 
-		private static List<BuildTarget> GetValidBuildTargets()
-		{
-			List<BuildTarget> list = new List<BuildTarget>();
-			using (List<Enum>.Enumerator enumerator = typeof(BuildTarget).EnumGetNonObsoleteValues().GetEnumerator())
-			{
-				while (enumerator.MoveNext())
-				{
-					BuildTarget buildTarget = (BuildTarget)enumerator.Current;
-					if (buildTarget > (BuildTarget)0)
-					{
-						if (!PluginImporterInspector.IgnorePlatform(buildTarget))
-						{
-							if (!ModuleManager.IsPlatformSupported(buildTarget) || ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(buildTarget)) || PluginImporterInspector.IsStandaloneTarget(buildTarget))
-							{
-								list.Add(buildTarget);
-							}
-						}
-					}
-				}
-			}
-			return list;
-		}
+    private void ShowPlatforms(PluginImporterInspector.ValueSwitcher switcher)
+    {
+      this.m_CompatibleWithEditor = switcher(this.ToggleWithMixedValue(switcher(this.m_CompatibleWithEditor), "Editor"));
+      EditorGUI.BeginChangeCheck();
+      PluginImporterInspector.Compatibility compatibility = this.ToggleWithMixedValue(switcher(this.compatibleWithStandalone), "Standalone");
+      if (EditorGUI.EndChangeCheck())
+      {
+        this.compatibleWithStandalone = switcher(compatibility);
+        if (this.compatibleWithStandalone != PluginImporterInspector.Compatibility.Mixed)
+          this.desktopExtension.ValidateSingleCPUTargets(this);
+      }
+      foreach (BuildTarget validBuildTarget in PluginImporterInspector.GetValidBuildTargets())
+      {
+        if (!PluginImporterInspector.IsStandaloneTarget(validBuildTarget))
+          this.m_CompatibleWithPlatform[(int) validBuildTarget] = switcher(this.ToggleWithMixedValue(switcher(this.m_CompatibleWithPlatform[(int) validBuildTarget]), validBuildTarget.ToString()));
+      }
+    }
 
-		private BuildPlatform[] GetBuildPlayerValidPlatforms()
-		{
-			List<BuildPlatform> validPlatforms = BuildPlatforms.instance.GetValidPlatforms();
-			List<BuildPlatform> list = new List<BuildPlatform>();
-			if (this.m_CompatibleWithEditor > PluginImporterInspector.Compatibility.NotCompatible)
-			{
-				list.Add(new BuildPlatform("Editor settings", "Editor Settings", "BuildSettings.Editor", BuildTargetGroup.Unknown, true)
-				{
-					name = BuildPipeline.GetEditorTargetName()
-				});
-			}
-			foreach (BuildPlatform current in validPlatforms)
-			{
-				if (!PluginImporterInspector.IgnorePlatform(current.defaultTarget))
-				{
-					if (current.targetGroup == BuildTargetGroup.Standalone)
-					{
-						if (this.compatibleWithStandalone < PluginImporterInspector.Compatibility.Compatible)
-						{
-							continue;
-						}
-					}
-					else
-					{
-						if (this.m_CompatibleWithPlatform[(int)current.defaultTarget] < PluginImporterInspector.Compatibility.Compatible)
-						{
-							continue;
-						}
-						if (ModuleManager.GetPluginImporterExtension(current.targetGroup) == null)
-						{
-							continue;
-						}
-					}
-					list.Add(current);
-				}
-			}
-			return list.ToArray();
-		}
+    private PluginImporterInspector.Compatibility SwitchToInclude(PluginImporterInspector.Compatibility value)
+    {
+      return value;
+    }
 
-		private void ResetCompatability(ref PluginImporterInspector.Compatibility value, PluginImporterInspector.GetComptability getComptability)
-		{
-			value = ((!getComptability(this.importer)) ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible);
-			PluginImporter[] importers = this.importers;
-			for (int i = 0; i < importers.Length; i++)
-			{
-				PluginImporter imp = importers[i];
-				if (value != ((!getComptability(imp)) ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible))
-				{
-					value = PluginImporterInspector.Compatibility.Mixed;
-					break;
-				}
-			}
-		}
+    private PluginImporterInspector.Compatibility SwitchToExclude(PluginImporterInspector.Compatibility value)
+    {
+      switch (value + 1)
+      {
+        case PluginImporterInspector.Compatibility.NotCompatible:
+          return PluginImporterInspector.Compatibility.Mixed;
+        case PluginImporterInspector.Compatibility.Compatible:
+          return PluginImporterInspector.Compatibility.Compatible;
+        case (PluginImporterInspector.Compatibility) 2:
+          return PluginImporterInspector.Compatibility.NotCompatible;
+        default:
+          throw new InvalidEnumArgumentException("Invalid value: " + value.ToString());
+      }
+    }
 
-		protected override void ResetValues()
-		{
-			base.ResetValues();
-			this.m_HasModified = false;
-			this.ResetCompatability(ref this.m_CompatibleWithAnyPlatform, (PluginImporter imp) => imp.GetCompatibleWithAnyPlatform());
-			this.ResetCompatability(ref this.m_CompatibleWithEditor, (PluginImporter imp) => imp.GetCompatibleWithEditor());
-			if (this.m_CompatibleWithAnyPlatform < PluginImporterInspector.Compatibility.Compatible)
-			{
-				this.ResetCompatability(ref this.m_CompatibleWithEditor, (PluginImporter imp) => imp.GetCompatibleWithEditor("", ""));
-				using (List<BuildTarget>.Enumerator enumerator = PluginImporterInspector.GetValidBuildTargets().GetEnumerator())
-				{
-					while (enumerator.MoveNext())
-					{
-						BuildTarget platform = enumerator.Current;
-						this.ResetCompatability(ref this.m_CompatibleWithPlatform[(int)platform], (PluginImporter imp) => imp.GetCompatibleWithPlatform(platform));
-					}
-				}
-			}
-			else
-			{
-				this.ResetCompatability(ref this.m_CompatibleWithEditor, (PluginImporter imp) => !imp.GetExcludeEditorFromAnyPlatform());
-				using (List<BuildTarget>.Enumerator enumerator2 = PluginImporterInspector.GetValidBuildTargets().GetEnumerator())
-				{
-					while (enumerator2.MoveNext())
-					{
-						BuildTarget platform = enumerator2.Current;
-						this.ResetCompatability(ref this.m_CompatibleWithPlatform[(int)platform], (PluginImporter imp) => !imp.GetExcludeFromAnyPlatform(platform));
-					}
-				}
-			}
-			if (this.IsEditingPlatformSettingsSupported())
-			{
-				IPluginImporterExtension[] additionalExtensions = this.additionalExtensions;
-				for (int i = 0; i < additionalExtensions.Length; i++)
-				{
-					IPluginImporterExtension pluginImporterExtension = additionalExtensions[i];
-					pluginImporterExtension.ResetValues(this);
-				}
-				foreach (BuildTarget current in PluginImporterInspector.GetValidBuildTargets())
-				{
-					IPluginImporterExtension pluginImporterExtension2 = ModuleManager.GetPluginImporterExtension(current);
-					if (pluginImporterExtension2 != null)
-					{
-						pluginImporterExtension2.ResetValues(this);
-					}
-				}
-			}
-		}
+    private void ShowGeneralOptions()
+    {
+      EditorGUI.BeginChangeCheck();
+      this.m_CompatibleWithAnyPlatform = this.ToggleWithMixedValue(this.m_CompatibleWithAnyPlatform, "Any Platform");
+      if (this.m_CompatibleWithAnyPlatform == PluginImporterInspector.Compatibility.Compatible)
+      {
+        GUILayout.Label("Exclude Platforms", EditorStyles.boldLabel, new GUILayoutOption[0]);
+        this.ShowPlatforms(new PluginImporterInspector.ValueSwitcher(this.SwitchToExclude));
+      }
+      else if (this.m_CompatibleWithAnyPlatform == PluginImporterInspector.Compatibility.NotCompatible)
+      {
+        GUILayout.Label("Include Platforms", EditorStyles.boldLabel, new GUILayoutOption[0]);
+        this.ShowPlatforms(new PluginImporterInspector.ValueSwitcher(this.SwitchToInclude));
+      }
+      if (!EditorGUI.EndChangeCheck())
+        return;
+      this.m_HasModified = true;
+    }
 
-		public override bool HasModified()
-		{
-			bool flag = this.m_HasModified || base.HasModified();
-			bool result;
-			if (!this.IsEditingPlatformSettingsSupported())
-			{
-				result = flag;
-			}
-			else
-			{
-				IPluginImporterExtension[] additionalExtensions = this.additionalExtensions;
-				for (int i = 0; i < additionalExtensions.Length; i++)
-				{
-					IPluginImporterExtension pluginImporterExtension = additionalExtensions[i];
-					flag |= pluginImporterExtension.HasModified(this);
-				}
-				foreach (BuildTarget current in PluginImporterInspector.GetValidBuildTargets())
-				{
-					IPluginImporterExtension pluginImporterExtension2 = ModuleManager.GetPluginImporterExtension(current);
-					if (pluginImporterExtension2 != null)
-					{
-						flag |= pluginImporterExtension2.HasModified(this);
-					}
-				}
-				result = flag;
-			}
-			return result;
-		}
+    private void ShowEditorSettings()
+    {
+      this.editorExtension.OnPlatformSettingsGUI(this);
+    }
 
-		protected override void Apply()
-		{
-			base.Apply();
-			PluginImporter[] importers = this.importers;
-			for (int i = 0; i < importers.Length; i++)
-			{
-				PluginImporter pluginImporter = importers[i];
-				if (this.m_CompatibleWithAnyPlatform > PluginImporterInspector.Compatibility.Mixed)
-				{
-					pluginImporter.SetCompatibleWithAnyPlatform(this.m_CompatibleWithAnyPlatform == PluginImporterInspector.Compatibility.Compatible);
-				}
-				if (this.m_CompatibleWithEditor > PluginImporterInspector.Compatibility.Mixed)
-				{
-					pluginImporter.SetCompatibleWithEditor(this.m_CompatibleWithEditor == PluginImporterInspector.Compatibility.Compatible);
-				}
-				foreach (BuildTarget current in PluginImporterInspector.GetValidBuildTargets())
-				{
-					if (this.m_CompatibleWithPlatform[(int)current] > PluginImporterInspector.Compatibility.Mixed)
-					{
-						pluginImporter.SetCompatibleWithPlatform(current, this.m_CompatibleWithPlatform[(int)current] == PluginImporterInspector.Compatibility.Compatible);
-					}
-				}
-				if (this.m_CompatibleWithEditor > PluginImporterInspector.Compatibility.Mixed)
-				{
-					pluginImporter.SetExcludeEditorFromAnyPlatform(this.m_CompatibleWithEditor == PluginImporterInspector.Compatibility.NotCompatible);
-				}
-				foreach (BuildTarget current2 in PluginImporterInspector.GetValidBuildTargets())
-				{
-					if (this.m_CompatibleWithPlatform[(int)current2] > PluginImporterInspector.Compatibility.Mixed)
-					{
-						pluginImporter.SetExcludeFromAnyPlatform(current2, this.m_CompatibleWithPlatform[(int)current2] == PluginImporterInspector.Compatibility.NotCompatible);
-					}
-				}
-			}
-			if (this.IsEditingPlatformSettingsSupported())
-			{
-				IPluginImporterExtension[] additionalExtensions = this.additionalExtensions;
-				for (int j = 0; j < additionalExtensions.Length; j++)
-				{
-					IPluginImporterExtension pluginImporterExtension = additionalExtensions[j];
-					pluginImporterExtension.Apply(this);
-				}
-				foreach (BuildTarget current3 in PluginImporterInspector.GetValidBuildTargets())
-				{
-					IPluginImporterExtension pluginImporterExtension2 = ModuleManager.GetPluginImporterExtension(current3);
-					if (pluginImporterExtension2 != null)
-					{
-						pluginImporterExtension2.Apply(this);
-					}
-				}
-			}
-		}
+    private void ShowPlatformSettings()
+    {
+      BuildPlatform[] playerValidPlatforms = this.GetBuildPlayerValidPlatforms();
+      if (playerValidPlatforms.Length <= 0)
+        return;
+      GUILayout.Label("Platform settings", EditorStyles.boldLabel, new GUILayoutOption[0]);
+      int index = EditorGUILayout.BeginPlatformGrouping(playerValidPlatforms, (GUIContent) null);
+      if (playerValidPlatforms[index].name == BuildPipeline.GetEditorTargetName())
+      {
+        this.ShowEditorSettings();
+      }
+      else
+      {
+        BuildTargetGroup targetGroup = playerValidPlatforms[index].targetGroup;
+        if (targetGroup == BuildTargetGroup.Standalone)
+        {
+          this.desktopExtension.OnPlatformSettingsGUI(this);
+        }
+        else
+        {
+          IPluginImporterExtension importerExtension = ModuleManager.GetPluginImporterExtension(targetGroup);
+          if (importerExtension != null)
+            importerExtension.OnPlatformSettingsGUI(this);
+        }
+      }
+      EditorGUILayout.EndPlatformGrouping();
+    }
 
-		protected override void Awake()
-		{
-			this.m_EditorExtension = new EditorPluginImporterExtension();
-			this.m_DesktopExtension = new DesktopPluginImporterExtension();
-			base.Awake();
-		}
+    public override void OnInspectorGUI()
+    {
+      using (new EditorGUI.DisabledScope(false))
+      {
+        GUILayout.Label("Select platforms for plugin", EditorStyles.boldLabel, new GUILayoutOption[0]);
+        EditorGUILayout.BeginVertical(GUI.skin.box, new GUILayoutOption[0]);
+        this.ShowGeneralOptions();
+        EditorGUILayout.EndVertical();
+        GUILayout.Space(10f);
+        if (this.IsEditingPlatformSettingsSupported())
+          this.ShowPlatformSettings();
+      }
+      this.ApplyRevertGUI();
+      if (this.targets.Length > 1)
+        return;
+      GUILayout.Label("Information", EditorStyles.boldLabel, new GUILayoutOption[0]);
+      this.m_InformationScrollPosition = EditorGUILayout.BeginVerticalScrollView(this.m_InformationScrollPosition);
+      foreach (KeyValuePair<string, string> keyValuePair in this.m_PluginInformation)
+      {
+        GUILayout.BeginHorizontal();
+        GUILayout.Label(keyValuePair.Key, new GUILayoutOption[1]
+        {
+          GUILayout.Width(85f)
+        });
+        EditorGUILayout.SelectableLabel(keyValuePair.Value, GUILayout.Height(16f));
+        GUILayout.EndHorizontal();
+      }
+      EditorGUILayout.EndScrollView();
+      GUILayout.FlexibleSpace();
+      if (this.importer.isNativePlugin)
+        EditorGUILayout.HelpBox("Once a native plugin is loaded from script, it's never unloaded. If you deselect a native plugin and it's already loaded, please restart Unity.", MessageType.Warning);
+      if (EditorApplication.scriptingRuntimeVersion != ScriptingRuntimeVersion.Legacy || this.importer.dllType != DllType.ManagedNET40 || this.m_CompatibleWithEditor != PluginImporterInspector.Compatibility.Compatible)
+        return;
+      EditorGUILayout.HelpBox("Plugin targets .NET 4.x and is marked as compatible with Editor, Editor can only use assemblies targeting .NET 3.5 or lower, please unselect Editor as compatible platform.", MessageType.Error);
+    }
 
-		public override void OnEnable()
-		{
-			if (this.IsEditingPlatformSettingsSupported())
-			{
-				IPluginImporterExtension[] additionalExtensions = this.additionalExtensions;
-				for (int i = 0; i < additionalExtensions.Length; i++)
-				{
-					IPluginImporterExtension pluginImporterExtension = additionalExtensions[i];
-					pluginImporterExtension.OnEnable(this);
-				}
-				foreach (BuildTarget current in PluginImporterInspector.GetValidBuildTargets())
-				{
-					IPluginImporterExtension pluginImporterExtension2 = ModuleManager.GetPluginImporterExtension(current);
-					if (pluginImporterExtension2 != null)
-					{
-						pluginImporterExtension2.OnEnable(this);
-						pluginImporterExtension2.ResetValues(this);
-					}
-				}
-				this.m_PluginInformation = new Dictionary<string, string>();
-				this.m_PluginInformation["Path"] = this.importer.assetPath;
-				this.m_PluginInformation["Type"] = ((!this.importer.isNativePlugin) ? "Managed" : "Native");
-				if (!this.importer.isNativePlugin)
-				{
-					string value;
-					switch (this.importer.dllType)
-					{
-					case DllType.UnknownManaged:
-						value = "Targets Unknown .NET";
-						break;
-					case DllType.ManagedNET35:
-						value = "Targets .NET 3.5";
-						break;
-					case DllType.ManagedNET40:
-						value = "Targets .NET 4.x";
-						break;
-					case DllType.WinMDNative:
-						value = "Native WinMD";
-						break;
-					case DllType.WinMDNET40:
-						value = "Managed WinMD";
-						break;
-					default:
-						throw new Exception("Unknown managed dll type: " + this.importer.dllType.ToString());
-					}
-					this.m_PluginInformation["Assembly Info"] = value;
-				}
-			}
-		}
+    private delegate PluginImporterInspector.Compatibility ValueSwitcher(PluginImporterInspector.Compatibility value);
 
-		private new void OnDisable()
-		{
-			base.OnDisable();
-			if (this.IsEditingPlatformSettingsSupported())
-			{
-				IPluginImporterExtension[] additionalExtensions = this.additionalExtensions;
-				for (int i = 0; i < additionalExtensions.Length; i++)
-				{
-					IPluginImporterExtension pluginImporterExtension = additionalExtensions[i];
-					pluginImporterExtension.OnDisable(this);
-				}
-				foreach (BuildTarget current in PluginImporterInspector.GetValidBuildTargets())
-				{
-					IPluginImporterExtension pluginImporterExtension2 = ModuleManager.GetPluginImporterExtension(current);
-					if (pluginImporterExtension2 != null)
-					{
-						pluginImporterExtension2.OnDisable(this);
-					}
-				}
-			}
-		}
+    internal enum Compatibility
+    {
+      Mixed = -1,
+      NotCompatible = 0,
+      Compatible = 1,
+    }
 
-		private PluginImporterInspector.Compatibility ToggleWithMixedValue(PluginImporterInspector.Compatibility value, string title)
-		{
-			EditorGUI.showMixedValue = (value == PluginImporterInspector.Compatibility.Mixed);
-			EditorGUI.BeginChangeCheck();
-			bool flag = EditorGUILayout.Toggle(title, value == PluginImporterInspector.Compatibility.Compatible, new GUILayoutOption[0]);
-			PluginImporterInspector.Compatibility result;
-			if (EditorGUI.EndChangeCheck())
-			{
-				result = ((!flag) ? PluginImporterInspector.Compatibility.NotCompatible : PluginImporterInspector.Compatibility.Compatible);
-			}
-			else
-			{
-				EditorGUI.showMixedValue = false;
-				result = value;
-			}
-			return result;
-		}
-
-		private void ShowPlatforms(PluginImporterInspector.ValueSwitcher switcher)
-		{
-			this.m_CompatibleWithEditor = switcher(this.ToggleWithMixedValue(switcher(this.m_CompatibleWithEditor), "Editor"));
-			EditorGUI.BeginChangeCheck();
-			PluginImporterInspector.Compatibility value = this.ToggleWithMixedValue(switcher(this.compatibleWithStandalone), "Standalone");
-			if (EditorGUI.EndChangeCheck())
-			{
-				this.compatibleWithStandalone = switcher(value);
-				if (this.compatibleWithStandalone != PluginImporterInspector.Compatibility.Mixed)
-				{
-					this.desktopExtension.ValidateSingleCPUTargets(this);
-				}
-			}
-			foreach (BuildTarget current in PluginImporterInspector.GetValidBuildTargets())
-			{
-				if (!PluginImporterInspector.IsStandaloneTarget(current))
-				{
-					this.m_CompatibleWithPlatform[(int)current] = switcher(this.ToggleWithMixedValue(switcher(this.m_CompatibleWithPlatform[(int)current]), current.ToString()));
-				}
-			}
-		}
-
-		private PluginImporterInspector.Compatibility SwitchToInclude(PluginImporterInspector.Compatibility value)
-		{
-			return value;
-		}
-
-		private PluginImporterInspector.Compatibility SwitchToExclude(PluginImporterInspector.Compatibility value)
-		{
-			PluginImporterInspector.Compatibility result;
-			switch (value + 1)
-			{
-			case PluginImporterInspector.Compatibility.NotCompatible:
-				result = PluginImporterInspector.Compatibility.Mixed;
-				break;
-			case PluginImporterInspector.Compatibility.Compatible:
-				result = PluginImporterInspector.Compatibility.Compatible;
-				break;
-			case (PluginImporterInspector.Compatibility)2:
-				result = PluginImporterInspector.Compatibility.NotCompatible;
-				break;
-			default:
-				throw new InvalidEnumArgumentException("Invalid value: " + value.ToString());
-			}
-			return result;
-		}
-
-		private void ShowGeneralOptions()
-		{
-			EditorGUI.BeginChangeCheck();
-			this.m_CompatibleWithAnyPlatform = this.ToggleWithMixedValue(this.m_CompatibleWithAnyPlatform, "Any Platform");
-			if (this.m_CompatibleWithAnyPlatform == PluginImporterInspector.Compatibility.Compatible)
-			{
-				GUILayout.Label("Exclude Platforms", EditorStyles.boldLabel, new GUILayoutOption[0]);
-				this.ShowPlatforms(new PluginImporterInspector.ValueSwitcher(this.SwitchToExclude));
-			}
-			else if (this.m_CompatibleWithAnyPlatform == PluginImporterInspector.Compatibility.NotCompatible)
-			{
-				GUILayout.Label("Include Platforms", EditorStyles.boldLabel, new GUILayoutOption[0]);
-				this.ShowPlatforms(new PluginImporterInspector.ValueSwitcher(this.SwitchToInclude));
-			}
-			if (EditorGUI.EndChangeCheck())
-			{
-				this.m_HasModified = true;
-			}
-		}
-
-		private void ShowEditorSettings()
-		{
-			this.editorExtension.OnPlatformSettingsGUI(this);
-		}
-
-		private void ShowPlatformSettings()
-		{
-			BuildPlatform[] buildPlayerValidPlatforms = this.GetBuildPlayerValidPlatforms();
-			if (buildPlayerValidPlatforms.Length > 0)
-			{
-				GUILayout.Label("Platform settings", EditorStyles.boldLabel, new GUILayoutOption[0]);
-				int num = EditorGUILayout.BeginPlatformGrouping(buildPlayerValidPlatforms, null);
-				if (buildPlayerValidPlatforms[num].name == BuildPipeline.GetEditorTargetName())
-				{
-					this.ShowEditorSettings();
-				}
-				else
-				{
-					BuildTargetGroup targetGroup = buildPlayerValidPlatforms[num].targetGroup;
-					if (targetGroup == BuildTargetGroup.Standalone)
-					{
-						this.desktopExtension.OnPlatformSettingsGUI(this);
-					}
-					else
-					{
-						IPluginImporterExtension pluginImporterExtension = ModuleManager.GetPluginImporterExtension(targetGroup);
-						if (pluginImporterExtension != null)
-						{
-							pluginImporterExtension.OnPlatformSettingsGUI(this);
-						}
-					}
-				}
-				EditorGUILayout.EndPlatformGrouping();
-			}
-		}
-
-		public override void OnInspectorGUI()
-		{
-			using (new EditorGUI.DisabledScope(false))
-			{
-				GUILayout.Label("Select platforms for plugin", EditorStyles.boldLabel, new GUILayoutOption[0]);
-				EditorGUILayout.BeginVertical(GUI.skin.box, new GUILayoutOption[0]);
-				this.ShowGeneralOptions();
-				EditorGUILayout.EndVertical();
-				GUILayout.Space(10f);
-				if (this.IsEditingPlatformSettingsSupported())
-				{
-					this.ShowPlatformSettings();
-				}
-			}
-			base.ApplyRevertGUI();
-			if (base.targets.Length <= 1)
-			{
-				GUILayout.Label("Information", EditorStyles.boldLabel, new GUILayoutOption[0]);
-				this.m_InformationScrollPosition = EditorGUILayout.BeginVerticalScrollView(this.m_InformationScrollPosition, new GUILayoutOption[0]);
-				foreach (KeyValuePair<string, string> current in this.m_PluginInformation)
-				{
-					GUILayout.BeginHorizontal(new GUILayoutOption[0]);
-					GUILayout.Label(current.Key, new GUILayoutOption[]
-					{
-						GUILayout.Width(85f)
-					});
-					EditorGUILayout.SelectableLabel(current.Value, new GUILayoutOption[]
-					{
-						GUILayout.Height(16f)
-					});
-					GUILayout.EndHorizontal();
-				}
-				EditorGUILayout.EndScrollView();
-				GUILayout.FlexibleSpace();
-				if (this.importer.isNativePlugin)
-				{
-					EditorGUILayout.HelpBox("Once a native plugin is loaded from script, it's never unloaded. If you deselect a native plugin and it's already loaded, please restart Unity.", MessageType.Warning);
-				}
-				if (EditorApplication.scriptingRuntimeVersion == ScriptingRuntimeVersion.Legacy && this.importer.dllType == DllType.ManagedNET40 && this.m_CompatibleWithEditor == PluginImporterInspector.Compatibility.Compatible)
-				{
-					EditorGUILayout.HelpBox("Plugin targets .NET 4.x and is marked as compatible with Editor, Editor can only use assemblies targeting .NET 3.5 or lower, please unselect Editor as compatible platform.", MessageType.Error);
-				}
-			}
-		}
-	}
+    private delegate bool GetComptability(PluginImporter imp);
+  }
 }

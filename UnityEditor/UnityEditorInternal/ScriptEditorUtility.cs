@@ -1,4 +1,9 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.ScriptEditorUtility
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
@@ -7,147 +12,96 @@ using UnityEngine;
 
 namespace UnityEditorInternal
 {
-	public class ScriptEditorUtility
-	{
-		public enum ScriptEditor
-		{
-			Internal,
-			MonoDevelop,
-			VisualStudio,
-			VisualStudioExpress,
-			VisualStudioCode,
-			Rider,
-			Other = 32
-		}
+  public class ScriptEditorUtility
+  {
+    public static ScriptEditorUtility.ScriptEditor GetScriptEditorFromPath(string path)
+    {
+      string lower = path.ToLower();
+      if (lower == "internal")
+        return ScriptEditorUtility.ScriptEditor.Internal;
+      if (lower.Contains("monodevelop") || lower.Contains("xamarinstudio") || lower.Contains("xamarin studio"))
+        return ScriptEditorUtility.ScriptEditor.MonoDevelop;
+      if (lower.EndsWith("devenv.exe"))
+        return ScriptEditorUtility.ScriptEditor.VisualStudio;
+      if (lower.EndsWith("vcsexpress.exe"))
+        return ScriptEditorUtility.ScriptEditor.VisualStudioExpress;
+      string str = Path.GetFileName(Paths.UnifyDirectorySeparator(lower)).Replace(" ", "");
+      if (str == "visualstudio.app")
+        return ScriptEditorUtility.ScriptEditor.MonoDevelop;
+      if (str == "code.exe" || str == "visualstudiocode.app" || (str == "vscode.app" || str == "code.app") || str == "code")
+        return ScriptEditorUtility.ScriptEditor.VisualStudioCode;
+      return str == "rider.exe" || str == "rider64.exe" || (str == "rider32.exe" || str == "ridereap.app") || (str == "rider.app" || str == "rider.sh") ? ScriptEditorUtility.ScriptEditor.Rider : ScriptEditorUtility.ScriptEditor.Other;
+    }
 
-		public static ScriptEditorUtility.ScriptEditor GetScriptEditorFromPath(string path)
-		{
-			string text = path.ToLower();
-			ScriptEditorUtility.ScriptEditor result;
-			if (text == "internal")
-			{
-				result = ScriptEditorUtility.ScriptEditor.Internal;
-			}
-			else if (text.Contains("monodevelop") || text.Contains("xamarinstudio") || text.Contains("xamarin studio"))
-			{
-				result = ScriptEditorUtility.ScriptEditor.MonoDevelop;
-			}
-			else if (text.EndsWith("devenv.exe"))
-			{
-				result = ScriptEditorUtility.ScriptEditor.VisualStudio;
-			}
-			else if (text.EndsWith("vcsexpress.exe"))
-			{
-				result = ScriptEditorUtility.ScriptEditor.VisualStudioExpress;
-			}
-			else
-			{
-				string a = Path.GetFileName(Paths.UnifyDirectorySeparator(text)).Replace(" ", "");
-				if (a == "visualstudio.app")
-				{
-					result = ScriptEditorUtility.ScriptEditor.MonoDevelop;
-				}
-				else if (a == "code.exe" || a == "visualstudiocode.app" || a == "vscode.app" || a == "code.app" || a == "code")
-				{
-					result = ScriptEditorUtility.ScriptEditor.VisualStudioCode;
-				}
-				else if (a == "rider.exe" || a == "rider64.exe" || a == "rider32.exe" || a == "ridereap.app" || a == "rider.app" || a == "rider.sh")
-				{
-					result = ScriptEditorUtility.ScriptEditor.Rider;
-				}
-				else
-				{
-					result = ScriptEditorUtility.ScriptEditor.Other;
-				}
-			}
-			return result;
-		}
+    public static bool IsScriptEditorSpecial(string path)
+    {
+      return ScriptEditorUtility.GetScriptEditorFromPath(path) != ScriptEditorUtility.ScriptEditor.Other;
+    }
 
-		public static bool IsScriptEditorSpecial(string path)
-		{
-			return ScriptEditorUtility.GetScriptEditorFromPath(path) != ScriptEditorUtility.ScriptEditor.Other;
-		}
+    public static string GetExternalScriptEditor()
+    {
+      return EditorPrefs.GetString("kScriptsDefaultApp");
+    }
 
-		public static string GetExternalScriptEditor()
-		{
-			return EditorPrefs.GetString("kScriptsDefaultApp");
-		}
+    public static void SetExternalScriptEditor(string path)
+    {
+      EditorPrefs.SetString("kScriptsDefaultApp", path);
+    }
 
-		public static void SetExternalScriptEditor(string path)
-		{
-			EditorPrefs.SetString("kScriptsDefaultApp", path);
-		}
+    private static string GetScriptEditorArgsKey(string path)
+    {
+      if (Application.platform == RuntimePlatform.OSXEditor)
+        return "kScriptEditorArgs_" + path;
+      return "kScriptEditorArgs" + path;
+    }
 
-		private static string GetScriptEditorArgsKey(string path)
-		{
-			string result;
-			if (Application.platform == RuntimePlatform.OSXEditor)
-			{
-				result = "kScriptEditorArgs_" + path;
-			}
-			else
-			{
-				result = "kScriptEditorArgs" + path;
-			}
-			return result;
-		}
+    private static string GetDefaultStringEditorArgs()
+    {
+      return Application.platform == RuntimePlatform.OSXEditor ? "" : "\"$(File)\"";
+    }
 
-		private static string GetDefaultStringEditorArgs()
-		{
-			string result;
-			if (Application.platform == RuntimePlatform.OSXEditor)
-			{
-				result = "";
-			}
-			else
-			{
-				result = "\"$(File)\"";
-			}
-			return result;
-		}
+    public static string GetExternalScriptEditorArgs()
+    {
+      string externalScriptEditor = ScriptEditorUtility.GetExternalScriptEditor();
+      if (ScriptEditorUtility.IsScriptEditorSpecial(externalScriptEditor))
+        return "";
+      return EditorPrefs.GetString(ScriptEditorUtility.GetScriptEditorArgsKey(externalScriptEditor), ScriptEditorUtility.GetDefaultStringEditorArgs());
+    }
 
-		public static string GetExternalScriptEditorArgs()
-		{
-			string externalScriptEditor = ScriptEditorUtility.GetExternalScriptEditor();
-			string result;
-			if (ScriptEditorUtility.IsScriptEditorSpecial(externalScriptEditor))
-			{
-				result = "";
-			}
-			else
-			{
-				result = EditorPrefs.GetString(ScriptEditorUtility.GetScriptEditorArgsKey(externalScriptEditor), ScriptEditorUtility.GetDefaultStringEditorArgs());
-			}
-			return result;
-		}
+    public static void SetExternalScriptEditorArgs(string args)
+    {
+      EditorPrefs.SetString(ScriptEditorUtility.GetScriptEditorArgsKey(ScriptEditorUtility.GetExternalScriptEditor()), args);
+    }
 
-		public static void SetExternalScriptEditorArgs(string args)
-		{
-			string externalScriptEditor = ScriptEditorUtility.GetExternalScriptEditor();
-			EditorPrefs.SetString(ScriptEditorUtility.GetScriptEditorArgsKey(externalScriptEditor), args);
-		}
+    public static ScriptEditorUtility.ScriptEditor GetScriptEditorFromPreferences()
+    {
+      return ScriptEditorUtility.GetScriptEditorFromPath(ScriptEditorUtility.GetExternalScriptEditor());
+    }
 
-		public static ScriptEditorUtility.ScriptEditor GetScriptEditorFromPreferences()
-		{
-			return ScriptEditorUtility.GetScriptEditorFromPath(ScriptEditorUtility.GetExternalScriptEditor());
-		}
+    public static string[] GetFoundScriptEditorPaths(RuntimePlatform platform)
+    {
+      List<string> list = new List<string>();
+      if (platform == RuntimePlatform.OSXEditor)
+        ScriptEditorUtility.AddIfDirectoryExists("/Applications/Visual Studio.app", list);
+      return list.ToArray();
+    }
 
-		public static string[] GetFoundScriptEditorPaths(RuntimePlatform platform)
-		{
-			List<string> list = new List<string>();
-			if (platform == RuntimePlatform.OSXEditor)
-			{
-				ScriptEditorUtility.AddIfDirectoryExists("/Applications/Visual Studio.app", list);
-			}
-			return list.ToArray();
-		}
+    private static void AddIfDirectoryExists(string path, List<string> list)
+    {
+      if (!Directory.Exists(path))
+        return;
+      list.Add(path);
+    }
 
-		private static void AddIfDirectoryExists(string path, List<string> list)
-		{
-			if (Directory.Exists(path))
-			{
-				list.Add(path);
-			}
-		}
-	}
+    public enum ScriptEditor
+    {
+      Internal = 0,
+      MonoDevelop = 1,
+      VisualStudio = 2,
+      VisualStudioExpress = 3,
+      VisualStudioCode = 4,
+      Rider = 5,
+      Other = 32, // 0x00000020
+    }
+  }
 }

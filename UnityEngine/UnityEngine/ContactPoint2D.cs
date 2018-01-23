@@ -1,119 +1,114 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.ContactPoint2D
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[UsedByNativeCode]
-	public struct ContactPoint2D
-	{
-		internal Vector2 m_Point;
+  [UsedByNativeCode]
+  public struct ContactPoint2D
+  {
+    private Vector2 m_Point;
+    private Vector2 m_Normal;
+    private Vector2 m_RelativeVelocity;
+    private float m_Separation;
+    private float m_NormalImpulse;
+    private float m_TangentImpulse;
+    private int m_Collider;
+    private int m_OtherCollider;
+    private int m_Rigidbody;
+    private int m_OtherRigidbody;
+    private int m_Enabled;
 
-		internal Vector2 m_Normal;
+    public Vector2 point
+    {
+      get
+      {
+        return this.m_Point;
+      }
+    }
 
-		internal Vector2 m_RelativeVelocity;
+    public Vector2 normal
+    {
+      get
+      {
+        return this.m_Normal;
+      }
+    }
 
-		internal float m_Separation;
+    public float separation
+    {
+      get
+      {
+        return this.m_Separation;
+      }
+    }
 
-		internal float m_NormalImpulse;
+    public float normalImpulse
+    {
+      get
+      {
+        return this.m_NormalImpulse;
+      }
+    }
 
-		internal float m_TangentImpulse;
+    public float tangentImpulse
+    {
+      get
+      {
+        return this.m_TangentImpulse;
+      }
+    }
 
-		internal int m_Collider;
+    public Vector2 relativeVelocity
+    {
+      get
+      {
+        return this.m_RelativeVelocity;
+      }
+    }
 
-		internal int m_OtherCollider;
+    public Collider2D collider
+    {
+      get
+      {
+        return Physics2D.GetColliderFromInstanceID(this.m_Collider);
+      }
+    }
 
-		internal int m_Rigidbody;
+    public Collider2D otherCollider
+    {
+      get
+      {
+        return Physics2D.GetColliderFromInstanceID(this.m_OtherCollider);
+      }
+    }
 
-		internal int m_OtherRigidbody;
+    public Rigidbody2D rigidbody
+    {
+      get
+      {
+        return Physics2D.GetRigidbodyFromInstanceID(this.m_Rigidbody);
+      }
+    }
 
-		internal int m_Enabled;
+    public Rigidbody2D otherRigidbody
+    {
+      get
+      {
+        return Physics2D.GetRigidbodyFromInstanceID(this.m_OtherRigidbody);
+      }
+    }
 
-		public Vector2 point
-		{
-			get
-			{
-				return this.m_Point;
-			}
-		}
-
-		public Vector2 normal
-		{
-			get
-			{
-				return this.m_Normal;
-			}
-		}
-
-		public float separation
-		{
-			get
-			{
-				return this.m_Separation;
-			}
-		}
-
-		public float normalImpulse
-		{
-			get
-			{
-				return this.m_NormalImpulse;
-			}
-		}
-
-		public float tangentImpulse
-		{
-			get
-			{
-				return this.m_TangentImpulse;
-			}
-		}
-
-		public Vector2 relativeVelocity
-		{
-			get
-			{
-				return this.m_RelativeVelocity;
-			}
-		}
-
-		public Collider2D collider
-		{
-			get
-			{
-				return Physics2D.GetColliderFromInstanceID(this.m_Collider);
-			}
-		}
-
-		public Collider2D otherCollider
-		{
-			get
-			{
-				return Physics2D.GetColliderFromInstanceID(this.m_OtherCollider);
-			}
-		}
-
-		public Rigidbody2D rigidbody
-		{
-			get
-			{
-				return Physics2D.GetRigidbodyFromInstanceID(this.m_Rigidbody);
-			}
-		}
-
-		public Rigidbody2D otherRigidbody
-		{
-			get
-			{
-				return Physics2D.GetRigidbodyFromInstanceID(this.m_OtherRigidbody);
-			}
-		}
-
-		public bool enabled
-		{
-			get
-			{
-				return this.m_Enabled == 1;
-			}
-		}
-	}
+    public bool enabled
+    {
+      get
+      {
+        return this.m_Enabled == 1;
+      }
+    }
+  }
 }

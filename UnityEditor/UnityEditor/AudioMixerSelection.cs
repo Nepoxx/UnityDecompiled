@@ -1,4 +1,9 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AudioMixerSelection
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Audio;
@@ -6,85 +11,73 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class AudioMixerSelection
-	{
-		private AudioMixerController m_Controller;
+  internal class AudioMixerSelection
+  {
+    private AudioMixerController m_Controller;
 
-		public List<AudioMixerGroupController> ChannelStripSelection
-		{
-			get;
-			private set;
-		}
+    public AudioMixerSelection(AudioMixerController controller)
+    {
+      this.m_Controller = controller;
+      this.ChannelStripSelection = new List<AudioMixerGroupController>();
+      this.SyncToUnitySelection();
+    }
 
-		public AudioMixerSelection(AudioMixerController controller)
-		{
-			this.m_Controller = controller;
-			this.ChannelStripSelection = new List<AudioMixerGroupController>();
-			this.SyncToUnitySelection();
-		}
+    public List<AudioMixerGroupController> ChannelStripSelection { get; private set; }
 
-		public void SyncToUnitySelection()
-		{
-			if (this.m_Controller != null)
-			{
-				this.RefreshCachedChannelStripSelection();
-			}
-		}
+    public void SyncToUnitySelection()
+    {
+      if (!((Object) this.m_Controller != (Object) null))
+        return;
+      this.RefreshCachedChannelStripSelection();
+    }
 
-		public void SetChannelStrips(List<AudioMixerGroupController> newSelection)
-		{
-			Selection.objects = newSelection.ToArray();
-		}
+    public void SetChannelStrips(List<AudioMixerGroupController> newSelection)
+    {
+      Selection.objects = (Object[]) newSelection.ToArray();
+    }
 
-		public void SetSingleChannelStrip(AudioMixerGroupController group)
-		{
-			Selection.objects = new AudioMixerGroupController[]
-			{
-				group
-			};
-		}
+    public void SetSingleChannelStrip(AudioMixerGroupController group)
+    {
+      Selection.objects = (Object[]) new AudioMixerGroupController[1]
+      {
+        group
+      };
+    }
 
-		public void ToggleChannelStrip(AudioMixerGroupController group)
-		{
-			List<UnityEngine.Object> list = new List<UnityEngine.Object>(Selection.objects);
-			if (list.Contains(group))
-			{
-				list.Remove(group);
-			}
-			else
-			{
-				list.Add(group);
-			}
-			Selection.objects = list.ToArray();
-		}
+    public void ToggleChannelStrip(AudioMixerGroupController group)
+    {
+      List<Object> objectList = new List<Object>((IEnumerable<Object>) Selection.objects);
+      if (objectList.Contains((Object) group))
+        objectList.Remove((Object) group);
+      else
+        objectList.Add((Object) group);
+      Selection.objects = objectList.ToArray();
+    }
 
-		public void ClearChannelStrips()
-		{
-			Selection.objects = new UnityEngine.Object[0];
-		}
+    public void ClearChannelStrips()
+    {
+      Selection.objects = new Object[0];
+    }
 
-		public bool HasSingleChannelStripSelection()
-		{
-			return this.ChannelStripSelection.Count == 1;
-		}
+    public bool HasSingleChannelStripSelection()
+    {
+      return this.ChannelStripSelection.Count == 1;
+    }
 
-		private void RefreshCachedChannelStripSelection()
-		{
-			UnityEngine.Object[] filtered = Selection.GetFiltered(typeof(AudioMixerGroupController), SelectionMode.Deep);
-			this.ChannelStripSelection = new List<AudioMixerGroupController>();
-			List<AudioMixerGroupController> allAudioGroupsSlow = this.m_Controller.GetAllAudioGroupsSlow();
-			foreach (AudioMixerGroupController current in allAudioGroupsSlow)
-			{
-				if (filtered.Contains(current))
-				{
-					this.ChannelStripSelection.Add(current);
-				}
-			}
-		}
+    private void RefreshCachedChannelStripSelection()
+    {
+      Object[] filtered = Selection.GetFiltered(typeof (AudioMixerGroupController), SelectionMode.Deep);
+      this.ChannelStripSelection = new List<AudioMixerGroupController>();
+      foreach (AudioMixerGroupController mixerGroupController in this.m_Controller.GetAllAudioGroupsSlow())
+      {
+        if (((IEnumerable<Object>) filtered).Contains<Object>((Object) mixerGroupController))
+          this.ChannelStripSelection.Add(mixerGroupController);
+      }
+    }
 
-		public void Sanitize()
-		{
-			this.RefreshCachedChannelStripSelection();
-		}
-	}
+    public void Sanitize()
+    {
+      this.RefreshCachedChannelStripSelection();
+    }
+  }
 }

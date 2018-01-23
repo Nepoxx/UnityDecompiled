@@ -1,109 +1,138 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.ControllerColliderHit
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System.Runtime.InteropServices;
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[RequiredByNativeCode]
-	[StructLayout(LayoutKind.Sequential)]
-	public class ControllerColliderHit
-	{
-		internal CharacterController m_Controller;
+  /// <summary>
+  ///   <para>ControllerColliderHit is used by CharacterController.OnControllerColliderHit to give detailed information about the collision and how to deal with it.</para>
+  /// </summary>
+  [RequiredByNativeCode]
+  [StructLayout(LayoutKind.Sequential)]
+  public class ControllerColliderHit
+  {
+    internal CharacterController m_Controller;
+    internal Collider m_Collider;
+    internal Vector3 m_Point;
+    internal Vector3 m_Normal;
+    internal Vector3 m_MoveDirection;
+    internal float m_MoveLength;
+    internal int m_Push;
 
-		internal Collider m_Collider;
+    /// <summary>
+    ///   <para>The controller that hit the collider.</para>
+    /// </summary>
+    public CharacterController controller
+    {
+      get
+      {
+        return this.m_Controller;
+      }
+    }
 
-		internal Vector3 m_Point;
+    /// <summary>
+    ///   <para>The collider that was hit by the controller.</para>
+    /// </summary>
+    public Collider collider
+    {
+      get
+      {
+        return this.m_Collider;
+      }
+    }
 
-		internal Vector3 m_Normal;
+    /// <summary>
+    ///   <para>The rigidbody that was hit by the controller.</para>
+    /// </summary>
+    public Rigidbody rigidbody
+    {
+      get
+      {
+        return this.m_Collider.attachedRigidbody;
+      }
+    }
 
-		internal Vector3 m_MoveDirection;
+    /// <summary>
+    ///   <para>The game object that was hit by the controller.</para>
+    /// </summary>
+    public GameObject gameObject
+    {
+      get
+      {
+        return this.m_Collider.gameObject;
+      }
+    }
 
-		internal float m_MoveLength;
+    /// <summary>
+    ///   <para>The transform that was hit by the controller.</para>
+    /// </summary>
+    public Transform transform
+    {
+      get
+      {
+        return this.m_Collider.transform;
+      }
+    }
 
-		internal int m_Push;
+    /// <summary>
+    ///   <para>The impact point in world space.</para>
+    /// </summary>
+    public Vector3 point
+    {
+      get
+      {
+        return this.m_Point;
+      }
+    }
 
-		public CharacterController controller
-		{
-			get
-			{
-				return this.m_Controller;
-			}
-		}
+    /// <summary>
+    ///   <para>The normal of the surface we collided with in world space.</para>
+    /// </summary>
+    public Vector3 normal
+    {
+      get
+      {
+        return this.m_Normal;
+      }
+    }
 
-		public Collider collider
-		{
-			get
-			{
-				return this.m_Collider;
-			}
-		}
+    /// <summary>
+    ///   <para>The direction the CharacterController was moving in when the collision occured.</para>
+    /// </summary>
+    public Vector3 moveDirection
+    {
+      get
+      {
+        return this.m_MoveDirection;
+      }
+    }
 
-		public Rigidbody rigidbody
-		{
-			get
-			{
-				return this.m_Collider.attachedRigidbody;
-			}
-		}
+    /// <summary>
+    ///   <para>How far the character has travelled until it hit the collider.</para>
+    /// </summary>
+    public float moveLength
+    {
+      get
+      {
+        return this.m_MoveLength;
+      }
+    }
 
-		public GameObject gameObject
-		{
-			get
-			{
-				return this.m_Collider.gameObject;
-			}
-		}
-
-		public Transform transform
-		{
-			get
-			{
-				return this.m_Collider.transform;
-			}
-		}
-
-		public Vector3 point
-		{
-			get
-			{
-				return this.m_Point;
-			}
-		}
-
-		public Vector3 normal
-		{
-			get
-			{
-				return this.m_Normal;
-			}
-		}
-
-		public Vector3 moveDirection
-		{
-			get
-			{
-				return this.m_MoveDirection;
-			}
-		}
-
-		public float moveLength
-		{
-			get
-			{
-				return this.m_MoveLength;
-			}
-		}
-
-		private bool push
-		{
-			get
-			{
-				return this.m_Push != 0;
-			}
-			set
-			{
-				this.m_Push = ((!value) ? 0 : 1);
-			}
-		}
-	}
+    private bool push
+    {
+      get
+      {
+        return this.m_Push != 0;
+      }
+      set
+      {
+        this.m_Push = !value ? 0 : 1;
+      }
+    }
+  }
 }

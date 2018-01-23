@@ -1,148 +1,119 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.GUISlideGroup
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class GUISlideGroup
-	{
-		private class SlideGroupInternal : GUILayoutGroup
-		{
-			private int m_ID;
+  internal class GUISlideGroup
+  {
+    internal static GUISlideGroup current = (GUISlideGroup) null;
+    private Dictionary<int, Rect> animIDs = new Dictionary<int, Rect>();
+    private const float kLerp = 0.1f;
+    private const float kSnap = 0.5f;
 
-			private GUISlideGroup m_Owner;
+    public void Begin()
+    {
+      if (GUISlideGroup.current != null)
+        Debug.LogError((object) "You cannot nest animGroups");
+      else
+        GUISlideGroup.current = this;
+    }
 
-			internal Rect m_FinalRect;
+    public void End()
+    {
+      GUISlideGroup.current = (GUISlideGroup) null;
+    }
 
-			public void SetID(GUISlideGroup owner, int id)
-			{
-				this.m_ID = id;
-				this.m_Owner = owner;
-			}
+    public void Reset()
+    {
+      GUISlideGroup.current = (GUISlideGroup) null;
+      this.animIDs.Clear();
+    }
 
-			public override void SetHorizontal(float x, float width)
-			{
-				this.m_FinalRect.x = x;
-				this.m_FinalRect.width = width;
-				base.SetHorizontal(x, width);
-			}
+    public Rect BeginHorizontal(int id, params GUILayoutOption[] options)
+    {
+      GUISlideGroup.SlideGroupInternal slideGroupInternal = (GUISlideGroup.SlideGroupInternal) GUILayoutUtility.BeginLayoutGroup(GUIStyle.none, options, typeof (GUISlideGroup.SlideGroupInternal));
+      slideGroupInternal.SetID(this, id);
+      slideGroupInternal.isVertical = false;
+      return slideGroupInternal.m_FinalRect;
+    }
 
-			public override void SetVertical(float y, float height)
-			{
-				this.m_FinalRect.y = y;
-				this.m_FinalRect.height = height;
-				Rect rect = new Rect(this.rect.x, y, this.rect.width, height);
-				bool flag;
-				rect = this.m_Owner.GetRect(this.m_ID, rect, out flag);
-				if (flag)
-				{
-					base.SetHorizontal(rect.x, rect.width);
-				}
-				base.SetVertical(rect.y, rect.height);
-			}
-		}
+    public void EndHorizontal()
+    {
+      GUILayoutUtility.EndLayoutGroup();
+    }
 
-		internal static GUISlideGroup current = null;
+    public Rect GetRect(int id, Rect r)
+    {
+      if (Event.current.type != EventType.Repaint)
+        return r;
+      bool changed;
+      return this.GetRect(id, r, out changed);
+    }
 
-		private Dictionary<int, Rect> animIDs = new Dictionary<int, Rect>();
+    private Rect GetRect(int id, Rect r, out bool changed)
+    {
+      if (!this.animIDs.ContainsKey(id))
+      {
+        this.animIDs.Add(id, r);
+        changed = false;
+        return r;
+      }
+      Rect animId = this.animIDs[id];
+      if ((double) animId.y != (double) r.y || (double) animId.height != (double) r.height || ((double) animId.x != (double) r.x || (double) animId.width != (double) r.width))
+      {
+        float t = 0.1f;
+        if ((double) Mathf.Abs(animId.y - r.y) > 0.5)
+          r.y = Mathf.Lerp(animId.y, r.y, t);
+        if ((double) Mathf.Abs(animId.height - r.height) > 0.5)
+          r.height = Mathf.Lerp(animId.height, r.height, t);
+        if ((double) Mathf.Abs(animId.x - r.x) > 0.5)
+          r.x = Mathf.Lerp(animId.x, r.x, t);
+        if ((double) Mathf.Abs(animId.width - r.width) > 0.5)
+          r.width = Mathf.Lerp(animId.width, r.width, t);
+        this.animIDs[id] = r;
+        changed = true;
+        HandleUtility.Repaint();
+      }
+      else
+        changed = false;
+      return r;
+    }
 
-		private const float kLerp = 0.1f;
+    private class SlideGroupInternal : GUILayoutGroup
+    {
+      private int m_ID;
+      private GUISlideGroup m_Owner;
+      internal Rect m_FinalRect;
 
-		private const float kSnap = 0.5f;
+      public void SetID(GUISlideGroup owner, int id)
+      {
+        this.m_ID = id;
+        this.m_Owner = owner;
+      }
 
-		public void Begin()
-		{
-			if (GUISlideGroup.current != null)
-			{
-				Debug.LogError("You cannot nest animGroups");
-			}
-			else
-			{
-				GUISlideGroup.current = this;
-			}
-		}
+      public override void SetHorizontal(float x, float width)
+      {
+        this.m_FinalRect.x = x;
+        this.m_FinalRect.width = width;
+        base.SetHorizontal(x, width);
+      }
 
-		public void End()
-		{
-			GUISlideGroup.current = null;
-		}
-
-		public void Reset()
-		{
-			GUISlideGroup.current = null;
-			this.animIDs.Clear();
-		}
-
-		public Rect BeginHorizontal(int id, params GUILayoutOption[] options)
-		{
-			GUISlideGroup.SlideGroupInternal slideGroupInternal = (GUISlideGroup.SlideGroupInternal)GUILayoutUtility.BeginLayoutGroup(GUIStyle.none, options, typeof(GUISlideGroup.SlideGroupInternal));
-			slideGroupInternal.SetID(this, id);
-			slideGroupInternal.isVertical = false;
-			return slideGroupInternal.m_FinalRect;
-		}
-
-		public void EndHorizontal()
-		{
-			GUILayoutUtility.EndLayoutGroup();
-		}
-
-		public Rect GetRect(int id, Rect r)
-		{
-			Rect result;
-			if (Event.current.type != EventType.Repaint)
-			{
-				result = r;
-			}
-			else
-			{
-				bool flag;
-				result = this.GetRect(id, r, out flag);
-			}
-			return result;
-		}
-
-		private Rect GetRect(int id, Rect r, out bool changed)
-		{
-			Rect result;
-			if (!this.animIDs.ContainsKey(id))
-			{
-				this.animIDs.Add(id, r);
-				changed = false;
-				result = r;
-			}
-			else
-			{
-				Rect rect = this.animIDs[id];
-				if (rect.y != r.y || rect.height != r.height || rect.x != r.x || rect.width != r.width)
-				{
-					float t = 0.1f;
-					if (Mathf.Abs(rect.y - r.y) > 0.5f)
-					{
-						r.y = Mathf.Lerp(rect.y, r.y, t);
-					}
-					if (Mathf.Abs(rect.height - r.height) > 0.5f)
-					{
-						r.height = Mathf.Lerp(rect.height, r.height, t);
-					}
-					if (Mathf.Abs(rect.x - r.x) > 0.5f)
-					{
-						r.x = Mathf.Lerp(rect.x, r.x, t);
-					}
-					if (Mathf.Abs(rect.width - r.width) > 0.5f)
-					{
-						r.width = Mathf.Lerp(rect.width, r.width, t);
-					}
-					this.animIDs[id] = r;
-					changed = true;
-					HandleUtility.Repaint();
-				}
-				else
-				{
-					changed = false;
-				}
-				result = r;
-			}
-			return result;
-		}
-	}
+      public override void SetVertical(float y, float height)
+      {
+        this.m_FinalRect.y = y;
+        this.m_FinalRect.height = height;
+        bool changed;
+        Rect rect = this.m_Owner.GetRect(this.m_ID, new Rect(this.rect.x, y, this.rect.width, height), out changed);
+        if (changed)
+          base.SetHorizontal(rect.x, rect.width);
+        base.SetVertical(rect.y, rect.height);
+      }
+    }
+  }
 }

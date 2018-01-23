@@ -1,11 +1,18 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AndroidTargetDevice
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
 
 namespace UnityEditor
 {
-	public enum AndroidTargetDevice
-	{
-		FAT,
-		ARMv7 = 3,
-		x86
-	}
+  /// <summary>
+  ///   <para>Target Android device architecture.</para>
+  /// </summary>
+  public enum AndroidTargetDevice
+  {
+    FAT = 0,
+    ARMv7 = 3,
+    x86 = 4,
+  }
 }

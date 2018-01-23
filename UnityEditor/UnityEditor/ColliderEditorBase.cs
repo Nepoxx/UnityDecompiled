@@ -1,84 +1,78 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.ColliderEditorBase
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
-using UnityEditorInternal;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class ColliderEditorBase : Editor
-	{
-		public bool editingCollider
-		{
-			get
-			{
-				return EditMode.editMode == EditMode.SceneViewEditMode.Collider && EditMode.IsOwner(this);
-			}
-		}
+  internal abstract class ColliderEditorBase : Editor
+  {
+    protected virtual void OnEditStart()
+    {
+    }
 
-		protected virtual GUIContent editModeButton
-		{
-			get
-			{
-				return EditorGUIUtility.IconContent("EditCollider");
-			}
-		}
+    protected virtual void OnEditEnd()
+    {
+    }
 
-		protected virtual void OnEditStart()
-		{
-		}
+    public bool editingCollider
+    {
+      get
+      {
+        return UnityEditorInternal.EditMode.editMode == UnityEditorInternal.EditMode.SceneViewEditMode.Collider && UnityEditorInternal.EditMode.IsOwner((Editor) this);
+      }
+    }
 
-		protected virtual void OnEditEnd()
-		{
-		}
+    public virtual void OnEnable()
+    {
+      UnityEditorInternal.EditMode.editModeStarted += new Action<IToolModeOwner, UnityEditorInternal.EditMode.SceneViewEditMode>(this.OnEditModeStart);
+      UnityEditorInternal.EditMode.editModeEnded += new Action<IToolModeOwner>(this.OnEditModeEnd);
+    }
 
-		public virtual void OnEnable()
-		{
-			EditMode.onEditModeStartDelegate = (EditMode.OnEditModeStartFunc)Delegate.Combine(EditMode.onEditModeStartDelegate, new EditMode.OnEditModeStartFunc(this.OnEditModeStart));
-			EditMode.onEditModeEndDelegate = (EditMode.OnEditModeStopFunc)Delegate.Combine(EditMode.onEditModeEndDelegate, new EditMode.OnEditModeStopFunc(this.OnEditModeEnd));
-		}
+    public virtual void OnDisable()
+    {
+      UnityEditorInternal.EditMode.editModeStarted -= new Action<IToolModeOwner, UnityEditorInternal.EditMode.SceneViewEditMode>(this.OnEditModeStart);
+      UnityEditorInternal.EditMode.editModeEnded -= new Action<IToolModeOwner>(this.OnEditModeEnd);
+    }
 
-		public virtual void OnDisable()
-		{
-			EditMode.onEditModeStartDelegate = (EditMode.OnEditModeStartFunc)Delegate.Remove(EditMode.onEditModeStartDelegate, new EditMode.OnEditModeStartFunc(this.OnEditModeStart));
-			EditMode.onEditModeEndDelegate = (EditMode.OnEditModeStopFunc)Delegate.Remove(EditMode.onEditModeEndDelegate, new EditMode.OnEditModeStopFunc(this.OnEditModeEnd));
-		}
+    protected virtual GUIContent editModeButton
+    {
+      get
+      {
+        return EditorGUIUtility.IconContent("EditCollider");
+      }
+    }
 
-		protected void InspectorEditButtonGUI()
-		{
-			EditMode.DoEditModeInspectorModeButton(EditMode.SceneViewEditMode.Collider, "Edit Collider", this.editModeButton, ColliderEditorBase.GetColliderBounds(base.target), this);
-		}
+    protected void InspectorEditButtonGUI()
+    {
+      UnityEditorInternal.EditMode.DoEditModeInspectorModeButton(UnityEditorInternal.EditMode.SceneViewEditMode.Collider, "Edit Collider", this.editModeButton, (IToolModeOwner) this);
+    }
 
-		private static Bounds GetColliderBounds(UnityEngine.Object collider)
-		{
-			Bounds result;
-			if (collider is Collider2D)
-			{
-				result = (collider as Collider2D).bounds;
-			}
-			else if (collider is Collider)
-			{
-				result = (collider as Collider).bounds;
-			}
-			else
-			{
-				result = default(Bounds);
-			}
-			return result;
-		}
+    internal override Bounds GetWorldBoundsOfTarget(UnityEngine.Object targetObject)
+    {
+      if (targetObject is Collider2D)
+        return ((Collider2D) targetObject).bounds;
+      if (targetObject is Collider)
+        return ((Collider) targetObject).bounds;
+      return base.GetWorldBoundsOfTarget(targetObject);
+    }
 
-		protected void OnEditModeStart(Editor editor, EditMode.SceneViewEditMode mode)
-		{
-			if (mode == EditMode.SceneViewEditMode.Collider && editor == this)
-			{
-				this.OnEditStart();
-			}
-		}
+    protected void OnEditModeStart(IToolModeOwner owner, UnityEditorInternal.EditMode.SceneViewEditMode mode)
+    {
+      if (mode != UnityEditorInternal.EditMode.SceneViewEditMode.Collider || owner != this)
+        return;
+      this.OnEditStart();
+    }
 
-		protected void OnEditModeEnd(Editor editor)
-		{
-			if (editor == this)
-			{
-				this.OnEditEnd();
-			}
-		}
-	}
+    protected void OnEditModeEnd(IToolModeOwner owner)
+    {
+      if (owner != this)
+        return;
+      this.OnEditEnd();
+    }
+  }
 }

@@ -1,68 +1,56 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.RenderSettingsInspector
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[CustomEditor(typeof(RenderSettings))]
-	internal class RenderSettingsInspector : Editor
-	{
-		private Editor m_LightingEditor;
+  [CustomEditor(typeof (RenderSettings))]
+  internal class RenderSettingsInspector : Editor
+  {
+    private Editor m_LightingEditor;
+    private Editor m_FogEditor;
+    private Editor m_OtherRenderingEditor;
 
-		private Editor m_FogEditor;
+    private Editor lightingEditor
+    {
+      get
+      {
+        return this.m_LightingEditor ?? (this.m_LightingEditor = Editor.CreateEditor(this.target, typeof (LightingEditor)));
+      }
+    }
 
-		private Editor m_OtherRenderingEditor;
+    private Editor fogEditor
+    {
+      get
+      {
+        return this.m_FogEditor ?? (this.m_FogEditor = Editor.CreateEditor(this.target, typeof (FogEditor)));
+      }
+    }
 
-		private Editor lightingEditor
-		{
-			get
-			{
-				Editor arg_2C_0;
-				if ((arg_2C_0 = this.m_LightingEditor) == null)
-				{
-					arg_2C_0 = (this.m_LightingEditor = Editor.CreateEditor(base.target, typeof(LightingEditor)));
-				}
-				return arg_2C_0;
-			}
-		}
+    private Editor otherRenderingEditor
+    {
+      get
+      {
+        return this.m_OtherRenderingEditor ?? (this.m_OtherRenderingEditor = Editor.CreateEditor(this.target, typeof (OtherRenderingEditor)));
+      }
+    }
 
-		private Editor fogEditor
-		{
-			get
-			{
-				Editor arg_2C_0;
-				if ((arg_2C_0 = this.m_FogEditor) == null)
-				{
-					arg_2C_0 = (this.m_FogEditor = Editor.CreateEditor(base.target, typeof(FogEditor)));
-				}
-				return arg_2C_0;
-			}
-		}
+    public virtual void OnEnable()
+    {
+      this.m_LightingEditor = (Editor) null;
+      this.m_FogEditor = (Editor) null;
+      this.m_OtherRenderingEditor = (Editor) null;
+    }
 
-		private Editor otherRenderingEditor
-		{
-			get
-			{
-				Editor arg_2C_0;
-				if ((arg_2C_0 = this.m_OtherRenderingEditor) == null)
-				{
-					arg_2C_0 = (this.m_OtherRenderingEditor = Editor.CreateEditor(base.target, typeof(OtherRenderingEditor)));
-				}
-				return arg_2C_0;
-			}
-		}
-
-		public virtual void OnEnable()
-		{
-			this.m_LightingEditor = null;
-			this.m_FogEditor = null;
-			this.m_OtherRenderingEditor = null;
-		}
-
-		public override void OnInspectorGUI()
-		{
-			this.lightingEditor.OnInspectorGUI();
-			this.fogEditor.OnInspectorGUI();
-			this.otherRenderingEditor.OnInspectorGUI();
-		}
-	}
+    public override void OnInspectorGUI()
+    {
+      this.lightingEditor.OnInspectorGUI();
+      this.fogEditor.OnInspectorGUI();
+      this.otherRenderingEditor.OnInspectorGUI();
+    }
+  }
 }

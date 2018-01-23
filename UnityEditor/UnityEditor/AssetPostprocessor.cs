@@ -1,77 +1,118 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AssetPostprocessor
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using UnityEngine;
 using UnityEngine.Internal;
 
 namespace UnityEditor
 {
-	public class AssetPostprocessor
-	{
-		private string m_PathName;
+  /// <summary>
+  ///   <para>AssetPostprocessor lets you hook into the import pipeline and run scripts prior or after importing assets.</para>
+  /// </summary>
+  public class AssetPostprocessor
+  {
+    private string m_PathName;
 
-		public string assetPath
-		{
-			get
-			{
-				return this.m_PathName;
-			}
-			set
-			{
-				this.m_PathName = value;
-			}
-		}
+    /// <summary>
+    ///   <para>The path name of the asset being imported.</para>
+    /// </summary>
+    public string assetPath
+    {
+      get
+      {
+        return this.m_PathName;
+      }
+      set
+      {
+        this.m_PathName = value;
+      }
+    }
 
-		public AssetImporter assetImporter
-		{
-			get
-			{
-				return AssetImporter.GetAtPath(this.assetPath);
-			}
-		}
+    /// <summary>
+    ///   <para>Logs an import warning to the console.</para>
+    /// </summary>
+    /// <param name="warning"></param>
+    /// <param name="context"></param>
+    [ExcludeFromDocs]
+    public void LogWarning(string warning)
+    {
+      UnityEngine.Object context = (UnityEngine.Object) null;
+      this.LogWarning(warning, context);
+    }
 
-		[Obsolete("To set or get the preview, call EditorUtility.SetAssetPreview or AssetPreview.GetAssetPreview instead", true)]
-		public Texture2D preview
-		{
-			get
-			{
-				return null;
-			}
-			set
-			{
-			}
-		}
+    /// <summary>
+    ///   <para>Logs an import warning to the console.</para>
+    /// </summary>
+    /// <param name="warning"></param>
+    /// <param name="context"></param>
+    public void LogWarning(string warning, [DefaultValue("null")] UnityEngine.Object context)
+    {
+      Debug.LogWarning((object) warning, context);
+    }
 
-		[ExcludeFromDocs]
-		public void LogWarning(string warning)
-		{
-			UnityEngine.Object context = null;
-			this.LogWarning(warning, context);
-		}
+    /// <summary>
+    ///   <para>Logs an import error message to the console.</para>
+    /// </summary>
+    /// <param name="warning"></param>
+    /// <param name="context"></param>
+    [ExcludeFromDocs]
+    public void LogError(string warning)
+    {
+      UnityEngine.Object context = (UnityEngine.Object) null;
+      this.LogError(warning, context);
+    }
 
-		public void LogWarning(string warning, [DefaultValue("null")] UnityEngine.Object context)
-		{
-			Debug.LogWarning(warning, context);
-		}
+    /// <summary>
+    ///   <para>Logs an import error message to the console.</para>
+    /// </summary>
+    /// <param name="warning"></param>
+    /// <param name="context"></param>
+    public void LogError(string warning, [DefaultValue("null")] UnityEngine.Object context)
+    {
+      Debug.LogError((object) warning, context);
+    }
 
-		[ExcludeFromDocs]
-		public void LogError(string warning)
-		{
-			UnityEngine.Object context = null;
-			this.LogError(warning, context);
-		}
+    /// <summary>
+    ///   <para>Returns the version of the asset postprocessor.</para>
+    /// </summary>
+    public virtual uint GetVersion()
+    {
+      return 0;
+    }
 
-		public void LogError(string warning, [DefaultValue("null")] UnityEngine.Object context)
-		{
-			Debug.LogError(warning, context);
-		}
+    /// <summary>
+    ///   <para>Reference to the asset importer.</para>
+    /// </summary>
+    public AssetImporter assetImporter
+    {
+      get
+      {
+        return AssetImporter.GetAtPath(this.assetPath);
+      }
+    }
 
-		public virtual uint GetVersion()
-		{
-			return 0u;
-		}
+    [Obsolete("To set or get the preview, call EditorUtility.SetAssetPreview or AssetPreview.GetAssetPreview instead", true)]
+    public Texture2D preview
+    {
+      get
+      {
+        return (Texture2D) null;
+      }
+      set
+      {
+      }
+    }
 
-		public virtual int GetPostprocessOrder()
-		{
-			return 0;
-		}
-	}
+    /// <summary>
+    ///   <para>Override the order in which importers are processed.</para>
+    /// </summary>
+    public virtual int GetPostprocessOrder()
+    {
+      return 0;
+    }
+  }
 }

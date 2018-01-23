@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AudioImporterInspector
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -8,664 +14,490 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	[CanEditMultipleObjects, CustomEditor(typeof(AudioImporter))]
-	internal class AudioImporterInspector : AssetImporterEditor
-	{
-		private static class Styles
-		{
-			public static readonly string[] kSampleRateStrings = new string[]
-			{
-				"8,000 Hz",
-				"11,025 Hz",
-				"22,050 Hz",
-				"44,100 Hz",
-				"48,000 Hz",
-				"96,000 Hz",
-				"192,000 Hz"
-			};
+  [CanEditMultipleObjects]
+  [CustomEditor(typeof (AudioImporter))]
+  internal class AudioImporterInspector : AssetImporterEditor
+  {
+    public SerializedProperty m_ForceToMono;
+    public SerializedProperty m_Normalize;
+    public SerializedProperty m_PreloadAudioData;
+    public SerializedProperty m_Ambisonic;
+    public SerializedProperty m_LoadInBackground;
+    public SerializedProperty m_OrigSize;
+    public SerializedProperty m_CompSize;
+    private AudioImporterInspector.SampleSettingProperties m_DefaultSampleSettings;
+    private Dictionary<BuildTargetGroup, AudioImporterInspector.SampleSettingProperties> m_SampleSettingOverrides;
 
-			public static readonly int[] kSampleRateValues = new int[]
-			{
-				8000,
-				11025,
-				22050,
-				44100,
-				48000,
-				96000,
-				192000
-			};
-		}
+    [DebuggerHidden]
+    private IEnumerable<AudioImporter> GetAllAudioImporterTargets()
+    {
+      // ISSUE: object of a compiler-generated type is created
+      // ISSUE: variable of a compiler-generated type
+      AudioImporterInspector.\u003CGetAllAudioImporterTargets\u003Ec__Iterator0 targetsCIterator0 = new AudioImporterInspector.\u003CGetAllAudioImporterTargets\u003Ec__Iterator0() { \u0024this = this };
+      // ISSUE: reference to a compiler-generated field
+      targetsCIterator0.\u0024PC = -2;
+      return (IEnumerable<AudioImporter>) targetsCIterator0;
+    }
 
-		private struct MultiValueStatus
-		{
-			public bool multiLoadType;
+    private bool SyncSettingsToBackend()
+    {
+      BuildPlatform[] array = BuildPlatforms.instance.GetValidPlatforms().ToArray();
+      foreach (AudioImporter audioImporterTarget in this.GetAllAudioImporterTargets())
+      {
+        AudioImporterSampleSettings defaultSampleSettings = audioImporterTarget.defaultSampleSettings;
+        if (this.m_DefaultSampleSettings.loadTypeChanged)
+          defaultSampleSettings.loadType = this.m_DefaultSampleSettings.settings.loadType;
+        if (this.m_DefaultSampleSettings.sampleRateSettingChanged)
+          defaultSampleSettings.sampleRateSetting = this.m_DefaultSampleSettings.settings.sampleRateSetting;
+        if (this.m_DefaultSampleSettings.sampleRateOverrideChanged)
+          defaultSampleSettings.sampleRateOverride = this.m_DefaultSampleSettings.settings.sampleRateOverride;
+        if (this.m_DefaultSampleSettings.compressionFormatChanged)
+          defaultSampleSettings.compressionFormat = this.m_DefaultSampleSettings.settings.compressionFormat;
+        if (this.m_DefaultSampleSettings.qualityChanged)
+          defaultSampleSettings.quality = this.m_DefaultSampleSettings.settings.quality;
+        if (this.m_DefaultSampleSettings.conversionModeChanged)
+          defaultSampleSettings.conversionMode = this.m_DefaultSampleSettings.settings.conversionMode;
+        audioImporterTarget.defaultSampleSettings = defaultSampleSettings;
+        foreach (BuildPlatform buildPlatform in array)
+        {
+          BuildTargetGroup targetGroup = buildPlatform.targetGroup;
+          if (this.m_SampleSettingOverrides.ContainsKey(targetGroup))
+          {
+            AudioImporterInspector.SampleSettingProperties sampleSettingOverride = this.m_SampleSettingOverrides[targetGroup];
+            if (sampleSettingOverride.overrideIsForced && !sampleSettingOverride.forcedOverrideState)
+              audioImporterTarget.Internal_ClearSampleSettingOverride(targetGroup);
+            else if (audioImporterTarget.Internal_ContainsSampleSettingsOverride(targetGroup) || sampleSettingOverride.overrideIsForced && sampleSettingOverride.forcedOverrideState)
+            {
+              AudioImporterSampleSettings overrideSampleSettings = audioImporterTarget.Internal_GetOverrideSampleSettings(targetGroup);
+              if (sampleSettingOverride.loadTypeChanged)
+                overrideSampleSettings.loadType = sampleSettingOverride.settings.loadType;
+              if (sampleSettingOverride.sampleRateSettingChanged)
+                overrideSampleSettings.sampleRateSetting = sampleSettingOverride.settings.sampleRateSetting;
+              if (sampleSettingOverride.sampleRateOverrideChanged)
+                overrideSampleSettings.sampleRateOverride = sampleSettingOverride.settings.sampleRateOverride;
+              if (sampleSettingOverride.compressionFormatChanged)
+                overrideSampleSettings.compressionFormat = sampleSettingOverride.settings.compressionFormat;
+              if (sampleSettingOverride.qualityChanged)
+                overrideSampleSettings.quality = sampleSettingOverride.settings.quality;
+              if (sampleSettingOverride.conversionModeChanged)
+                overrideSampleSettings.conversionMode = sampleSettingOverride.settings.conversionMode;
+              audioImporterTarget.Internal_SetOverrideSampleSettings(targetGroup, overrideSampleSettings);
+            }
+            this.m_SampleSettingOverrides[targetGroup] = sampleSettingOverride;
+          }
+        }
+      }
+      this.m_DefaultSampleSettings.ClearChangedFlags();
+      foreach (BuildPlatform buildPlatform in array)
+      {
+        BuildTargetGroup targetGroup = buildPlatform.targetGroup;
+        if (this.m_SampleSettingOverrides.ContainsKey(targetGroup))
+        {
+          AudioImporterInspector.SampleSettingProperties sampleSettingOverride = this.m_SampleSettingOverrides[targetGroup];
+          sampleSettingOverride.ClearChangedFlags();
+          this.m_SampleSettingOverrides[targetGroup] = sampleSettingOverride;
+        }
+      }
+      return true;
+    }
 
-			public bool multiSampleRateSetting;
+    private void ResetSettingsFromBackend()
+    {
+      if (!this.GetAllAudioImporterTargets().Any<AudioImporter>())
+        return;
+      AudioImporter audioImporter = this.GetAllAudioImporterTargets().First<AudioImporter>();
+      this.m_DefaultSampleSettings.settings = audioImporter.defaultSampleSettings;
+      this.m_DefaultSampleSettings.ClearChangedFlags();
+      this.m_SampleSettingOverrides = new Dictionary<BuildTargetGroup, AudioImporterInspector.SampleSettingProperties>();
+      foreach (BuildPlatform validPlatform in BuildPlatforms.instance.GetValidPlatforms())
+      {
+        BuildTargetGroup targetGroup = validPlatform.targetGroup;
+        foreach (AudioImporter audioImporterTarget in this.GetAllAudioImporterTargets())
+        {
+          if (audioImporterTarget.Internal_ContainsSampleSettingsOverride(targetGroup))
+          {
+            this.m_SampleSettingOverrides[targetGroup] = new AudioImporterInspector.SampleSettingProperties()
+            {
+              settings = audioImporterTarget.Internal_GetOverrideSampleSettings(targetGroup)
+            };
+            break;
+          }
+        }
+        if (!this.m_SampleSettingOverrides.ContainsKey(targetGroup))
+          this.m_SampleSettingOverrides[targetGroup] = new AudioImporterInspector.SampleSettingProperties()
+          {
+            settings = audioImporter.Internal_GetOverrideSampleSettings(targetGroup)
+          };
+      }
+    }
 
-			public bool multiSampleRateOverride;
+    public bool CurrentPlatformHasAutoTranslatedCompression()
+    {
+      BuildTargetGroup buildTargetGroup = BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
+      foreach (AudioImporter audioImporterTarget in this.GetAllAudioImporterTargets())
+      {
+        AudioCompressionFormat compressionFormat1 = audioImporterTarget.defaultSampleSettings.compressionFormat;
+        if (!audioImporterTarget.Internal_ContainsSampleSettingsOverride(buildTargetGroup))
+        {
+          AudioCompressionFormat compressionFormat2 = audioImporterTarget.Internal_GetOverrideSampleSettings(buildTargetGroup).compressionFormat;
+          if (compressionFormat1 != compressionFormat2)
+            return true;
+        }
+      }
+      return false;
+    }
 
-			public bool multiCompressionFormat;
+    public bool IsHardwareSound(AudioCompressionFormat format)
+    {
+      switch (format)
+      {
+        case AudioCompressionFormat.VAG:
+        case AudioCompressionFormat.HEVAG:
+        case AudioCompressionFormat.XMA:
+        case AudioCompressionFormat.GCADPCM:
+          return true;
+        default:
+          return false;
+      }
+    }
 
-			public bool multiQuality;
+    public bool CurrentSelectionContainsHardwareSounds()
+    {
+      BuildTargetGroup buildTargetGroup = BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
+      foreach (AudioImporter audioImporterTarget in this.GetAllAudioImporterTargets())
+      {
+        if (this.IsHardwareSound(audioImporterTarget.Internal_GetOverrideSampleSettings(buildTargetGroup).compressionFormat))
+          return true;
+      }
+      return false;
+    }
 
-			public bool multiConversionMode;
-		}
+    public override void OnEnable()
+    {
+      this.m_ForceToMono = this.serializedObject.FindProperty("m_ForceToMono");
+      this.m_Normalize = this.serializedObject.FindProperty("m_Normalize");
+      this.m_PreloadAudioData = this.serializedObject.FindProperty("m_PreloadAudioData");
+      this.m_Ambisonic = this.serializedObject.FindProperty("m_Ambisonic");
+      this.m_LoadInBackground = this.serializedObject.FindProperty("m_LoadInBackground");
+      this.m_OrigSize = this.serializedObject.FindProperty("m_PreviewData.m_OrigSize");
+      this.m_CompSize = this.serializedObject.FindProperty("m_PreviewData.m_CompSize");
+      this.ResetSettingsFromBackend();
+    }
 
-		private struct SampleSettingProperties
-		{
-			public AudioImporterSampleSettings settings;
+    protected override void ResetValues()
+    {
+      base.ResetValues();
+      this.ResetSettingsFromBackend();
+    }
 
-			public bool forcedOverrideState;
+    public override void OnInspectorGUI()
+    {
+      this.serializedObject.UpdateIfRequiredOrScript();
+      bool selectionContainsTrackerFile = false;
+      foreach (AssetImporter audioImporterTarget in this.GetAllAudioImporterTargets())
+      {
+        string lowerInvariant = FileUtil.GetPathExtension(audioImporterTarget.assetPath).ToLowerInvariant();
+        if (lowerInvariant == "mod" || lowerInvariant == "it" || (lowerInvariant == "s3m" || lowerInvariant == "xm"))
+        {
+          selectionContainsTrackerFile = true;
+          break;
+        }
+      }
+      this.OnAudioImporterGUI(selectionContainsTrackerFile);
+      int bytes1 = 0;
+      int bytes2 = 0;
+      foreach (AudioImporter audioImporterTarget in this.GetAllAudioImporterTargets())
+      {
+        bytes1 += audioImporterTarget.origSize;
+        bytes2 += audioImporterTarget.compSize;
+      }
+      GUILayout.Space(10f);
+      EditorGUILayout.HelpBox("Original Size: \t" + EditorUtility.FormatBytes(bytes1) + "\nImported Size: \t" + EditorUtility.FormatBytes(bytes2) + "\nRatio: \t\t" + (100f * (float) bytes2 / (float) bytes1).ToString("0.00") + "%", MessageType.Info);
+      if (this.CurrentPlatformHasAutoTranslatedCompression())
+      {
+        GUILayout.Space(10f);
+        EditorGUILayout.HelpBox("The selection contains different compression formats to the default settings for the current build platform.", MessageType.Info);
+      }
+      if (this.CurrentSelectionContainsHardwareSounds())
+      {
+        GUILayout.Space(10f);
+        EditorGUILayout.HelpBox("The selection contains sounds that are decompressed in hardware. Advanced mixing is not available for these sounds.", MessageType.Info);
+      }
+      this.ApplyRevertGUI();
+    }
 
-			public bool overrideIsForced;
+    private AudioImporterInspector.MultiValueStatus GetMultiValueStatus(BuildTargetGroup platform)
+    {
+      AudioImporterInspector.MultiValueStatus multiValueStatus;
+      multiValueStatus.multiLoadType = false;
+      multiValueStatus.multiSampleRateSetting = false;
+      multiValueStatus.multiSampleRateOverride = false;
+      multiValueStatus.multiCompressionFormat = false;
+      multiValueStatus.multiQuality = false;
+      multiValueStatus.multiConversionMode = false;
+      if (this.GetAllAudioImporterTargets().Any<AudioImporter>())
+      {
+        AudioImporter audioImporter1 = this.GetAllAudioImporterTargets().First<AudioImporter>();
+        AudioImporterSampleSettings importerSampleSettings1 = platform != BuildTargetGroup.Unknown ? audioImporter1.Internal_GetOverrideSampleSettings(platform) : audioImporter1.defaultSampleSettings;
+        foreach (AudioImporter audioImporter2 in this.GetAllAudioImporterTargets().Except<AudioImporter>((IEnumerable<AudioImporter>) new AudioImporter[1]{ audioImporter1 }))
+        {
+          AudioImporterSampleSettings importerSampleSettings2 = platform != BuildTargetGroup.Unknown ? audioImporter2.Internal_GetOverrideSampleSettings(platform) : audioImporter2.defaultSampleSettings;
+          multiValueStatus.multiLoadType |= importerSampleSettings1.loadType != importerSampleSettings2.loadType;
+          multiValueStatus.multiSampleRateSetting |= importerSampleSettings1.sampleRateSetting != importerSampleSettings2.sampleRateSetting;
+          multiValueStatus.multiSampleRateOverride |= (int) importerSampleSettings1.sampleRateOverride != (int) importerSampleSettings2.sampleRateOverride;
+          multiValueStatus.multiCompressionFormat |= importerSampleSettings1.compressionFormat != importerSampleSettings2.compressionFormat;
+          multiValueStatus.multiQuality |= (double) importerSampleSettings1.quality != (double) importerSampleSettings2.quality;
+          multiValueStatus.multiConversionMode |= importerSampleSettings1.conversionMode != importerSampleSettings2.conversionMode;
+        }
+      }
+      return multiValueStatus;
+    }
 
-			public bool loadTypeChanged;
+    private AudioImporterInspector.OverrideStatus GetOverrideStatus(BuildTargetGroup platform)
+    {
+      bool flag1 = false;
+      bool flag2 = false;
+      if (this.GetAllAudioImporterTargets().Any<AudioImporter>())
+      {
+        AudioImporter audioImporter1 = this.GetAllAudioImporterTargets().First<AudioImporter>();
+        flag2 = audioImporter1.Internal_ContainsSampleSettingsOverride(platform);
+        foreach (AudioImporter audioImporter2 in this.GetAllAudioImporterTargets().Except<AudioImporter>((IEnumerable<AudioImporter>) new AudioImporter[1]{ audioImporter1 }))
+        {
+          bool flag3 = audioImporter2.Internal_ContainsSampleSettingsOverride(platform);
+          if (flag3 != flag2)
+            flag1 = ((flag1 ? 1 : 0) | 1) != 0;
+          flag2 |= flag3;
+        }
+      }
+      if (!flag2)
+        return AudioImporterInspector.OverrideStatus.NoOverrides;
+      return flag1 ? AudioImporterInspector.OverrideStatus.MixedOverrides : AudioImporterInspector.OverrideStatus.AllOverrides;
+    }
 
-			public bool sampleRateSettingChanged;
+    private AudioCompressionFormat[] GetFormatsForPlatform(BuildTargetGroup platform)
+    {
+      List<AudioCompressionFormat> compressionFormatList = new List<AudioCompressionFormat>();
+      if (platform == BuildTargetGroup.WebGL)
+      {
+        compressionFormatList.Add(AudioCompressionFormat.AAC);
+        return compressionFormatList.ToArray();
+      }
+      compressionFormatList.Add(AudioCompressionFormat.PCM);
+      if (platform != BuildTargetGroup.PSM && platform != BuildTargetGroup.PSP2)
+        compressionFormatList.Add(AudioCompressionFormat.Vorbis);
+      compressionFormatList.Add(AudioCompressionFormat.ADPCM);
+      if (platform != BuildTargetGroup.Standalone && platform != BuildTargetGroup.WSA && (platform != BuildTargetGroup.WiiU && platform != BuildTargetGroup.XboxOne) && platform != BuildTargetGroup.Unknown)
+        compressionFormatList.Add(AudioCompressionFormat.MP3);
+      if (platform == BuildTargetGroup.PSM)
+        compressionFormatList.Add(AudioCompressionFormat.VAG);
+      if (platform == BuildTargetGroup.PSP2)
+      {
+        compressionFormatList.Add(AudioCompressionFormat.HEVAG);
+        compressionFormatList.Add(AudioCompressionFormat.ATRAC9);
+      }
+      if (platform == BuildTargetGroup.PS4)
+        compressionFormatList.Add(AudioCompressionFormat.ATRAC9);
+      if (platform == BuildTargetGroup.WiiU)
+        compressionFormatList.Add(AudioCompressionFormat.GCADPCM);
+      if (platform == BuildTargetGroup.XboxOne)
+        compressionFormatList.Add(AudioCompressionFormat.XMA);
+      return compressionFormatList.ToArray();
+    }
 
-			public bool sampleRateOverrideChanged;
+    private bool CompressionFormatHasQuality(AudioCompressionFormat format)
+    {
+      switch (format)
+      {
+        case AudioCompressionFormat.Vorbis:
+        case AudioCompressionFormat.MP3:
+        case AudioCompressionFormat.XMA:
+        case AudioCompressionFormat.AAC:
+        case AudioCompressionFormat.ATRAC9:
+          return true;
+        default:
+          return false;
+      }
+    }
 
-			public bool compressionFormatChanged;
+    private void OnSampleSettingGUI(BuildTargetGroup platform, AudioImporterInspector.MultiValueStatus status, bool selectionContainsTrackerFile, ref AudioImporterInspector.SampleSettingProperties properties, bool disablePreloadAudioDataOption)
+    {
+      EditorGUI.showMixedValue = status.multiLoadType && !properties.loadTypeChanged;
+      EditorGUI.BeginChangeCheck();
+      AudioClipLoadType audioClipLoadType = (AudioClipLoadType) EditorGUILayout.EnumPopup("Load Type", (Enum) properties.settings.loadType, new GUILayoutOption[0]);
+      if (EditorGUI.EndChangeCheck())
+      {
+        properties.settings.loadType = audioClipLoadType;
+        properties.loadTypeChanged = true;
+      }
+      using (new EditorGUI.DisabledScope(disablePreloadAudioDataOption))
+      {
+        if (disablePreloadAudioDataOption)
+          EditorGUILayout.Toggle("Preload Audio Data", false, new GUILayoutOption[0]);
+        else
+          EditorGUILayout.PropertyField(this.m_PreloadAudioData);
+      }
+      if (selectionContainsTrackerFile)
+        return;
+      AudioCompressionFormat[] formatsForPlatform = this.GetFormatsForPlatform(platform);
+      EditorGUI.showMixedValue = status.multiCompressionFormat && !properties.compressionFormatChanged;
+      EditorGUI.BeginChangeCheck();
+      AudioCompressionFormat compressionFormat = (AudioCompressionFormat) EditorGUILayout.IntPopup("Compression Format", (int) properties.settings.compressionFormat, Array.ConvertAll<AudioCompressionFormat, string>(formatsForPlatform, (Converter<AudioCompressionFormat, string>) (value => value.ToString())), Array.ConvertAll<AudioCompressionFormat, int>(formatsForPlatform, (Converter<AudioCompressionFormat, int>) (value => (int) value)), new GUILayoutOption[0]);
+      if (EditorGUI.EndChangeCheck())
+      {
+        properties.settings.compressionFormat = compressionFormat;
+        properties.compressionFormatChanged = true;
+      }
+      if (this.CompressionFormatHasQuality(properties.settings.compressionFormat))
+      {
+        EditorGUI.showMixedValue = status.multiQuality && !properties.qualityChanged;
+        EditorGUI.BeginChangeCheck();
+        int num = EditorGUILayout.IntSlider("Quality", (int) Mathf.Clamp(properties.settings.quality * 100f, 1f, 100f), 1, 100, new GUILayoutOption[0]);
+        if (EditorGUI.EndChangeCheck())
+        {
+          properties.settings.quality = 0.01f * (float) num;
+          properties.qualityChanged = true;
+        }
+      }
+      if (platform != BuildTargetGroup.WebGL)
+      {
+        EditorGUI.showMixedValue = status.multiSampleRateSetting && !properties.sampleRateSettingChanged;
+        EditorGUI.BeginChangeCheck();
+        AudioSampleRateSetting sampleRateSetting = (AudioSampleRateSetting) EditorGUILayout.EnumPopup("Sample Rate Setting", (Enum) properties.settings.sampleRateSetting, new GUILayoutOption[0]);
+        if (EditorGUI.EndChangeCheck())
+        {
+          properties.settings.sampleRateSetting = sampleRateSetting;
+          properties.sampleRateSettingChanged = true;
+        }
+        if (properties.settings.sampleRateSetting == AudioSampleRateSetting.OverrideSampleRate)
+        {
+          EditorGUI.showMixedValue = status.multiSampleRateOverride && !properties.sampleRateOverrideChanged;
+          EditorGUI.BeginChangeCheck();
+          int num = EditorGUILayout.IntPopup("Sample Rate", (int) properties.settings.sampleRateOverride, AudioImporterInspector.Styles.kSampleRateStrings, AudioImporterInspector.Styles.kSampleRateValues, new GUILayoutOption[0]);
+          if (EditorGUI.EndChangeCheck())
+          {
+            properties.settings.sampleRateOverride = (uint) num;
+            properties.sampleRateOverrideChanged = true;
+          }
+        }
+      }
+      EditorGUI.showMixedValue = false;
+    }
 
-			public bool qualityChanged;
+    private void OnAudioImporterGUI(bool selectionContainsTrackerFile)
+    {
+      if (!selectionContainsTrackerFile)
+      {
+        EditorGUILayout.PropertyField(this.m_ForceToMono);
+        ++EditorGUI.indentLevel;
+        using (new EditorGUI.DisabledScope(!this.m_ForceToMono.boolValue))
+          EditorGUILayout.PropertyField(this.m_Normalize);
+        --EditorGUI.indentLevel;
+        EditorGUILayout.PropertyField(this.m_LoadInBackground);
+        EditorGUILayout.PropertyField(this.m_Ambisonic);
+      }
+      BuildPlatform[] array = BuildPlatforms.instance.GetValidPlatforms().ToArray();
+      GUILayout.Space(10f);
+      int index = EditorGUILayout.BeginPlatformGrouping(array, GUIContent.Temp("Default"));
+      if (index == -1)
+      {
+        bool disablePreloadAudioDataOption = this.m_DefaultSampleSettings.settings.loadType == AudioClipLoadType.Streaming;
+        this.OnSampleSettingGUI(BuildTargetGroup.Unknown, this.GetMultiValueStatus(BuildTargetGroup.Unknown), selectionContainsTrackerFile, ref this.m_DefaultSampleSettings, disablePreloadAudioDataOption);
+      }
+      else
+      {
+        BuildTargetGroup targetGroup = array[index].targetGroup;
+        AudioImporterInspector.SampleSettingProperties sampleSettingOverride = this.m_SampleSettingOverrides[targetGroup];
+        AudioImporterInspector.OverrideStatus overrideStatus = this.GetOverrideStatus(targetGroup);
+        EditorGUI.BeginChangeCheck();
+        EditorGUI.showMixedValue = overrideStatus == AudioImporterInspector.OverrideStatus.MixedOverrides && !sampleSettingOverride.overrideIsForced;
+        bool flag1 = sampleSettingOverride.overrideIsForced && sampleSettingOverride.forcedOverrideState || !sampleSettingOverride.overrideIsForced && overrideStatus != AudioImporterInspector.OverrideStatus.NoOverrides;
+        bool flag2 = EditorGUILayout.ToggleLeft("Override for " + array[index].title.text, flag1);
+        EditorGUI.showMixedValue = false;
+        if (EditorGUI.EndChangeCheck())
+        {
+          sampleSettingOverride.forcedOverrideState = flag2;
+          sampleSettingOverride.overrideIsForced = true;
+        }
+        bool disablePreloadAudioDataOption = (sampleSettingOverride.overrideIsForced && sampleSettingOverride.forcedOverrideState || this.GetOverrideStatus(targetGroup) == AudioImporterInspector.OverrideStatus.AllOverrides) && sampleSettingOverride.settings.loadType == AudioClipLoadType.Streaming;
+        AudioImporterInspector.MultiValueStatus multiValueStatus = this.GetMultiValueStatus(targetGroup);
+        using (new EditorGUI.DisabledScope((!sampleSettingOverride.overrideIsForced || !sampleSettingOverride.forcedOverrideState ? (overrideStatus == AudioImporterInspector.OverrideStatus.AllOverrides ? 1 : 0) : 1) == 0))
+          this.OnSampleSettingGUI(targetGroup, multiValueStatus, selectionContainsTrackerFile, ref sampleSettingOverride, disablePreloadAudioDataOption);
+        this.m_SampleSettingOverrides[targetGroup] = sampleSettingOverride;
+      }
+      EditorGUILayout.EndPlatformGrouping();
+    }
 
-			public bool conversionModeChanged;
+    public override bool HasModified()
+    {
+      if (base.HasModified() || this.m_DefaultSampleSettings.HasModified())
+        return true;
+      foreach (AudioImporterInspector.SampleSettingProperties settingProperties in this.m_SampleSettingOverrides.Values)
+      {
+        if (settingProperties.HasModified())
+          return true;
+      }
+      return false;
+    }
 
-			public bool HasModified()
-			{
-				return this.overrideIsForced || this.loadTypeChanged || this.sampleRateSettingChanged || this.sampleRateOverrideChanged || this.compressionFormatChanged || this.qualityChanged || this.conversionModeChanged;
-			}
+    protected override void Apply()
+    {
+      base.Apply();
+      this.SyncSettingsToBackend();
+      foreach (EditorWindow allProjectBrowser in ProjectBrowser.GetAllProjectBrowsers())
+        allProjectBrowser.Repaint();
+    }
 
-			public void ClearChangedFlags()
-			{
-				this.forcedOverrideState = false;
-				this.overrideIsForced = false;
-				this.loadTypeChanged = false;
-				this.sampleRateSettingChanged = false;
-				this.sampleRateOverrideChanged = false;
-				this.compressionFormatChanged = false;
-				this.qualityChanged = false;
-				this.conversionModeChanged = false;
-			}
-		}
+    private static class Styles
+    {
+      public static readonly string[] kSampleRateStrings = new string[7]{ "8,000 Hz", "11,025 Hz", "22,050 Hz", "44,100 Hz", "48,000 Hz", "96,000 Hz", "192,000 Hz" };
+      public static readonly int[] kSampleRateValues = new int[7]{ 8000, 11025, 22050, 44100, 48000, 96000, 192000 };
+    }
 
-		private enum OverrideStatus
-		{
-			NoOverrides,
-			MixedOverrides,
-			AllOverrides
-		}
+    private struct MultiValueStatus
+    {
+      public bool multiLoadType;
+      public bool multiSampleRateSetting;
+      public bool multiSampleRateOverride;
+      public bool multiCompressionFormat;
+      public bool multiQuality;
+      public bool multiConversionMode;
+    }
 
-		public SerializedProperty m_ForceToMono;
+    private struct SampleSettingProperties
+    {
+      public AudioImporterSampleSettings settings;
+      public bool forcedOverrideState;
+      public bool overrideIsForced;
+      public bool loadTypeChanged;
+      public bool sampleRateSettingChanged;
+      public bool sampleRateOverrideChanged;
+      public bool compressionFormatChanged;
+      public bool qualityChanged;
+      public bool conversionModeChanged;
 
-		public SerializedProperty m_Normalize;
+      public bool HasModified()
+      {
+        return this.overrideIsForced || this.loadTypeChanged || (this.sampleRateSettingChanged || this.sampleRateOverrideChanged) || (this.compressionFormatChanged || this.qualityChanged) || this.conversionModeChanged;
+      }
 
-		public SerializedProperty m_PreloadAudioData;
+      public void ClearChangedFlags()
+      {
+        this.forcedOverrideState = false;
+        this.overrideIsForced = false;
+        this.loadTypeChanged = false;
+        this.sampleRateSettingChanged = false;
+        this.sampleRateOverrideChanged = false;
+        this.compressionFormatChanged = false;
+        this.qualityChanged = false;
+        this.conversionModeChanged = false;
+      }
+    }
 
-		public SerializedProperty m_Ambisonic;
-
-		public SerializedProperty m_LoadInBackground;
-
-		public SerializedProperty m_OrigSize;
-
-		public SerializedProperty m_CompSize;
-
-		private AudioImporterInspector.SampleSettingProperties m_DefaultSampleSettings;
-
-		private Dictionary<BuildTargetGroup, AudioImporterInspector.SampleSettingProperties> m_SampleSettingOverrides;
-
-		[DebuggerHidden]
-		private IEnumerable<AudioImporter> GetAllAudioImporterTargets()
-		{
-			AudioImporterInspector.<GetAllAudioImporterTargets>c__Iterator0 <GetAllAudioImporterTargets>c__Iterator = new AudioImporterInspector.<GetAllAudioImporterTargets>c__Iterator0();
-			<GetAllAudioImporterTargets>c__Iterator.$this = this;
-			AudioImporterInspector.<GetAllAudioImporterTargets>c__Iterator0 expr_0E = <GetAllAudioImporterTargets>c__Iterator;
-			expr_0E.$PC = -2;
-			return expr_0E;
-		}
-
-		private bool SyncSettingsToBackend()
-		{
-			BuildPlatform[] array = BuildPlatforms.instance.GetValidPlatforms().ToArray();
-			foreach (AudioImporter current in this.GetAllAudioImporterTargets())
-			{
-				AudioImporterSampleSettings defaultSampleSettings = current.defaultSampleSettings;
-				if (this.m_DefaultSampleSettings.loadTypeChanged)
-				{
-					defaultSampleSettings.loadType = this.m_DefaultSampleSettings.settings.loadType;
-				}
-				if (this.m_DefaultSampleSettings.sampleRateSettingChanged)
-				{
-					defaultSampleSettings.sampleRateSetting = this.m_DefaultSampleSettings.settings.sampleRateSetting;
-				}
-				if (this.m_DefaultSampleSettings.sampleRateOverrideChanged)
-				{
-					defaultSampleSettings.sampleRateOverride = this.m_DefaultSampleSettings.settings.sampleRateOverride;
-				}
-				if (this.m_DefaultSampleSettings.compressionFormatChanged)
-				{
-					defaultSampleSettings.compressionFormat = this.m_DefaultSampleSettings.settings.compressionFormat;
-				}
-				if (this.m_DefaultSampleSettings.qualityChanged)
-				{
-					defaultSampleSettings.quality = this.m_DefaultSampleSettings.settings.quality;
-				}
-				if (this.m_DefaultSampleSettings.conversionModeChanged)
-				{
-					defaultSampleSettings.conversionMode = this.m_DefaultSampleSettings.settings.conversionMode;
-				}
-				current.defaultSampleSettings = defaultSampleSettings;
-				BuildPlatform[] array2 = array;
-				for (int i = 0; i < array2.Length; i++)
-				{
-					BuildPlatform buildPlatform = array2[i];
-					BuildTargetGroup targetGroup = buildPlatform.targetGroup;
-					if (this.m_SampleSettingOverrides.ContainsKey(targetGroup))
-					{
-						AudioImporterInspector.SampleSettingProperties value = this.m_SampleSettingOverrides[targetGroup];
-						if (value.overrideIsForced && !value.forcedOverrideState)
-						{
-							current.Internal_ClearSampleSettingOverride(targetGroup);
-						}
-						else if (current.Internal_ContainsSampleSettingsOverride(targetGroup) || (value.overrideIsForced && value.forcedOverrideState))
-						{
-							AudioImporterSampleSettings settings = current.Internal_GetOverrideSampleSettings(targetGroup);
-							if (value.loadTypeChanged)
-							{
-								settings.loadType = value.settings.loadType;
-							}
-							if (value.sampleRateSettingChanged)
-							{
-								settings.sampleRateSetting = value.settings.sampleRateSetting;
-							}
-							if (value.sampleRateOverrideChanged)
-							{
-								settings.sampleRateOverride = value.settings.sampleRateOverride;
-							}
-							if (value.compressionFormatChanged)
-							{
-								settings.compressionFormat = value.settings.compressionFormat;
-							}
-							if (value.qualityChanged)
-							{
-								settings.quality = value.settings.quality;
-							}
-							if (value.conversionModeChanged)
-							{
-								settings.conversionMode = value.settings.conversionMode;
-							}
-							current.Internal_SetOverrideSampleSettings(targetGroup, settings);
-						}
-						this.m_SampleSettingOverrides[targetGroup] = value;
-					}
-				}
-			}
-			this.m_DefaultSampleSettings.ClearChangedFlags();
-			BuildPlatform[] array3 = array;
-			for (int j = 0; j < array3.Length; j++)
-			{
-				BuildPlatform buildPlatform2 = array3[j];
-				BuildTargetGroup targetGroup2 = buildPlatform2.targetGroup;
-				if (this.m_SampleSettingOverrides.ContainsKey(targetGroup2))
-				{
-					AudioImporterInspector.SampleSettingProperties value2 = this.m_SampleSettingOverrides[targetGroup2];
-					value2.ClearChangedFlags();
-					this.m_SampleSettingOverrides[targetGroup2] = value2;
-				}
-			}
-			return true;
-		}
-
-		private void ResetSettingsFromBackend()
-		{
-			if (this.GetAllAudioImporterTargets().Any<AudioImporter>())
-			{
-				AudioImporter audioImporter = this.GetAllAudioImporterTargets().First<AudioImporter>();
-				this.m_DefaultSampleSettings.settings = audioImporter.defaultSampleSettings;
-				this.m_DefaultSampleSettings.ClearChangedFlags();
-				this.m_SampleSettingOverrides = new Dictionary<BuildTargetGroup, AudioImporterInspector.SampleSettingProperties>();
-				List<BuildPlatform> validPlatforms = BuildPlatforms.instance.GetValidPlatforms();
-				foreach (BuildPlatform current in validPlatforms)
-				{
-					BuildTargetGroup targetGroup = current.targetGroup;
-					foreach (AudioImporter current2 in this.GetAllAudioImporterTargets())
-					{
-						if (current2.Internal_ContainsSampleSettingsOverride(targetGroup))
-						{
-							AudioImporterInspector.SampleSettingProperties value = default(AudioImporterInspector.SampleSettingProperties);
-							value.settings = current2.Internal_GetOverrideSampleSettings(targetGroup);
-							this.m_SampleSettingOverrides[targetGroup] = value;
-							break;
-						}
-					}
-					if (!this.m_SampleSettingOverrides.ContainsKey(targetGroup))
-					{
-						AudioImporterInspector.SampleSettingProperties value2 = default(AudioImporterInspector.SampleSettingProperties);
-						value2.settings = audioImporter.Internal_GetOverrideSampleSettings(targetGroup);
-						this.m_SampleSettingOverrides[targetGroup] = value2;
-					}
-				}
-			}
-		}
-
-		public bool CurrentPlatformHasAutoTranslatedCompression()
-		{
-			BuildTargetGroup buildTargetGroup = BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
-			bool result;
-			foreach (AudioImporter current in this.GetAllAudioImporterTargets())
-			{
-				AudioCompressionFormat compressionFormat = current.defaultSampleSettings.compressionFormat;
-				if (!current.Internal_ContainsSampleSettingsOverride(buildTargetGroup))
-				{
-					AudioCompressionFormat compressionFormat2 = current.Internal_GetOverrideSampleSettings(buildTargetGroup).compressionFormat;
-					if (compressionFormat != compressionFormat2)
-					{
-						result = true;
-						return result;
-					}
-				}
-			}
-			result = false;
-			return result;
-		}
-
-		public bool IsHardwareSound(AudioCompressionFormat format)
-		{
-			bool result;
-			switch (format)
-			{
-			case AudioCompressionFormat.VAG:
-			case AudioCompressionFormat.HEVAG:
-			case AudioCompressionFormat.XMA:
-			case AudioCompressionFormat.GCADPCM:
-				result = true;
-				return result;
-			}
-			result = false;
-			return result;
-		}
-
-		public bool CurrentSelectionContainsHardwareSounds()
-		{
-			BuildTargetGroup buildTargetGroup = BuildPipeline.GetBuildTargetGroup(EditorUserBuildSettings.activeBuildTarget);
-			bool result;
-			foreach (AudioImporter current in this.GetAllAudioImporterTargets())
-			{
-				if (this.IsHardwareSound(current.Internal_GetOverrideSampleSettings(buildTargetGroup).compressionFormat))
-				{
-					result = true;
-					return result;
-				}
-			}
-			result = false;
-			return result;
-		}
-
-		public override void OnEnable()
-		{
-			this.m_ForceToMono = base.serializedObject.FindProperty("m_ForceToMono");
-			this.m_Normalize = base.serializedObject.FindProperty("m_Normalize");
-			this.m_PreloadAudioData = base.serializedObject.FindProperty("m_PreloadAudioData");
-			this.m_Ambisonic = base.serializedObject.FindProperty("m_Ambisonic");
-			this.m_LoadInBackground = base.serializedObject.FindProperty("m_LoadInBackground");
-			this.m_OrigSize = base.serializedObject.FindProperty("m_PreviewData.m_OrigSize");
-			this.m_CompSize = base.serializedObject.FindProperty("m_PreviewData.m_CompSize");
-			this.ResetSettingsFromBackend();
-		}
-
-		protected override void ResetValues()
-		{
-			base.ResetValues();
-			this.ResetSettingsFromBackend();
-		}
-
-		public override void OnInspectorGUI()
-		{
-			base.serializedObject.UpdateIfRequiredOrScript();
-			bool selectionContainsTrackerFile = false;
-			foreach (AudioImporter current in this.GetAllAudioImporterTargets())
-			{
-				string assetPath = current.assetPath;
-				string a = FileUtil.GetPathExtension(assetPath).ToLowerInvariant();
-				if (a == "mod" || a == "it" || a == "s3m" || a == "xm")
-				{
-					selectionContainsTrackerFile = true;
-					break;
-				}
-			}
-			this.OnAudioImporterGUI(selectionContainsTrackerFile);
-			int num = 0;
-			int num2 = 0;
-			foreach (AudioImporter current2 in this.GetAllAudioImporterTargets())
-			{
-				num += current2.origSize;
-				num2 += current2.compSize;
-			}
-			GUILayout.Space(10f);
-			EditorGUILayout.HelpBox(string.Concat(new string[]
-			{
-				"Original Size: \t",
-				EditorUtility.FormatBytes(num),
-				"\nImported Size: \t",
-				EditorUtility.FormatBytes(num2),
-				"\nRatio: \t\t",
-				(100f * (float)num2 / (float)num).ToString("0.00"),
-				"%"
-			}), MessageType.Info);
-			if (this.CurrentPlatformHasAutoTranslatedCompression())
-			{
-				GUILayout.Space(10f);
-				EditorGUILayout.HelpBox("The selection contains different compression formats to the default settings for the current build platform.", MessageType.Info);
-			}
-			if (this.CurrentSelectionContainsHardwareSounds())
-			{
-				GUILayout.Space(10f);
-				EditorGUILayout.HelpBox("The selection contains sounds that are decompressed in hardware. Advanced mixing is not available for these sounds.", MessageType.Info);
-			}
-			base.ApplyRevertGUI();
-		}
-
-		private AudioImporterInspector.MultiValueStatus GetMultiValueStatus(BuildTargetGroup platform)
-		{
-			AudioImporterInspector.MultiValueStatus result;
-			result.multiLoadType = false;
-			result.multiSampleRateSetting = false;
-			result.multiSampleRateOverride = false;
-			result.multiCompressionFormat = false;
-			result.multiQuality = false;
-			result.multiConversionMode = false;
-			if (this.GetAllAudioImporterTargets().Any<AudioImporter>())
-			{
-				AudioImporter audioImporter = this.GetAllAudioImporterTargets().First<AudioImporter>();
-				AudioImporterSampleSettings audioImporterSampleSettings;
-				if (platform == BuildTargetGroup.Unknown)
-				{
-					audioImporterSampleSettings = audioImporter.defaultSampleSettings;
-				}
-				else
-				{
-					audioImporterSampleSettings = audioImporter.Internal_GetOverrideSampleSettings(platform);
-				}
-				foreach (AudioImporter current in this.GetAllAudioImporterTargets().Except(new AudioImporter[]
-				{
-					audioImporter
-				}))
-				{
-					AudioImporterSampleSettings audioImporterSampleSettings2;
-					if (platform == BuildTargetGroup.Unknown)
-					{
-						audioImporterSampleSettings2 = current.defaultSampleSettings;
-					}
-					else
-					{
-						audioImporterSampleSettings2 = current.Internal_GetOverrideSampleSettings(platform);
-					}
-					result.multiLoadType |= (audioImporterSampleSettings.loadType != audioImporterSampleSettings2.loadType);
-					result.multiSampleRateSetting |= (audioImporterSampleSettings.sampleRateSetting != audioImporterSampleSettings2.sampleRateSetting);
-					result.multiSampleRateOverride |= (audioImporterSampleSettings.sampleRateOverride != audioImporterSampleSettings2.sampleRateOverride);
-					result.multiCompressionFormat |= (audioImporterSampleSettings.compressionFormat != audioImporterSampleSettings2.compressionFormat);
-					result.multiQuality |= (audioImporterSampleSettings.quality != audioImporterSampleSettings2.quality);
-					result.multiConversionMode |= (audioImporterSampleSettings.conversionMode != audioImporterSampleSettings2.conversionMode);
-				}
-			}
-			return result;
-		}
-
-		private AudioImporterInspector.OverrideStatus GetOverrideStatus(BuildTargetGroup platform)
-		{
-			bool flag = false;
-			bool flag2 = false;
-			if (this.GetAllAudioImporterTargets().Any<AudioImporter>())
-			{
-				AudioImporter audioImporter = this.GetAllAudioImporterTargets().First<AudioImporter>();
-				flag2 = audioImporter.Internal_ContainsSampleSettingsOverride(platform);
-				foreach (AudioImporter current in this.GetAllAudioImporterTargets().Except(new AudioImporter[]
-				{
-					audioImporter
-				}))
-				{
-					bool flag3 = current.Internal_ContainsSampleSettingsOverride(platform);
-					if (flag3 != flag2)
-					{
-						flag |= true;
-					}
-					flag2 |= flag3;
-				}
-			}
-			AudioImporterInspector.OverrideStatus result;
-			if (!flag2)
-			{
-				result = AudioImporterInspector.OverrideStatus.NoOverrides;
-			}
-			else if (flag)
-			{
-				result = AudioImporterInspector.OverrideStatus.MixedOverrides;
-			}
-			else
-			{
-				result = AudioImporterInspector.OverrideStatus.AllOverrides;
-			}
-			return result;
-		}
-
-		private AudioCompressionFormat[] GetFormatsForPlatform(BuildTargetGroup platform)
-		{
-			List<AudioCompressionFormat> list = new List<AudioCompressionFormat>();
-			AudioCompressionFormat[] result;
-			if (platform == BuildTargetGroup.WebGL)
-			{
-				list.Add(AudioCompressionFormat.AAC);
-				result = list.ToArray();
-			}
-			else
-			{
-				list.Add(AudioCompressionFormat.PCM);
-				if (platform != BuildTargetGroup.PSM && platform != BuildTargetGroup.PSP2)
-				{
-					list.Add(AudioCompressionFormat.Vorbis);
-				}
-				list.Add(AudioCompressionFormat.ADPCM);
-				if (platform != BuildTargetGroup.Standalone && platform != BuildTargetGroup.WSA && platform != BuildTargetGroup.WiiU && platform != BuildTargetGroup.XboxOne && platform != BuildTargetGroup.Unknown)
-				{
-					list.Add(AudioCompressionFormat.MP3);
-				}
-				if (platform == BuildTargetGroup.PSM)
-				{
-					list.Add(AudioCompressionFormat.VAG);
-				}
-				if (platform == BuildTargetGroup.PSP2)
-				{
-					list.Add(AudioCompressionFormat.HEVAG);
-					list.Add(AudioCompressionFormat.ATRAC9);
-				}
-				if (platform == BuildTargetGroup.PS4)
-				{
-					list.Add(AudioCompressionFormat.ATRAC9);
-				}
-				if (platform == BuildTargetGroup.WiiU)
-				{
-					list.Add(AudioCompressionFormat.GCADPCM);
-				}
-				if (platform == BuildTargetGroup.XboxOne)
-				{
-					list.Add(AudioCompressionFormat.XMA);
-				}
-				result = list.ToArray();
-			}
-			return result;
-		}
-
-		private bool CompressionFormatHasQuality(AudioCompressionFormat format)
-		{
-			bool result;
-			switch (format)
-			{
-			case AudioCompressionFormat.Vorbis:
-			case AudioCompressionFormat.MP3:
-			case AudioCompressionFormat.XMA:
-			case AudioCompressionFormat.AAC:
-			case AudioCompressionFormat.ATRAC9:
-				result = true;
-				return result;
-			}
-			result = false;
-			return result;
-		}
-
-		private void OnSampleSettingGUI(BuildTargetGroup platform, AudioImporterInspector.MultiValueStatus status, bool selectionContainsTrackerFile, ref AudioImporterInspector.SampleSettingProperties properties, bool disablePreloadAudioDataOption)
-		{
-			EditorGUI.showMixedValue = (status.multiLoadType && !properties.loadTypeChanged);
-			EditorGUI.BeginChangeCheck();
-			AudioClipLoadType loadType = (AudioClipLoadType)EditorGUILayout.EnumPopup("Load Type", properties.settings.loadType, new GUILayoutOption[0]);
-			if (EditorGUI.EndChangeCheck())
-			{
-				properties.settings.loadType = loadType;
-				properties.loadTypeChanged = true;
-			}
-			using (new EditorGUI.DisabledScope(disablePreloadAudioDataOption))
-			{
-				if (disablePreloadAudioDataOption)
-				{
-					EditorGUILayout.Toggle("Preload Audio Data", false, new GUILayoutOption[0]);
-				}
-				else
-				{
-					EditorGUILayout.PropertyField(this.m_PreloadAudioData, new GUILayoutOption[0]);
-				}
-			}
-			if (!selectionContainsTrackerFile)
-			{
-				AudioCompressionFormat[] formatsForPlatform = this.GetFormatsForPlatform(platform);
-				EditorGUI.showMixedValue = (status.multiCompressionFormat && !properties.compressionFormatChanged);
-				EditorGUI.BeginChangeCheck();
-				AudioCompressionFormat compressionFormat = (AudioCompressionFormat)EditorGUILayout.IntPopup("Compression Format", (int)properties.settings.compressionFormat, Array.ConvertAll<AudioCompressionFormat, string>(formatsForPlatform, (AudioCompressionFormat value) => value.ToString()), Array.ConvertAll<AudioCompressionFormat, int>(formatsForPlatform, (AudioCompressionFormat value) => (int)value), new GUILayoutOption[0]);
-				if (EditorGUI.EndChangeCheck())
-				{
-					properties.settings.compressionFormat = compressionFormat;
-					properties.compressionFormatChanged = true;
-				}
-				if (this.CompressionFormatHasQuality(properties.settings.compressionFormat))
-				{
-					EditorGUI.showMixedValue = (status.multiQuality && !properties.qualityChanged);
-					EditorGUI.BeginChangeCheck();
-					int num = EditorGUILayout.IntSlider("Quality", (int)Mathf.Clamp(properties.settings.quality * 100f, 1f, 100f), 1, 100, new GUILayoutOption[0]);
-					if (EditorGUI.EndChangeCheck())
-					{
-						properties.settings.quality = 0.01f * (float)num;
-						properties.qualityChanged = true;
-					}
-				}
-				if (platform != BuildTargetGroup.WebGL)
-				{
-					EditorGUI.showMixedValue = (status.multiSampleRateSetting && !properties.sampleRateSettingChanged);
-					EditorGUI.BeginChangeCheck();
-					AudioSampleRateSetting sampleRateSetting = (AudioSampleRateSetting)EditorGUILayout.EnumPopup("Sample Rate Setting", properties.settings.sampleRateSetting, new GUILayoutOption[0]);
-					if (EditorGUI.EndChangeCheck())
-					{
-						properties.settings.sampleRateSetting = sampleRateSetting;
-						properties.sampleRateSettingChanged = true;
-					}
-					if (properties.settings.sampleRateSetting == AudioSampleRateSetting.OverrideSampleRate)
-					{
-						EditorGUI.showMixedValue = (status.multiSampleRateOverride && !properties.sampleRateOverrideChanged);
-						EditorGUI.BeginChangeCheck();
-						int sampleRateOverride = EditorGUILayout.IntPopup("Sample Rate", (int)properties.settings.sampleRateOverride, AudioImporterInspector.Styles.kSampleRateStrings, AudioImporterInspector.Styles.kSampleRateValues, new GUILayoutOption[0]);
-						if (EditorGUI.EndChangeCheck())
-						{
-							properties.settings.sampleRateOverride = (uint)sampleRateOverride;
-							properties.sampleRateOverrideChanged = true;
-						}
-					}
-				}
-				EditorGUI.showMixedValue = false;
-			}
-		}
-
-		private void OnAudioImporterGUI(bool selectionContainsTrackerFile)
-		{
-			if (!selectionContainsTrackerFile)
-			{
-				EditorGUILayout.PropertyField(this.m_ForceToMono, new GUILayoutOption[0]);
-				EditorGUI.indentLevel++;
-				using (new EditorGUI.DisabledScope(!this.m_ForceToMono.boolValue))
-				{
-					EditorGUILayout.PropertyField(this.m_Normalize, new GUILayoutOption[0]);
-				}
-				EditorGUI.indentLevel--;
-				EditorGUILayout.PropertyField(this.m_LoadInBackground, new GUILayoutOption[0]);
-				EditorGUILayout.PropertyField(this.m_Ambisonic, new GUILayoutOption[0]);
-			}
-			BuildPlatform[] array = BuildPlatforms.instance.GetValidPlatforms().ToArray();
-			GUILayout.Space(10f);
-			int num = EditorGUILayout.BeginPlatformGrouping(array, GUIContent.Temp("Default"));
-			if (num == -1)
-			{
-				bool disablePreloadAudioDataOption = this.m_DefaultSampleSettings.settings.loadType == AudioClipLoadType.Streaming;
-				AudioImporterInspector.MultiValueStatus multiValueStatus = this.GetMultiValueStatus(BuildTargetGroup.Unknown);
-				this.OnSampleSettingGUI(BuildTargetGroup.Unknown, multiValueStatus, selectionContainsTrackerFile, ref this.m_DefaultSampleSettings, disablePreloadAudioDataOption);
-			}
-			else
-			{
-				BuildTargetGroup targetGroup = array[num].targetGroup;
-				AudioImporterInspector.SampleSettingProperties value = this.m_SampleSettingOverrides[targetGroup];
-				AudioImporterInspector.OverrideStatus overrideStatus = this.GetOverrideStatus(targetGroup);
-				EditorGUI.BeginChangeCheck();
-				EditorGUI.showMixedValue = (overrideStatus == AudioImporterInspector.OverrideStatus.MixedOverrides && !value.overrideIsForced);
-				bool flag = (value.overrideIsForced && value.forcedOverrideState) || (!value.overrideIsForced && overrideStatus != AudioImporterInspector.OverrideStatus.NoOverrides);
-				flag = EditorGUILayout.ToggleLeft("Override for " + array[num].title.text, flag, new GUILayoutOption[0]);
-				EditorGUI.showMixedValue = false;
-				if (EditorGUI.EndChangeCheck())
-				{
-					value.forcedOverrideState = flag;
-					value.overrideIsForced = true;
-				}
-				bool disablePreloadAudioDataOption2 = ((value.overrideIsForced && value.forcedOverrideState) || this.GetOverrideStatus(targetGroup) == AudioImporterInspector.OverrideStatus.AllOverrides) && value.settings.loadType == AudioClipLoadType.Streaming;
-				AudioImporterInspector.MultiValueStatus multiValueStatus2 = this.GetMultiValueStatus(targetGroup);
-				bool disabled = (!value.overrideIsForced || !value.forcedOverrideState) && overrideStatus != AudioImporterInspector.OverrideStatus.AllOverrides;
-				using (new EditorGUI.DisabledScope(disabled))
-				{
-					this.OnSampleSettingGUI(targetGroup, multiValueStatus2, selectionContainsTrackerFile, ref value, disablePreloadAudioDataOption2);
-				}
-				this.m_SampleSettingOverrides[targetGroup] = value;
-			}
-			EditorGUILayout.EndPlatformGrouping();
-		}
-
-		public override bool HasModified()
-		{
-			bool result;
-			if (base.HasModified())
-			{
-				result = true;
-			}
-			else if (this.m_DefaultSampleSettings.HasModified())
-			{
-				result = true;
-			}
-			else
-			{
-				Dictionary<BuildTargetGroup, AudioImporterInspector.SampleSettingProperties>.ValueCollection values = this.m_SampleSettingOverrides.Values;
-				foreach (AudioImporterInspector.SampleSettingProperties current in values)
-				{
-					if (current.HasModified())
-					{
-						result = true;
-						return result;
-					}
-				}
-				result = false;
-			}
-			return result;
-		}
-
-		protected override void Apply()
-		{
-			base.Apply();
-			this.SyncSettingsToBackend();
-			foreach (ProjectBrowser current in ProjectBrowser.GetAllProjectBrowsers())
-			{
-				current.Repaint();
-			}
-		}
-	}
+    private enum OverrideStatus
+    {
+      NoOverrides,
+      MixedOverrides,
+      AllOverrides,
+    }
+  }
 }

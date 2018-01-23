@@ -1,73 +1,67 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.MaximizedHostView
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class MaximizedHostView : HostView
-	{
-		public void OnGUI()
-		{
-			base.ClearBackground();
-			EditorGUIUtility.ResetGUIState();
-			Rect rect = new Rect(-2f, 0f, base.position.width + 4f, base.position.height);
-			this.background = "dockarea";
-			rect = this.background.margin.Remove(rect);
-			Rect position = new Rect(rect.x + 1f, rect.y, rect.width - 2f, 17f);
-			if (Event.current.type == EventType.Repaint)
-			{
-				this.background.Draw(rect, GUIContent.none, false, false, false, false);
-				GUIStyle gUIStyle = "dragTab";
-				gUIStyle.Draw(position, base.actualView.titleContent, false, false, true, base.hasFocus);
-			}
-			if (Event.current.type == EventType.ContextClick && position.Contains(Event.current.mousePosition))
-			{
-				base.PopupGenericMenu(base.actualView, new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y, 0f, 0f));
-			}
-			base.ShowGenericMenu();
-			if (base.actualView)
-			{
-				base.actualView.m_Pos = base.borderSize.Remove(base.screenPosition);
-			}
-			base.InvokeOnGUI(rect);
-		}
+  internal class MaximizedHostView : HostView
+  {
+    protected override void OldOnGUI()
+    {
+      this.ClearBackground();
+      EditorGUIUtility.ResetGUIState();
+      Rect rect1 = new Rect(-2f, 0.0f, this.position.width + 4f, this.position.height);
+      this.background = (GUIStyle) "dockarea";
+      Rect rect2 = this.background.margin.Remove(rect1);
+      Rect position = new Rect(rect2.x + 1f, rect2.y, rect2.width - 2f, 17f);
+      if (Event.current.type == EventType.Repaint)
+      {
+        this.background.Draw(rect2, GUIContent.none, false, false, false, false);
+        (GUIStyle) "dragTab".Draw(position, this.actualView.titleContent, false, false, true, this.hasFocus);
+      }
+      if (Event.current.type == EventType.ContextClick && position.Contains(Event.current.mousePosition))
+        this.PopupGenericMenu(this.actualView, new Rect(Event.current.mousePosition.x, Event.current.mousePosition.y, 0.0f, 0.0f));
+      this.ShowGenericMenu();
+      if ((bool) ((UnityEngine.Object) this.actualView))
+        this.actualView.m_Pos = this.borderSize.Remove(this.screenPosition);
+      this.InvokeOnGUI(rect2);
+    }
 
-		protected override RectOffset GetBorderSize()
-		{
-			this.m_BorderSize.left = 0;
-			this.m_BorderSize.right = 0;
-			this.m_BorderSize.top = 17;
-			this.m_BorderSize.bottom = 4;
-			return this.m_BorderSize;
-		}
+    protected override RectOffset GetBorderSize()
+    {
+      this.m_BorderSize.left = 0;
+      this.m_BorderSize.right = 0;
+      this.m_BorderSize.top = 17;
+      this.m_BorderSize.bottom = 4;
+      return this.m_BorderSize;
+    }
 
-		private void Unmaximize(object userData)
-		{
-			EditorWindow win = (EditorWindow)userData;
-			WindowLayout.Unmaximize(win);
-		}
+    private void Unmaximize(object userData)
+    {
+      WindowLayout.Unmaximize((EditorWindow) userData);
+    }
 
-		protected override void AddDefaultItemsToMenu(GenericMenu menu, EditorWindow view)
-		{
-			if (menu.GetItemCount() != 0)
-			{
-				menu.AddSeparator("");
-			}
-			menu.AddItem(EditorGUIUtility.TextContent("Maximize"), !(base.parent is SplitView), new GenericMenu.MenuFunction2(this.Unmaximize), view);
-			menu.AddDisabledItem(EditorGUIUtility.TextContent("Close Tab"));
-			menu.AddSeparator("");
-			Type[] paneTypes = base.GetPaneTypes();
-			GUIContent gUIContent = EditorGUIUtility.TextContent("Add Tab");
-			Type[] array = paneTypes;
-			for (int i = 0; i < array.Length; i++)
-			{
-				Type type = array[i];
-				if (type != null)
-				{
-					GUIContent gUIContent2 = new GUIContent(EditorWindow.GetLocalizedTitleContentFromType(type));
-					gUIContent2.text = gUIContent.text + "/" + gUIContent2.text;
-					menu.AddDisabledItem(gUIContent2);
-				}
-			}
-		}
-	}
+    protected override void AddDefaultItemsToMenu(GenericMenu menu, EditorWindow window)
+    {
+      base.AddDefaultItemsToMenu(menu, window);
+      menu.AddItem(EditorGUIUtility.TextContent("Maximize"), !(this.parent is SplitView), new GenericMenu.MenuFunction2(this.Unmaximize), (object) window);
+      menu.AddDisabledItem(EditorGUIUtility.TextContent("Close Tab"));
+      menu.AddSeparator("");
+      System.Type[] paneTypes = this.GetPaneTypes();
+      GUIContent guiContent = EditorGUIUtility.TextContent("Add Tab");
+      foreach (System.Type t in paneTypes)
+      {
+        if (t != null)
+        {
+          GUIContent content = new GUIContent(EditorWindow.GetLocalizedTitleContentFromType(t));
+          content.text = guiContent.text + "/" + content.text;
+          menu.AddDisabledItem(content);
+        }
+      }
+    }
+  }
 }

@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: DesktopStandaloneBuildWindowExtension
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using UnityEditor;
@@ -6,246 +12,147 @@ using UnityEngine;
 
 internal class DesktopStandaloneBuildWindowExtension : DefaultBuildWindowExtension
 {
-	private GUIContent m_StandaloneTarget = EditorGUIUtility.TextContent("Target Platform|Destination platform for standalone build");
+  private GUIContent m_StandaloneTarget = EditorGUIUtility.TextContent("Target Platform|Destination platform for standalone build");
+  private GUIContent m_Architecture = EditorGUIUtility.TextContent("Architecture|Build m_Architecture for standalone");
+  private BuildTarget[] m_StandaloneSubtargets;
+  private GUIContent[] m_StandaloneSubtargetStrings;
 
-	private GUIContent m_Architecture = EditorGUIUtility.TextContent("Architecture|Build m_Architecture for standalone");
+  public DesktopStandaloneBuildWindowExtension()
+  {
+    this.SetupStandaloneSubtargets();
+  }
 
-	private BuildTarget[] m_StandaloneSubtargets;
+  private void SetupStandaloneSubtargets()
+  {
+    List<BuildTarget> buildTargetList = new List<BuildTarget>();
+    List<GUIContent> guiContentList = new List<GUIContent>();
+    if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneWindows)))
+    {
+      buildTargetList.Add(BuildTarget.StandaloneWindows);
+      guiContentList.Add(EditorGUIUtility.TextContent("Windows"));
+    }
+    if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneOSX)))
+    {
+      buildTargetList.Add(BuildTarget.StandaloneOSX);
+      guiContentList.Add(EditorGUIUtility.TextContent("Mac OS X"));
+    }
+    if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneLinux)))
+    {
+      buildTargetList.Add(BuildTarget.StandaloneLinux);
+      guiContentList.Add(EditorGUIUtility.TextContent("Linux"));
+    }
+    this.m_StandaloneSubtargets = buildTargetList.ToArray();
+    this.m_StandaloneSubtargetStrings = guiContentList.ToArray();
+  }
 
-	private GUIContent[] m_StandaloneSubtargetStrings;
+  internal static BuildTarget GetBestStandaloneTarget(BuildTarget selectedTarget)
+  {
+    if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(selectedTarget)))
+      return selectedTarget;
+    if (Application.platform == RuntimePlatform.WindowsEditor && ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneWindows)))
+      return BuildTarget.StandaloneWindows;
+    if (Application.platform == RuntimePlatform.OSXEditor && ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneOSX)) || ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneOSX)))
+      return BuildTarget.StandaloneOSX;
+    return ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneLinux)) ? BuildTarget.StandaloneLinux : BuildTarget.StandaloneWindows;
+  }
 
-	public DesktopStandaloneBuildWindowExtension()
-	{
-		this.SetupStandaloneSubtargets();
-	}
+  private static Dictionary<GUIContent, BuildTarget> GetArchitecturesForPlatform(BuildTarget target)
+  {
+    switch (target)
+    {
+      case BuildTarget.StandaloneLinux:
+        return new Dictionary<GUIContent, BuildTarget>() { { EditorGUIUtility.TextContent("x86"), BuildTarget.StandaloneLinux }, { EditorGUIUtility.TextContent("x86_64"), BuildTarget.StandaloneLinux64 }, { EditorGUIUtility.TextContent("x86 + x86_64 (Universal)"), BuildTarget.StandaloneLinuxUniversal } };
+      case BuildTarget.StandaloneWindows64:
+        return new Dictionary<GUIContent, BuildTarget>() { { EditorGUIUtility.TextContent("x86"), BuildTarget.StandaloneWindows }, { EditorGUIUtility.TextContent("x86_64"), BuildTarget.StandaloneWindows64 } };
+      default:
+        if (target != BuildTarget.StandaloneLinux64 && target != BuildTarget.StandaloneLinuxUniversal)
+        {
+          if (target != BuildTarget.StandaloneWindows)
+            return (Dictionary<GUIContent, BuildTarget>) null;
+          goto case BuildTarget.StandaloneWindows64;
+        }
+        else
+          goto case BuildTarget.StandaloneLinux;
+    }
+  }
 
-	private void SetupStandaloneSubtargets()
-	{
-		List<BuildTarget> list = new List<BuildTarget>();
-		List<GUIContent> list2 = new List<GUIContent>();
-		if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneWindows)))
-		{
-			list.Add(BuildTarget.StandaloneWindows);
-			list2.Add(EditorGUIUtility.TextContent("Windows"));
-		}
-		if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneOSXIntel)))
-		{
-			list.Add(BuildTarget.StandaloneOSXIntel);
-			list2.Add(EditorGUIUtility.TextContent("Mac OS X"));
-		}
-		if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneLinux)))
-		{
-			list.Add(BuildTarget.StandaloneLinux);
-			list2.Add(EditorGUIUtility.TextContent("Linux"));
-		}
-		this.m_StandaloneSubtargets = list.ToArray();
-		this.m_StandaloneSubtargetStrings = list2.ToArray();
-	}
+  private static BuildTarget DefaultTargetForPlatform(BuildTarget target)
+  {
+    switch (target)
+    {
+      case BuildTarget.StandaloneOSX:
+      case BuildTarget.StandaloneOSXIntel:
+label_5:
+        return BuildTarget.StandaloneOSX;
+      case BuildTarget.StandaloneWindows:
+label_3:
+        return BuildTarget.StandaloneWindows;
+      default:
+        switch (target - 24)
+        {
+          case ~BuildTarget.iPhone:
+          case ~BuildTarget.NoTarget:
+label_4:
+            return BuildTarget.StandaloneLinux;
+          case (BuildTarget) 3:
+            goto label_5;
+          default:
+            switch (target - 17)
+            {
+              case ~BuildTarget.iPhone:
+                goto label_4;
+              case BuildTarget.StandaloneOSX:
+                goto label_3;
+              default:
+                return target;
+            }
+        }
+    }
+  }
 
-	private static BuildTarget GetBestStandaloneTarget(BuildTarget selectedTarget)
-	{
-		BuildTarget result;
-		if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(selectedTarget)))
-		{
-			result = selectedTarget;
-		}
-		else if (Application.platform == RuntimePlatform.WindowsEditor && ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneWindows)))
-		{
-			result = BuildTarget.StandaloneWindows;
-		}
-		else if (Application.platform == RuntimePlatform.OSXEditor && ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneOSXIntel)))
-		{
-			result = BuildTarget.StandaloneOSXIntel;
-		}
-		else if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneOSXIntel)))
-		{
-			result = BuildTarget.StandaloneOSXIntel;
-		}
-		else if (ModuleManager.IsPlatformSupportLoaded(ModuleManager.GetTargetStringFromBuildTarget(BuildTarget.StandaloneLinux)))
-		{
-			result = BuildTarget.StandaloneLinux;
-		}
-		else
-		{
-			result = BuildTarget.StandaloneWindows;
-		}
-		return result;
-	}
+  public override void ShowPlatformBuildOptions()
+  {
+    BuildTarget standaloneTarget = DesktopStandaloneBuildWindowExtension.GetBestStandaloneTarget(EditorUserBuildSettings.selectedStandaloneTarget);
+    BuildTarget buildTarget = EditorUserBuildSettings.selectedStandaloneTarget;
+    int selectedIndex1 = Math.Max(0, Array.IndexOf<BuildTarget>(this.m_StandaloneSubtargets, DesktopStandaloneBuildWindowExtension.DefaultTargetForPlatform(standaloneTarget)));
+    int index1 = EditorGUILayout.Popup(this.m_StandaloneTarget, selectedIndex1, this.m_StandaloneSubtargetStrings, new GUILayoutOption[0]);
+    if (index1 == selectedIndex1)
+    {
+      Dictionary<GUIContent, BuildTarget> architecturesForPlatform = DesktopStandaloneBuildWindowExtension.GetArchitecturesForPlatform(standaloneTarget);
+      if (architecturesForPlatform != null)
+      {
+        GUIContent[] array = new List<GUIContent>((IEnumerable<GUIContent>) architecturesForPlatform.Keys).ToArray();
+        int selectedIndex2 = 0;
+        if (index1 == selectedIndex1)
+        {
+          foreach (KeyValuePair<GUIContent, BuildTarget> keyValuePair in architecturesForPlatform)
+          {
+            if (keyValuePair.Value == standaloneTarget)
+            {
+              selectedIndex2 = Math.Max(0, Array.IndexOf<GUIContent>(array, keyValuePair.Key));
+              break;
+            }
+          }
+        }
+        int index2 = EditorGUILayout.Popup(this.m_Architecture, selectedIndex2, array, new GUILayoutOption[0]);
+        buildTarget = architecturesForPlatform[array[index2]];
+      }
+    }
+    else
+      buildTarget = this.m_StandaloneSubtargets[index1];
+    if (buildTarget == EditorUserBuildSettings.selectedStandaloneTarget)
+      return;
+    EditorUserBuildSettings.selectedStandaloneTarget = buildTarget;
+    GUIUtility.ExitGUI();
+  }
 
-	private static Dictionary<GUIContent, BuildTarget> GetArchitecturesForPlatform(BuildTarget target)
-	{
-		Dictionary<GUIContent, BuildTarget> result;
-		switch (target)
-		{
-		case BuildTarget.StandaloneOSXUniversal:
-		case BuildTarget.StandaloneOSXIntel:
-			goto IL_BF;
-		case (BuildTarget)3:
-			IL_19:
-			switch (target)
-			{
-			case BuildTarget.StandaloneLinux64:
-			case BuildTarget.StandaloneLinuxUniversal:
-				goto IL_7C;
-			case BuildTarget.WP8Player:
-				IL_32:
-				switch (target)
-				{
-				case BuildTarget.StandaloneLinux:
-					goto IL_7C;
-				case BuildTarget.StandaloneWindows64:
-					goto IL_4C;
-				}
-				result = null;
-				return result;
-			case BuildTarget.StandaloneOSXIntel64:
-				goto IL_BF;
-			}
-			goto IL_32;
-			IL_7C:
-			result = new Dictionary<GUIContent, BuildTarget>
-			{
-				{
-					EditorGUIUtility.TextContent("x86"),
-					BuildTarget.StandaloneLinux
-				},
-				{
-					EditorGUIUtility.TextContent("x86_64"),
-					BuildTarget.StandaloneLinux64
-				},
-				{
-					EditorGUIUtility.TextContent("x86 + x86_64 (Universal)"),
-					BuildTarget.StandaloneLinuxUniversal
-				}
-			};
-			return result;
-		case BuildTarget.StandaloneWindows:
-			goto IL_4C;
-		}
-		goto IL_19;
-		IL_4C:
-		result = new Dictionary<GUIContent, BuildTarget>
-		{
-			{
-				EditorGUIUtility.TextContent("x86"),
-				BuildTarget.StandaloneWindows
-			},
-			{
-				EditorGUIUtility.TextContent("x86_64"),
-				BuildTarget.StandaloneWindows64
-			}
-		};
-		return result;
-		IL_BF:
-		result = new Dictionary<GUIContent, BuildTarget>
-		{
-			{
-				EditorGUIUtility.TextContent("x86"),
-				BuildTarget.StandaloneOSXIntel
-			},
-			{
-				EditorGUIUtility.TextContent("x86_64"),
-				BuildTarget.StandaloneOSXIntel64
-			},
-			{
-				EditorGUIUtility.TextContent("Universal"),
-				BuildTarget.StandaloneOSXUniversal
-			}
-		};
-		return result;
-	}
+  public override bool EnabledBuildButton()
+  {
+    return true;
+  }
 
-	private static BuildTarget DefaultTargetForPlatform(BuildTarget target)
-	{
-		BuildTarget result;
-		switch (target)
-		{
-		case BuildTarget.StandaloneOSXUniversal:
-		case BuildTarget.StandaloneOSXIntel:
-			goto IL_5B;
-		case (BuildTarget)3:
-			IL_19:
-			switch (target)
-			{
-			case BuildTarget.StandaloneLinux64:
-			case BuildTarget.StandaloneLinuxUniversal:
-				goto IL_53;
-			case BuildTarget.WP8Player:
-				IL_32:
-				switch (target)
-				{
-				case BuildTarget.StandaloneLinux:
-					goto IL_53;
-				case BuildTarget.StandaloneWindows64:
-					goto IL_4C;
-				}
-				result = target;
-				return result;
-			case BuildTarget.StandaloneOSXIntel64:
-				goto IL_5B;
-			}
-			goto IL_32;
-			IL_53:
-			result = BuildTarget.StandaloneLinux;
-			return result;
-		case BuildTarget.StandaloneWindows:
-			goto IL_4C;
-		}
-		goto IL_19;
-		IL_4C:
-		result = BuildTarget.StandaloneWindows;
-		return result;
-		IL_5B:
-		result = BuildTarget.StandaloneOSXIntel;
-		return result;
-	}
-
-	public override void ShowPlatformBuildOptions()
-	{
-		BuildTarget bestStandaloneTarget = DesktopStandaloneBuildWindowExtension.GetBestStandaloneTarget(EditorUserBuildSettings.selectedStandaloneTarget);
-		BuildTarget buildTarget = EditorUserBuildSettings.selectedStandaloneTarget;
-		int num = Math.Max(0, Array.IndexOf<BuildTarget>(this.m_StandaloneSubtargets, DesktopStandaloneBuildWindowExtension.DefaultTargetForPlatform(bestStandaloneTarget)));
-		int num2 = EditorGUILayout.Popup(this.m_StandaloneTarget, num, this.m_StandaloneSubtargetStrings, new GUILayoutOption[0]);
-		if (num2 == num)
-		{
-			Dictionary<GUIContent, BuildTarget> architecturesForPlatform = DesktopStandaloneBuildWindowExtension.GetArchitecturesForPlatform(bestStandaloneTarget);
-			if (architecturesForPlatform != null)
-			{
-				GUIContent[] array = new List<GUIContent>(architecturesForPlatform.Keys).ToArray();
-				int num3 = 0;
-				if (num2 == num)
-				{
-					foreach (KeyValuePair<GUIContent, BuildTarget> current in architecturesForPlatform)
-					{
-						if (current.Value == bestStandaloneTarget)
-						{
-							num3 = Math.Max(0, Array.IndexOf<GUIContent>(array, current.Key));
-							break;
-						}
-					}
-				}
-				num3 = EditorGUILayout.Popup(this.m_Architecture, num3, array, new GUILayoutOption[0]);
-				buildTarget = architecturesForPlatform[array[num3]];
-			}
-		}
-		else
-		{
-			buildTarget = this.m_StandaloneSubtargets[num2];
-		}
-		if (buildTarget != EditorUserBuildSettings.selectedStandaloneTarget)
-		{
-			EditorUserBuildSettings.selectedStandaloneTarget = buildTarget;
-			GUIUtility.ExitGUI();
-		}
-	}
-
-	public override bool EnabledBuildButton()
-	{
-		return true;
-	}
-
-	public override bool EnabledBuildAndRunButton()
-	{
-		return true;
-	}
+  public override bool EnabledBuildAndRunButton()
+  {
+    return true;
+  }
 }

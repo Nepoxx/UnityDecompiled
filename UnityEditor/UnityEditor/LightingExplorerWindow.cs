@@ -1,206 +1,185 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.LightingExplorerWindow
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[EditorWindowTitle(title = "Light Explorer", icon = "Lighting")]
-	internal class LightingExplorerWindow : EditorWindow
-	{
-		private static class Styles
-		{
-			public static readonly GUIContent[] TabTypes = new GUIContent[]
-			{
-				EditorGUIUtility.TextContent("Lights"),
-				EditorGUIUtility.TextContent("Reflection Probes"),
-				EditorGUIUtility.TextContent("Light Probes"),
-				EditorGUIUtility.TextContent("Static Emissives")
-			};
-		}
+  [EditorWindowTitle(icon = "Lighting", title = "Light Explorer")]
+  internal class LightingExplorerWindow : EditorWindow
+  {
+    private float m_ToolbarPadding = -1f;
+    private LightingExplorerWindow.TabType m_SelectedTab = LightingExplorerWindow.TabType.Lights;
+    private List<LightingExplorerWindowTab> m_TableTabs;
 
-		private enum TabType
-		{
-			Lights,
-			Reflections,
-			LightProbes,
-			Emissives,
-			Count
-		}
+    [MenuItem("Window/Lighting/Light Explorer", false, 2099)]
+    private static void CreateLightingExplorerWindow()
+    {
+      LightingExplorerWindow window = EditorWindow.GetWindow<LightingExplorerWindow>();
+      window.minSize = new Vector2(500f, 250f);
+      window.Show();
+    }
 
-		private List<LightingExplorerWindowTab> m_TableTabs;
+    private float toolbarPadding
+    {
+      get
+      {
+        if ((double) this.m_ToolbarPadding == -1.0)
+          this.m_ToolbarPadding = (float) ((double) EditorStyles.iconButton.CalcSize(EditorGUI.GUIContents.helpIcon).x * 2.0 + 6.0);
+        return this.m_ToolbarPadding;
+      }
+    }
 
-		private float m_ToolbarPadding = -1f;
+    private void OnEnable()
+    {
+      this.titleContent = this.GetLocalizedTitleContent();
+      if (this.m_TableTabs == null || this.m_TableTabs.Count != 4)
+      {
+        List<LightingExplorerWindowTab> explorerWindowTabList1 = new List<LightingExplorerWindowTab>();
+        List<LightingExplorerWindowTab> explorerWindowTabList2 = explorerWindowTabList1;
+        string serializationUID1 = "LightTable";
+        SerializedPropertyDataStore.GatherDelegate gatherDelegate1 = (SerializedPropertyDataStore.GatherDelegate) (() => (UnityEngine.Object[]) UnityEngine.Object.FindObjectsOfType<Light>());
+        // ISSUE: reference to a compiler-generated field
+        if (LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache0 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache0 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateLightColumns);
+        }
+        // ISSUE: reference to a compiler-generated field
+        SerializedPropertyTable.HeaderDelegate fMgCache0 = LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache0;
+        LightingExplorerWindowTab explorerWindowTab1 = new LightingExplorerWindowTab(new SerializedPropertyTable(serializationUID1, gatherDelegate1, fMgCache0));
+        explorerWindowTabList2.Add(explorerWindowTab1);
+        List<LightingExplorerWindowTab> explorerWindowTabList3 = explorerWindowTabList1;
+        string serializationUID2 = "ReflectionTable";
+        SerializedPropertyDataStore.GatherDelegate gatherDelegate2 = (SerializedPropertyDataStore.GatherDelegate) (() => (UnityEngine.Object[]) UnityEngine.Object.FindObjectsOfType<UnityEngine.ReflectionProbe>());
+        // ISSUE: reference to a compiler-generated field
+        if (LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache1 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache1 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateReflectionColumns);
+        }
+        // ISSUE: reference to a compiler-generated field
+        SerializedPropertyTable.HeaderDelegate fMgCache1 = LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache1;
+        LightingExplorerWindowTab explorerWindowTab2 = new LightingExplorerWindowTab(new SerializedPropertyTable(serializationUID2, gatherDelegate2, fMgCache1));
+        explorerWindowTabList3.Add(explorerWindowTab2);
+        List<LightingExplorerWindowTab> explorerWindowTabList4 = explorerWindowTabList1;
+        string serializationUID3 = "LightProbeTable";
+        SerializedPropertyDataStore.GatherDelegate gatherDelegate3 = (SerializedPropertyDataStore.GatherDelegate) (() => (UnityEngine.Object[]) UnityEngine.Object.FindObjectsOfType<LightProbeGroup>());
+        // ISSUE: reference to a compiler-generated field
+        if (LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache2 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache2 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateLightProbeColumns);
+        }
+        // ISSUE: reference to a compiler-generated field
+        SerializedPropertyTable.HeaderDelegate fMgCache2 = LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache2;
+        LightingExplorerWindowTab explorerWindowTab3 = new LightingExplorerWindowTab(new SerializedPropertyTable(serializationUID3, gatherDelegate3, fMgCache2));
+        explorerWindowTabList4.Add(explorerWindowTab3);
+        List<LightingExplorerWindowTab> explorerWindowTabList5 = explorerWindowTabList1;
+        string serializationUID4 = "EmissiveMaterialTable";
+        SerializedPropertyDataStore.GatherDelegate gatherDelegate4 = this.StaticEmissivesGatherDelegate();
+        // ISSUE: reference to a compiler-generated field
+        if (LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache3 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache3 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateEmissivesColumns);
+        }
+        // ISSUE: reference to a compiler-generated field
+        SerializedPropertyTable.HeaderDelegate fMgCache3 = LightingExplorerWindow.\u003C\u003Ef__mg\u0024cache3;
+        LightingExplorerWindowTab explorerWindowTab4 = new LightingExplorerWindowTab(new SerializedPropertyTable(serializationUID4, gatherDelegate4, fMgCache3));
+        explorerWindowTabList5.Add(explorerWindowTab4);
+        this.m_TableTabs = explorerWindowTabList1;
+      }
+      for (int index = 0; index < this.m_TableTabs.Count; ++index)
+        this.m_TableTabs[index].OnEnable();
+      EditorApplication.searchChanged += new EditorApplication.CallbackFunction(((EditorWindow) this).Repaint);
+      this.Repaint();
+    }
 
-		private LightingExplorerWindow.TabType m_SelectedTab = LightingExplorerWindow.TabType.Lights;
+    private void OnDisable()
+    {
+      if (this.m_TableTabs != null)
+      {
+        for (int index = 0; index < this.m_TableTabs.Count; ++index)
+          this.m_TableTabs[index].OnDisable();
+      }
+      EditorApplication.searchChanged -= new EditorApplication.CallbackFunction(((EditorWindow) this).Repaint);
+    }
 
-		[CompilerGenerated]
-		private static SerializedPropertyTable.HeaderDelegate <>f__mg$cache0;
+    private void OnInspectorUpdate()
+    {
+      if (this.m_TableTabs == null || this.m_SelectedTab < LightingExplorerWindow.TabType.Lights || this.m_SelectedTab >= (LightingExplorerWindow.TabType) this.m_TableTabs.Count)
+        return;
+      this.m_TableTabs[(int) this.m_SelectedTab].OnInspectorUpdate();
+    }
 
-		[CompilerGenerated]
-		private static SerializedPropertyTable.HeaderDelegate <>f__mg$cache1;
+    private void OnSelectionChange()
+    {
+      if (this.m_TableTabs != null)
+      {
+        for (int index = 0; index < this.m_TableTabs.Count; ++index)
+        {
+          if (index == this.m_TableTabs.Count - 1)
+          {
+            int[] array = ((IEnumerable<MeshRenderer>) UnityEngine.Object.FindObjectsOfType<MeshRenderer>()).Where<MeshRenderer>((Func<MeshRenderer, bool>) (mr => ((IEnumerable<int>) Selection.instanceIDs).Contains<int>(mr.gameObject.GetInstanceID()))).SelectMany<MeshRenderer, Material>((Func<MeshRenderer, IEnumerable<Material>>) (meshRenderer => (IEnumerable<Material>) meshRenderer.sharedMaterials)).Where<Material>((Func<Material, bool>) (m => (UnityEngine.Object) m != (UnityEngine.Object) null && (m.globalIlluminationFlags & MaterialGlobalIlluminationFlags.AnyEmissive) != MaterialGlobalIlluminationFlags.None)).Select<Material, int>((Func<Material, int>) (m => m.GetInstanceID())).Union<int>((IEnumerable<int>) Selection.instanceIDs).Distinct<int>().ToArray<int>();
+            this.m_TableTabs[index].OnSelectionChange(array);
+          }
+          else
+            this.m_TableTabs[index].OnSelectionChange();
+        }
+      }
+      this.Repaint();
+    }
 
-		[CompilerGenerated]
-		private static SerializedPropertyTable.HeaderDelegate <>f__mg$cache2;
+    private void OnHierarchyChange()
+    {
+      if (this.m_TableTabs == null)
+        return;
+      for (int index = 0; index < this.m_TableTabs.Count; ++index)
+        this.m_TableTabs[index].OnHierarchyChange();
+    }
 
-		[CompilerGenerated]
-		private static SerializedPropertyTable.HeaderDelegate <>f__mg$cache3;
+    private void OnGUI()
+    {
+      EditorGUIUtility.labelWidth = 130f;
+      EditorGUILayout.Space();
+      EditorGUILayout.BeginHorizontal();
+      GUILayout.FlexibleSpace();
+      this.m_SelectedTab = (LightingExplorerWindow.TabType) GUILayout.Toolbar((int) this.m_SelectedTab, LightingExplorerWindow.Styles.TabTypes, (GUIStyle) "LargeButton", GUI.ToolbarButtonSize.FitToContents, new GUILayoutOption[0]);
+      GUILayout.FlexibleSpace();
+      EditorGUILayout.EndHorizontal();
+      EditorGUILayout.Space();
+      EditorGUILayout.BeginHorizontal();
+      if (this.m_TableTabs != null && this.m_SelectedTab >= LightingExplorerWindow.TabType.Lights && this.m_SelectedTab < (LightingExplorerWindow.TabType) this.m_TableTabs.Count)
+        this.m_TableTabs[(int) this.m_SelectedTab].OnGUI();
+      EditorGUILayout.Space();
+      EditorGUILayout.EndHorizontal();
+      EditorGUILayout.Space();
+    }
 
-		private float toolbarPadding
-		{
-			get
-			{
-				if (this.m_ToolbarPadding == -1f)
-				{
-					this.m_ToolbarPadding = EditorStyles.iconButton.CalcSize(EditorGUI.GUIContents.helpIcon).x * 2f + 6f;
-				}
-				return this.m_ToolbarPadding;
-			}
-		}
+    private SerializedPropertyDataStore.GatherDelegate StaticEmissivesGatherDelegate()
+    {
+      return (SerializedPropertyDataStore.GatherDelegate) (() => (UnityEngine.Object[]) ((IEnumerable<MeshRenderer>) UnityEngine.Object.FindObjectsOfType<MeshRenderer>()).Where<MeshRenderer>((Func<MeshRenderer, bool>) (mr => GameObjectUtility.AreStaticEditorFlagsSet(mr.gameObject, StaticEditorFlags.LightmapStatic))).SelectMany<MeshRenderer, Material>((Func<MeshRenderer, IEnumerable<Material>>) (meshRenderer => (IEnumerable<Material>) meshRenderer.sharedMaterials)).Where<Material>((Func<Material, bool>) (m => (UnityEngine.Object) m != (UnityEngine.Object) null && (m.globalIlluminationFlags & MaterialGlobalIlluminationFlags.AnyEmissive) != MaterialGlobalIlluminationFlags.None && m.HasProperty("_EmissionColor"))).Distinct<Material>().ToArray<Material>());
+    }
 
-		[MenuItem("Window/Lighting/Light Explorer", false, 2099)]
-		private static void CreateLightingExplorerWindow()
-		{
-			LightingExplorerWindow window = EditorWindow.GetWindow<LightingExplorerWindow>();
-			window.minSize = new Vector2(500f, 250f);
-			window.Show();
-		}
+    private static class Styles
+    {
+      public static readonly GUIContent[] TabTypes = new GUIContent[4]{ EditorGUIUtility.TextContent("Lights"), EditorGUIUtility.TextContent("Reflection Probes"), EditorGUIUtility.TextContent("Light Probes"), EditorGUIUtility.TextContent("Static Emissives") };
+    }
 
-		private void OnEnable()
-		{
-			base.titleContent = base.GetLocalizedTitleContent();
-			if (this.m_TableTabs == null || this.m_TableTabs.Count != 4)
-			{
-				List<LightingExplorerWindowTab> list = new List<LightingExplorerWindowTab>();
-				List<LightingExplorerWindowTab> arg_7B_0 = list;
-				string arg_71_0 = "LightTable";
-				SerializedPropertyDataStore.GatherDelegate arg_71_1 = () => UnityEngine.Object.FindObjectsOfType<Light>();
-				if (LightingExplorerWindow.<>f__mg$cache0 == null)
-				{
-					LightingExplorerWindow.<>f__mg$cache0 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateLightColumns);
-				}
-				arg_7B_0.Add(new LightingExplorerWindowTab(new SerializedPropertyTable(arg_71_0, arg_71_1, LightingExplorerWindow.<>f__mg$cache0)));
-				List<LightingExplorerWindowTab> arg_CA_0 = list;
-				string arg_C0_0 = "ReflectionTable";
-				SerializedPropertyDataStore.GatherDelegate arg_C0_1 = () => UnityEngine.Object.FindObjectsOfType<ReflectionProbe>();
-				if (LightingExplorerWindow.<>f__mg$cache1 == null)
-				{
-					LightingExplorerWindow.<>f__mg$cache1 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateReflectionColumns);
-				}
-				arg_CA_0.Add(new LightingExplorerWindowTab(new SerializedPropertyTable(arg_C0_0, arg_C0_1, LightingExplorerWindow.<>f__mg$cache1)));
-				List<LightingExplorerWindowTab> arg_119_0 = list;
-				string arg_10F_0 = "LightProbeTable";
-				SerializedPropertyDataStore.GatherDelegate arg_10F_1 = () => UnityEngine.Object.FindObjectsOfType<LightProbeGroup>();
-				if (LightingExplorerWindow.<>f__mg$cache2 == null)
-				{
-					LightingExplorerWindow.<>f__mg$cache2 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateLightProbeColumns);
-				}
-				arg_119_0.Add(new LightingExplorerWindowTab(new SerializedPropertyTable(arg_10F_0, arg_10F_1, LightingExplorerWindow.<>f__mg$cache2)));
-				List<LightingExplorerWindowTab> arg_151_0 = list;
-				string arg_147_0 = "EmissiveMaterialTable";
-				SerializedPropertyDataStore.GatherDelegate arg_147_1 = this.StaticEmissivesGatherDelegate();
-				if (LightingExplorerWindow.<>f__mg$cache3 == null)
-				{
-					LightingExplorerWindow.<>f__mg$cache3 = new SerializedPropertyTable.HeaderDelegate(LightTableColumns.CreateEmissivesColumns);
-				}
-				arg_151_0.Add(new LightingExplorerWindowTab(new SerializedPropertyTable(arg_147_0, arg_147_1, LightingExplorerWindow.<>f__mg$cache3)));
-				this.m_TableTabs = list;
-			}
-			for (int i = 0; i < this.m_TableTabs.Count; i++)
-			{
-				this.m_TableTabs[i].OnEnable();
-			}
-			EditorApplication.searchChanged = (EditorApplication.CallbackFunction)Delegate.Combine(EditorApplication.searchChanged, new EditorApplication.CallbackFunction(base.Repaint));
-			base.Repaint();
-		}
-
-		private void OnDisable()
-		{
-			if (this.m_TableTabs != null)
-			{
-				for (int i = 0; i < this.m_TableTabs.Count; i++)
-				{
-					this.m_TableTabs[i].OnDisable();
-				}
-			}
-			EditorApplication.searchChanged = (EditorApplication.CallbackFunction)Delegate.Remove(EditorApplication.searchChanged, new EditorApplication.CallbackFunction(base.Repaint));
-		}
-
-		private void OnInspectorUpdate()
-		{
-			if (this.m_TableTabs != null && this.m_SelectedTab >= LightingExplorerWindow.TabType.Lights && this.m_SelectedTab < (LightingExplorerWindow.TabType)this.m_TableTabs.Count)
-			{
-				this.m_TableTabs[(int)this.m_SelectedTab].OnInspectorUpdate();
-			}
-		}
-
-		private void OnSelectionChange()
-		{
-			if (this.m_TableTabs != null)
-			{
-				for (int i = 0; i < this.m_TableTabs.Count; i++)
-				{
-					if (i == this.m_TableTabs.Count - 1)
-					{
-						int[] instanceIDs = (from m in (from mr in UnityEngine.Object.FindObjectsOfType<MeshRenderer>()
-						where Selection.instanceIDs.Contains(mr.gameObject.GetInstanceID())
-						select mr).SelectMany((MeshRenderer meshRenderer) => meshRenderer.sharedMaterials)
-						where m != null && (m.globalIlluminationFlags & MaterialGlobalIlluminationFlags.AnyEmissive) != MaterialGlobalIlluminationFlags.None
-						select m.GetInstanceID()).Union(Selection.instanceIDs).Distinct<int>().ToArray<int>();
-						this.m_TableTabs[i].OnSelectionChange(instanceIDs);
-					}
-					else
-					{
-						this.m_TableTabs[i].OnSelectionChange();
-					}
-				}
-			}
-			base.Repaint();
-		}
-
-		private void OnHierarchyChange()
-		{
-			if (this.m_TableTabs != null)
-			{
-				for (int i = 0; i < this.m_TableTabs.Count; i++)
-				{
-					this.m_TableTabs[i].OnHierarchyChange();
-				}
-			}
-		}
-
-		private void OnGUI()
-		{
-			EditorGUIUtility.labelWidth = 130f;
-			EditorGUILayout.Space();
-			EditorGUILayout.BeginHorizontal(new GUILayoutOption[0]);
-			GUILayout.Space(this.toolbarPadding);
-			float width = base.position.width - this.toolbarPadding * 2f;
-			this.m_SelectedTab = (LightingExplorerWindow.TabType)GUILayout.Toolbar((int)this.m_SelectedTab, LightingExplorerWindow.Styles.TabTypes, "LargeButton", new GUILayoutOption[]
-			{
-				GUILayout.Width(width)
-			});
-			GUILayout.FlexibleSpace();
-			EditorGUILayout.EndHorizontal();
-			EditorGUILayout.Space();
-			EditorGUILayout.BeginHorizontal(new GUILayoutOption[0]);
-			if (this.m_TableTabs != null && this.m_SelectedTab >= LightingExplorerWindow.TabType.Lights && this.m_SelectedTab < (LightingExplorerWindow.TabType)this.m_TableTabs.Count)
-			{
-				this.m_TableTabs[(int)this.m_SelectedTab].OnGUI();
-			}
-			EditorGUILayout.Space();
-			EditorGUILayout.EndHorizontal();
-			EditorGUILayout.Space();
-		}
-
-		private SerializedPropertyDataStore.GatherDelegate StaticEmissivesGatherDelegate()
-		{
-			return () => (from m in (from mr in UnityEngine.Object.FindObjectsOfType<MeshRenderer>()
-			where GameObjectUtility.AreStaticEditorFlagsSet(mr.gameObject, StaticEditorFlags.LightmapStatic)
-			select mr).SelectMany((MeshRenderer meshRenderer) => meshRenderer.sharedMaterials)
-			where m != null && (m.globalIlluminationFlags & MaterialGlobalIlluminationFlags.AnyEmissive) != MaterialGlobalIlluminationFlags.None && m.HasProperty("_EmissionColor")
-			select m).Distinct<Material>().ToArray<Material>();
-		}
-	}
+    private enum TabType
+    {
+      Lights,
+      Reflections,
+      LightProbes,
+      Emissives,
+      Count,
+    }
+  }
 }

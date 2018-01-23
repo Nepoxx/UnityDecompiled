@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.PropertyHandler
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,241 +12,230 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class PropertyHandler
-	{
-		private PropertyDrawer m_PropertyDrawer = null;
+  internal class PropertyHandler
+  {
+    private PropertyDrawer m_PropertyDrawer = (PropertyDrawer) null;
+    private List<DecoratorDrawer> m_DecoratorDrawers = (List<DecoratorDrawer>) null;
+    public string tooltip = (string) null;
+    public List<ContextMenuItemAttribute> contextMenuItems = (List<ContextMenuItemAttribute>) null;
 
-		private List<DecoratorDrawer> m_DecoratorDrawers = null;
+    public bool hasPropertyDrawer
+    {
+      get
+      {
+        return this.propertyDrawer != null;
+      }
+    }
 
-		public string tooltip = null;
+    private PropertyDrawer propertyDrawer
+    {
+      get
+      {
+        return !this.isCurrentlyNested ? this.m_PropertyDrawer : (PropertyDrawer) null;
+      }
+    }
 
-		public List<ContextMenuItemAttribute> contextMenuItems = null;
+    private bool isCurrentlyNested
+    {
+      get
+      {
+        return this.m_PropertyDrawer != null && ScriptAttributeUtility.s_DrawerStack.Any<PropertyDrawer>() && this.m_PropertyDrawer == ScriptAttributeUtility.s_DrawerStack.Peek();
+      }
+    }
 
-		public bool hasPropertyDrawer
-		{
-			get
-			{
-				return this.propertyDrawer != null;
-			}
-		}
+    public bool empty
+    {
+      get
+      {
+        return this.m_DecoratorDrawers == null && this.tooltip == null && this.propertyDrawer == null && this.contextMenuItems == null;
+      }
+    }
 
-		private PropertyDrawer propertyDrawer
-		{
-			get
-			{
-				return (!this.isCurrentlyNested) ? this.m_PropertyDrawer : null;
-			}
-		}
+    public void HandleAttribute(PropertyAttribute attribute, System.Reflection.FieldInfo field, System.Type propertyType)
+    {
+      if (attribute is TooltipAttribute)
+        this.tooltip = (attribute as TooltipAttribute).tooltip;
+      else if (attribute is ContextMenuItemAttribute)
+      {
+        if (propertyType.IsArrayOrList())
+          return;
+        if (this.contextMenuItems == null)
+          this.contextMenuItems = new List<ContextMenuItemAttribute>();
+        this.contextMenuItems.Add(attribute as ContextMenuItemAttribute);
+      }
+      else
+        this.HandleDrawnType(attribute.GetType(), propertyType, field, attribute);
+    }
 
-		private bool isCurrentlyNested
-		{
-			get
-			{
-				return this.m_PropertyDrawer != null && ScriptAttributeUtility.s_DrawerStack.Any<PropertyDrawer>() && this.m_PropertyDrawer == ScriptAttributeUtility.s_DrawerStack.Peek();
-			}
-		}
+    public void HandleDrawnType(System.Type drawnType, System.Type propertyType, System.Reflection.FieldInfo field, PropertyAttribute attribute)
+    {
+      System.Type drawerTypeForType = ScriptAttributeUtility.GetDrawerTypeForType(drawnType);
+      if (drawerTypeForType == null)
+        return;
+      if (typeof (PropertyDrawer).IsAssignableFrom(drawerTypeForType))
+      {
+        if (propertyType != null && propertyType.IsArrayOrList())
+          return;
+        this.m_PropertyDrawer = (PropertyDrawer) Activator.CreateInstance(drawerTypeForType);
+        this.m_PropertyDrawer.m_FieldInfo = field;
+        this.m_PropertyDrawer.m_Attribute = attribute;
+      }
+      else if (typeof (DecoratorDrawer).IsAssignableFrom(drawerTypeForType) && (field == null || !field.FieldType.IsArrayOrList() || propertyType.IsArrayOrList()))
+      {
+        DecoratorDrawer instance = (DecoratorDrawer) Activator.CreateInstance(drawerTypeForType);
+        instance.m_Attribute = attribute;
+        if (this.m_DecoratorDrawers == null)
+          this.m_DecoratorDrawers = new List<DecoratorDrawer>();
+        this.m_DecoratorDrawers.Add(instance);
+      }
+    }
 
-		public bool empty
-		{
-			get
-			{
-				return this.m_DecoratorDrawers == null && this.tooltip == null && this.propertyDrawer == null && this.contextMenuItems == null;
-			}
-		}
+    public bool OnGUI(Rect position, SerializedProperty property, GUIContent label, bool includeChildren)
+    {
+      float height = position.height;
+      position.height = 0.0f;
+      if (this.m_DecoratorDrawers != null && !this.isCurrentlyNested)
+      {
+        foreach (DecoratorDrawer decoratorDrawer in this.m_DecoratorDrawers)
+        {
+          position.height = decoratorDrawer.GetHeight();
+          float labelWidth = EditorGUIUtility.labelWidth;
+          float fieldWidth = EditorGUIUtility.fieldWidth;
+          decoratorDrawer.OnGUI(position);
+          EditorGUIUtility.labelWidth = labelWidth;
+          EditorGUIUtility.fieldWidth = fieldWidth;
+          position.y += position.height;
+          height -= position.height;
+        }
+      }
+      position.height = height;
+      if (this.propertyDrawer != null)
+      {
+        float labelWidth = EditorGUIUtility.labelWidth;
+        float fieldWidth = EditorGUIUtility.fieldWidth;
+        this.propertyDrawer.OnGUISafe(position, property.Copy(), label ?? EditorGUIUtility.TempContent(property.displayName));
+        EditorGUIUtility.labelWidth = labelWidth;
+        EditorGUIUtility.fieldWidth = fieldWidth;
+        return false;
+      }
+      if (!includeChildren)
+        return EditorGUI.DefaultPropertyField(position, property, label);
+      Vector2 iconSize = EditorGUIUtility.GetIconSize();
+      bool enabled = GUI.enabled;
+      int indentLevel = EditorGUI.indentLevel;
+      int num = indentLevel - property.depth;
+      SerializedProperty serializedProperty = property.Copy();
+      SerializedProperty endProperty = serializedProperty.GetEndProperty();
+      position.height = EditorGUI.GetSinglePropertyHeight(serializedProperty, label);
+      EditorGUI.indentLevel = serializedProperty.depth + num;
+      bool enterChildren = EditorGUI.DefaultPropertyField(position, serializedProperty, label) && EditorGUI.HasVisibleChildFields(serializedProperty);
+      position.y += position.height + 2f;
+      while (serializedProperty.NextVisible(enterChildren) && !SerializedProperty.EqualContents(serializedProperty, endProperty))
+      {
+        EditorGUI.indentLevel = serializedProperty.depth + num;
+        position.height = EditorGUI.GetPropertyHeight(serializedProperty, (GUIContent) null, false);
+        EditorGUI.BeginChangeCheck();
+        enterChildren = ScriptAttributeUtility.GetHandler(serializedProperty).OnGUI(position, serializedProperty, (GUIContent) null, false) && EditorGUI.HasVisibleChildFields(serializedProperty);
+        if (!EditorGUI.EndChangeCheck())
+          position.y += position.height + 2f;
+        else
+          break;
+      }
+      GUI.enabled = enabled;
+      EditorGUIUtility.SetIconSize(iconSize);
+      EditorGUI.indentLevel = indentLevel;
+      return false;
+    }
 
-		public void HandleAttribute(PropertyAttribute attribute, FieldInfo field, Type propertyType)
-		{
-			if (attribute is TooltipAttribute)
-			{
-				this.tooltip = (attribute as TooltipAttribute).tooltip;
-			}
-			else if (attribute is ContextMenuItemAttribute)
-			{
-				if (!propertyType.IsArrayOrList())
-				{
-					if (this.contextMenuItems == null)
-					{
-						this.contextMenuItems = new List<ContextMenuItemAttribute>();
-					}
-					this.contextMenuItems.Add(attribute as ContextMenuItemAttribute);
-				}
-			}
-			else
-			{
-				this.HandleDrawnType(attribute.GetType(), propertyType, field, attribute);
-			}
-		}
+    public bool OnGUILayout(SerializedProperty property, GUIContent label, bool includeChildren, params GUILayoutOption[] options)
+    {
+      Rect position = property.propertyType != SerializedPropertyType.Boolean || this.propertyDrawer != null || this.m_DecoratorDrawers != null && this.m_DecoratorDrawers.Count != 0 ? EditorGUILayout.GetControlRect(EditorGUI.LabelHasContent(label), this.GetHeight(property, label, includeChildren), options) : EditorGUILayout.GetToggleRect(true, options);
+      EditorGUILayout.s_LastRect = position;
+      return this.OnGUI(position, property, label, includeChildren);
+    }
 
-		public void HandleDrawnType(Type drawnType, Type propertyType, FieldInfo field, PropertyAttribute attribute)
-		{
-			Type drawerTypeForType = ScriptAttributeUtility.GetDrawerTypeForType(drawnType);
-			if (drawerTypeForType != null)
-			{
-				if (typeof(PropertyDrawer).IsAssignableFrom(drawerTypeForType))
-				{
-					if (propertyType == null || !propertyType.IsArrayOrList())
-					{
-						this.m_PropertyDrawer = (PropertyDrawer)Activator.CreateInstance(drawerTypeForType);
-						this.m_PropertyDrawer.m_FieldInfo = field;
-						this.m_PropertyDrawer.m_Attribute = attribute;
-					}
-				}
-				else if (typeof(DecoratorDrawer).IsAssignableFrom(drawerTypeForType))
-				{
-					if (field == null || !field.FieldType.IsArrayOrList() || propertyType.IsArrayOrList())
-					{
-						DecoratorDrawer decoratorDrawer = (DecoratorDrawer)Activator.CreateInstance(drawerTypeForType);
-						decoratorDrawer.m_Attribute = attribute;
-						if (this.m_DecoratorDrawers == null)
-						{
-							this.m_DecoratorDrawers = new List<DecoratorDrawer>();
-						}
-						this.m_DecoratorDrawers.Add(decoratorDrawer);
-					}
-				}
-			}
-		}
+    public float GetHeight(SerializedProperty property, GUIContent label, bool includeChildren)
+    {
+      float num1 = 0.0f;
+      if (this.m_DecoratorDrawers != null && !this.isCurrentlyNested)
+      {
+        foreach (DecoratorDrawer decoratorDrawer in this.m_DecoratorDrawers)
+          num1 += decoratorDrawer.GetHeight();
+      }
+      float num2;
+      if (this.propertyDrawer != null)
+        num2 = num1 + this.propertyDrawer.GetPropertyHeightSafe(property.Copy(), label ?? EditorGUIUtility.TempContent(property.displayName));
+      else if (!includeChildren)
+      {
+        num2 = num1 + EditorGUI.GetSinglePropertyHeight(property, label);
+      }
+      else
+      {
+        property = property.Copy();
+        SerializedProperty endProperty = property.GetEndProperty();
+        num2 = num1 + EditorGUI.GetSinglePropertyHeight(property, label);
+        bool enterChildren = property.isExpanded && EditorGUI.HasVisibleChildFields(property);
+        while (property.NextVisible(enterChildren) && !SerializedProperty.EqualContents(property, endProperty))
+        {
+          float num3 = num2 + ScriptAttributeUtility.GetHandler(property).GetHeight(property, EditorGUIUtility.TempContent(property.displayName), true);
+          enterChildren = false;
+          num2 = num3 + 2f;
+        }
+      }
+      return num2;
+    }
 
-		public bool OnGUI(Rect position, SerializedProperty property, GUIContent label, bool includeChildren)
-		{
-			float num = position.height;
-			position.height = 0f;
-			if (this.m_DecoratorDrawers != null && !this.isCurrentlyNested)
-			{
-				foreach (DecoratorDrawer current in this.m_DecoratorDrawers)
-				{
-					position.height = current.GetHeight();
-					float labelWidth = EditorGUIUtility.labelWidth;
-					float fieldWidth = EditorGUIUtility.fieldWidth;
-					current.OnGUI(position);
-					EditorGUIUtility.labelWidth = labelWidth;
-					EditorGUIUtility.fieldWidth = fieldWidth;
-					position.y += position.height;
-					num -= position.height;
-				}
-			}
-			position.height = num;
-			bool result;
-			if (this.propertyDrawer != null)
-			{
-				float labelWidth = EditorGUIUtility.labelWidth;
-				float fieldWidth = EditorGUIUtility.fieldWidth;
-				this.propertyDrawer.OnGUISafe(position, property.Copy(), label ?? EditorGUIUtility.TempContent(property.displayName));
-				EditorGUIUtility.labelWidth = labelWidth;
-				EditorGUIUtility.fieldWidth = fieldWidth;
-				result = false;
-			}
-			else if (!includeChildren)
-			{
-				result = EditorGUI.DefaultPropertyField(position, property, label);
-			}
-			else
-			{
-				Vector2 iconSize = EditorGUIUtility.GetIconSize();
-				bool enabled = GUI.enabled;
-				int indentLevel = EditorGUI.indentLevel;
-				int num2 = indentLevel - property.depth;
-				SerializedProperty serializedProperty = property.Copy();
-				SerializedProperty endProperty = serializedProperty.GetEndProperty();
-				position.height = EditorGUI.GetSinglePropertyHeight(serializedProperty, label);
-				EditorGUI.indentLevel = serializedProperty.depth + num2;
-				bool enterChildren = EditorGUI.DefaultPropertyField(position, serializedProperty, label) && EditorGUI.HasVisibleChildFields(serializedProperty);
-				position.y += position.height + 2f;
-				while (serializedProperty.NextVisible(enterChildren) && !SerializedProperty.EqualContents(serializedProperty, endProperty))
-				{
-					EditorGUI.indentLevel = serializedProperty.depth + num2;
-					position.height = EditorGUI.GetPropertyHeight(serializedProperty, null, false);
-					EditorGUI.BeginChangeCheck();
-					enterChildren = (ScriptAttributeUtility.GetHandler(serializedProperty).OnGUI(position, serializedProperty, null, false) && EditorGUI.HasVisibleChildFields(serializedProperty));
-					if (EditorGUI.EndChangeCheck())
-					{
-						break;
-					}
-					position.y += position.height + 2f;
-				}
-				GUI.enabled = enabled;
-				EditorGUIUtility.SetIconSize(iconSize);
-				EditorGUI.indentLevel = indentLevel;
-				result = false;
-			}
-			return result;
-		}
+    public bool CanCacheInspectorGUI(SerializedProperty property)
+    {
+      if (this.m_DecoratorDrawers != null && !this.isCurrentlyNested && this.m_DecoratorDrawers.Any<DecoratorDrawer>((Func<DecoratorDrawer, bool>) (decorator => !decorator.CanCacheInspectorGUI())))
+        return false;
+      if (this.propertyDrawer != null)
+        return this.propertyDrawer.CanCacheInspectorGUISafe(property.Copy());
+      property = property.Copy();
+      SerializedProperty endProperty = property.GetEndProperty();
+      for (bool enterChildren = property.isExpanded && EditorGUI.HasVisibleChildFields(property); property.NextVisible(enterChildren) && !SerializedProperty.EqualContents(property, endProperty); enterChildren = false)
+      {
+        if (!ScriptAttributeUtility.GetHandler(property).CanCacheInspectorGUI(property))
+          return false;
+      }
+      return true;
+    }
 
-		public bool OnGUILayout(SerializedProperty property, GUIContent label, bool includeChildren, params GUILayoutOption[] options)
-		{
-			Rect rect;
-			if (property.propertyType == SerializedPropertyType.Boolean && this.propertyDrawer == null && (this.m_DecoratorDrawers == null || this.m_DecoratorDrawers.Count == 0))
-			{
-				rect = EditorGUILayout.GetToggleRect(true, options);
-			}
-			else
-			{
-				rect = EditorGUILayout.GetControlRect(EditorGUI.LabelHasContent(label), this.GetHeight(property, label, includeChildren), options);
-			}
-			EditorGUILayout.s_LastRect = rect;
-			return this.OnGUI(rect, property, label, includeChildren);
-		}
+    public void AddMenuItems(SerializedProperty property, GenericMenu menu)
+    {
+      // ISSUE: object of a compiler-generated type is created
+      // ISSUE: variable of a compiler-generated type
+      PropertyHandler.\u003CAddMenuItems\u003Ec__AnonStorey0 itemsCAnonStorey0 = new PropertyHandler.\u003CAddMenuItems\u003Ec__AnonStorey0();
+      // ISSUE: reference to a compiler-generated field
+      itemsCAnonStorey0.property = property;
+      // ISSUE: reference to a compiler-generated field
+      itemsCAnonStorey0.\u0024this = this;
+      if (this.contextMenuItems == null)
+        return;
+      // ISSUE: reference to a compiler-generated field
+      System.Type type = itemsCAnonStorey0.property.serializedObject.targetObject.GetType();
+      foreach (ContextMenuItemAttribute contextMenuItem in this.contextMenuItems)
+      {
+        // ISSUE: object of a compiler-generated type is created
+        // ISSUE: variable of a compiler-generated type
+        PropertyHandler.\u003CAddMenuItems\u003Ec__AnonStorey1 itemsCAnonStorey1 = new PropertyHandler.\u003CAddMenuItems\u003Ec__AnonStorey1();
+        // ISSUE: reference to a compiler-generated field
+        itemsCAnonStorey1.\u003C\u003Ef__ref\u00240 = itemsCAnonStorey0;
+        // ISSUE: reference to a compiler-generated field
+        itemsCAnonStorey1.method = type.GetMethod(contextMenuItem.function, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        // ISSUE: reference to a compiler-generated field
+        if (itemsCAnonStorey1.method != null)
+        {
+          // ISSUE: reference to a compiler-generated method
+          menu.AddItem(new GUIContent(contextMenuItem.name), false, new GenericMenu.MenuFunction(itemsCAnonStorey1.\u003C\u003Em__0));
+        }
+      }
+    }
 
-		public float GetHeight(SerializedProperty property, GUIContent label, bool includeChildren)
-		{
-			float num = 0f;
-			if (this.m_DecoratorDrawers != null && !this.isCurrentlyNested)
-			{
-				foreach (DecoratorDrawer current in this.m_DecoratorDrawers)
-				{
-					num += current.GetHeight();
-				}
-			}
-			if (this.propertyDrawer != null)
-			{
-				num += this.propertyDrawer.GetPropertyHeightSafe(property.Copy(), label ?? EditorGUIUtility.TempContent(property.displayName));
-			}
-			else if (!includeChildren)
-			{
-				num += EditorGUI.GetSinglePropertyHeight(property, label);
-			}
-			else
-			{
-				property = property.Copy();
-				SerializedProperty endProperty = property.GetEndProperty();
-				num += EditorGUI.GetSinglePropertyHeight(property, label);
-				bool enterChildren = property.isExpanded && EditorGUI.HasVisibleChildFields(property);
-				while (property.NextVisible(enterChildren) && !SerializedProperty.EqualContents(property, endProperty))
-				{
-					num += ScriptAttributeUtility.GetHandler(property).GetHeight(property, EditorGUIUtility.TempContent(property.displayName), true);
-					enterChildren = false;
-					num += 2f;
-				}
-			}
-			return num;
-		}
-
-		public void AddMenuItems(SerializedProperty property, GenericMenu menu)
-		{
-			if (this.contextMenuItems != null)
-			{
-				Type type = property.serializedObject.targetObject.GetType();
-				foreach (ContextMenuItemAttribute current in this.contextMenuItems)
-				{
-					MethodInfo method = type.GetMethod(current.function, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-					if (method != null)
-					{
-						menu.AddItem(new GUIContent(current.name), false, delegate
-						{
-							this.CallMenuCallback(property.serializedObject.targetObjects, method);
-						});
-					}
-				}
-			}
-		}
-
-		public void CallMenuCallback(object[] targets, MethodInfo method)
-		{
-			for (int i = 0; i < targets.Length; i++)
-			{
-				object obj = targets[i];
-				method.Invoke(obj, new object[0]);
-			}
-		}
-	}
+    public void CallMenuCallback(object[] targets, MethodInfo method)
+    {
+      foreach (object target in targets)
+        method.Invoke(target, new object[0]);
+    }
+  }
 }

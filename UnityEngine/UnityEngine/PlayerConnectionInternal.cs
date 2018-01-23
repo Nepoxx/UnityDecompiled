@@ -1,67 +1,80 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.PlayerConnectionInternal
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	internal sealed class PlayerConnectionInternal : IPlayerEditorConnectionNative
-	{
-		void IPlayerEditorConnectionNative.SendMessage(Guid messageId, byte[] data, int playerId)
-		{
-			if (messageId == Guid.Empty)
-			{
-				throw new ArgumentException("messageId must not be empty");
-			}
-			PlayerConnectionInternal.SendMessage(messageId.ToString("N"), data, playerId);
-		}
+  internal sealed class PlayerConnectionInternal : IPlayerEditorConnectionNative
+  {
+    void IPlayerEditorConnectionNative.SendMessage(Guid messageId, byte[] data, int playerId)
+    {
+      if (messageId == Guid.Empty)
+        throw new ArgumentException("messageId must not be empty");
+      PlayerConnectionInternal.SendMessage(messageId.ToString("N"), data, playerId);
+    }
 
-		void IPlayerEditorConnectionNative.RegisterInternal(Guid messageId)
-		{
-			PlayerConnectionInternal.RegisterInternal(messageId.ToString("N"));
-		}
+    void IPlayerEditorConnectionNative.Poll()
+    {
+      PlayerConnectionInternal.PollInternal();
+    }
 
-		void IPlayerEditorConnectionNative.UnregisterInternal(Guid messageId)
-		{
-			PlayerConnectionInternal.UnregisterInternal(messageId.ToString("N"));
-		}
+    void IPlayerEditorConnectionNative.RegisterInternal(Guid messageId)
+    {
+      PlayerConnectionInternal.RegisterInternal(messageId.ToString("N"));
+    }
 
-		void IPlayerEditorConnectionNative.Initialize()
-		{
-			PlayerConnectionInternal.Initialize();
-		}
+    void IPlayerEditorConnectionNative.UnregisterInternal(Guid messageId)
+    {
+      PlayerConnectionInternal.UnregisterInternal(messageId.ToString("N"));
+    }
 
-		bool IPlayerEditorConnectionNative.IsConnected()
-		{
-			return PlayerConnectionInternal.IsConnected();
-		}
+    void IPlayerEditorConnectionNative.Initialize()
+    {
+      PlayerConnectionInternal.Initialize();
+    }
 
-		void IPlayerEditorConnectionNative.DisconnectAll()
-		{
-			PlayerConnectionInternal.DisconnectAll();
-		}
+    bool IPlayerEditorConnectionNative.IsConnected()
+    {
+      return PlayerConnectionInternal.IsConnected();
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern bool IsConnected();
+    void IPlayerEditorConnectionNative.DisconnectAll()
+    {
+      PlayerConnectionInternal.DisconnectAll();
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void Initialize();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern bool IsConnected();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void RegisterInternal(string messageId);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void Initialize();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void UnregisterInternal(string messageId);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void RegisterInternal(string messageId);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void SendMessage(string messageId, byte[] data, int playerId);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void UnregisterInternal(string messageId);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void DisconnectAll();
-	}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void SendMessage(string messageId, byte[] data, int playerId);
+
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void PollInternal();
+
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void DisconnectAll();
+  }
 }

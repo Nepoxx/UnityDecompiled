@@ -1,354 +1,331 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AudioMixerSnapshotListView
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEditor.Audio;
 using UnityEditorInternal;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace UnityEditor
 {
-	internal class AudioMixerSnapshotListView
-	{
-		private class Styles
-		{
-			public GUIContent starIcon = new GUIContent(EditorGUIUtility.FindTexture("Favorite"), "Start snapshot");
+  internal class AudioMixerSnapshotListView
+  {
+    private ReorderableListWithRenameAndScrollView m_ReorderableListWithRenameAndScrollView;
+    private AudioMixerController m_Controller;
+    private List<AudioMixerSnapshotController> m_Snapshots;
+    private ReorderableListWithRenameAndScrollView.State m_State;
+    private static AudioMixerSnapshotListView.Styles s_Styles;
 
-			public GUIContent header = new GUIContent("Snapshots", "A snapshot is a set of values for all parameters in the mixer. When using the mixer you modify parameters in the selected snapshot. Blend between multiple snapshots at runtime.");
+    public AudioMixerSnapshotListView(ReorderableListWithRenameAndScrollView.State state)
+    {
+      this.m_State = state;
+    }
 
-			public GUIContent addButton = new GUIContent("+");
+    public void OnMixerControllerChanged(AudioMixerController controller)
+    {
+      this.m_Controller = controller;
+      this.RecreateListControl();
+    }
 
-			public Texture2D snapshotsIcon = EditorGUIUtility.FindTexture("AudioMixerSnapshot Icon");
-		}
+    private int GetSnapshotIndex(AudioMixerSnapshotController snapshot)
+    {
+      for (int index = 0; index < this.m_Snapshots.Count; ++index)
+      {
+        if ((UnityEngine.Object) this.m_Snapshots[index] == (UnityEngine.Object) snapshot)
+          return index;
+      }
+      return 0;
+    }
 
-		internal class SnapshotMenu
-		{
-			private class data
-			{
-				public AudioMixerSnapshotController snapshot;
+    private void RecreateListControl()
+    {
+      if ((UnityEngine.Object) this.m_Controller == (UnityEngine.Object) null)
+        return;
+      this.m_Snapshots = new List<AudioMixerSnapshotController>((IEnumerable<AudioMixerSnapshotController>) this.m_Controller.snapshots);
+      this.m_ReorderableListWithRenameAndScrollView = new ReorderableListWithRenameAndScrollView(new ReorderableList((IList) this.m_Snapshots, typeof (AudioMixerSnapshotController), true, false, false, false)
+      {
+        onReorderCallback = new ReorderableList.ReorderCallbackDelegate(this.EndDragChild),
+        elementHeight = 16f,
+        headerHeight = 0.0f,
+        footerHeight = 0.0f,
+        showDefaultBackground = false,
+        index = this.GetSnapshotIndex(this.m_Controller.TargetSnapshot)
+      }, this.m_State);
+      this.m_ReorderableListWithRenameAndScrollView.onSelectionChanged += new Action<int>(this.SelectionChanged);
+      this.m_ReorderableListWithRenameAndScrollView.onNameChangedAtIndex += new Action<int, string>(this.NameChanged);
+      this.m_ReorderableListWithRenameAndScrollView.onDeleteItemAtIndex += new Action<int>(this.Delete);
+      this.m_ReorderableListWithRenameAndScrollView.onGetNameAtIndex += new Func<int, string>(this.GetNameOfElement);
+      this.m_ReorderableListWithRenameAndScrollView.onCustomDrawElement += new ReorderableList.ElementCallbackDelegate(this.CustomDrawElement);
+    }
 
-				public AudioMixerSnapshotListView list;
-			}
+    private void SaveToBackend()
+    {
+      this.m_Controller.snapshots = this.m_Snapshots.ToArray();
+      this.m_Controller.OnSubAssetChanged();
+    }
 
-			[CompilerGenerated]
-			private static GenericMenu.MenuFunction2 <>f__mg$cache0;
+    public void LoadFromBackend()
+    {
+      if ((UnityEngine.Object) this.m_Controller == (UnityEngine.Object) null)
+        return;
+      this.m_Snapshots.Clear();
+      this.m_Snapshots.AddRange((IEnumerable<AudioMixerSnapshotController>) this.m_Controller.snapshots);
+    }
 
-			[CompilerGenerated]
-			private static GenericMenu.MenuFunction2 <>f__mg$cache1;
+    public void OnEvent()
+    {
+      if ((UnityEngine.Object) this.m_Controller == (UnityEngine.Object) null)
+        return;
+      this.m_ReorderableListWithRenameAndScrollView.OnEvent();
+    }
 
-			[CompilerGenerated]
-			private static GenericMenu.MenuFunction2 <>f__mg$cache2;
+    public void CustomDrawElement(Rect r, int index, bool isActive, bool isFocused)
+    {
+      Event current = Event.current;
+      if (current.type == EventType.MouseUp && current.button == 1 && r.Contains(current.mousePosition))
+      {
+        AudioMixerSnapshotListView.SnapshotMenu.Show(r, this.m_Snapshots[index], this);
+        current.Use();
+      }
+      bool isSelected = index == this.m_ReorderableListWithRenameAndScrollView.list.index && !this.m_ReorderableListWithRenameAndScrollView.IsRenamingIndex(index);
+      r.width -= 19f;
+      this.m_ReorderableListWithRenameAndScrollView.DrawElementText(r, index, isActive, isSelected, isFocused);
+      if (!((UnityEngine.Object) this.m_Controller.startSnapshot == (UnityEngine.Object) this.m_Snapshots[index]))
+        return;
+      r.x = (float) ((double) r.xMax + 5.0 + 5.0);
+      r.y += (float) (((double) r.height - 14.0) / 2.0);
+      // ISSUE: explicit reference operation
+      // ISSUE: variable of a reference type
+      Rect& local = @r;
+      float num1 = 14f;
+      r.height = num1;
+      double num2 = (double) num1;
+      // ISSUE: explicit reference operation
+      (^local).width = (float) num2;
+      GUI.Label(r, AudioMixerSnapshotListView.s_Styles.starIcon, GUIStyle.none);
+    }
 
-			[CompilerGenerated]
-			private static GenericMenu.MenuFunction2 <>f__mg$cache3;
+    public float GetTotalHeight()
+    {
+      if ((UnityEngine.Object) this.m_Controller == (UnityEngine.Object) null)
+        return 0.0f;
+      return this.m_ReorderableListWithRenameAndScrollView.list.GetHeight() + 22f;
+    }
 
-			public static void Show(Rect buttonRect, AudioMixerSnapshotController snapshot, AudioMixerSnapshotListView list)
-			{
-				GenericMenu genericMenu = new GenericMenu();
-				AudioMixerSnapshotListView.SnapshotMenu.data userData = new AudioMixerSnapshotListView.SnapshotMenu.data
-				{
-					snapshot = snapshot,
-					list = list
-				};
-				GenericMenu arg_47_0 = genericMenu;
-				GUIContent arg_47_1 = new GUIContent("Set as start Snapshot");
-				bool arg_47_2 = false;
-				if (AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache0 == null)
-				{
-					AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache0 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.SetAsStartupSnapshot);
-				}
-				arg_47_0.AddItem(arg_47_1, arg_47_2, AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache0, userData);
-				genericMenu.AddSeparator("");
-				GenericMenu arg_81_0 = genericMenu;
-				GUIContent arg_81_1 = new GUIContent("Rename");
-				bool arg_81_2 = false;
-				if (AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache1 == null)
-				{
-					AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache1 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.Rename);
-				}
-				arg_81_0.AddItem(arg_81_1, arg_81_2, AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache1, userData);
-				GenericMenu arg_B0_0 = genericMenu;
-				GUIContent arg_B0_1 = new GUIContent("Duplicate");
-				bool arg_B0_2 = false;
-				if (AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache2 == null)
-				{
-					AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache2 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.Duplicate);
-				}
-				arg_B0_0.AddItem(arg_B0_1, arg_B0_2, AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache2, userData);
-				GenericMenu arg_DF_0 = genericMenu;
-				GUIContent arg_DF_1 = new GUIContent("Delete");
-				bool arg_DF_2 = false;
-				if (AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache3 == null)
-				{
-					AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache3 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.Delete);
-				}
-				arg_DF_0.AddItem(arg_DF_1, arg_DF_2, AudioMixerSnapshotListView.SnapshotMenu.<>f__mg$cache3, userData);
-				genericMenu.DropDown(buttonRect);
-			}
+    public void OnGUI(Rect rect)
+    {
+      if (AudioMixerSnapshotListView.s_Styles == null)
+        AudioMixerSnapshotListView.s_Styles = new AudioMixerSnapshotListView.Styles();
+      Rect headerRect;
+      Rect contentRect;
+      using (new EditorGUI.DisabledScope((UnityEngine.Object) this.m_Controller == (UnityEngine.Object) null))
+      {
+        AudioMixerDrawUtils.DrawRegionBg(rect, out headerRect, out contentRect);
+        AudioMixerDrawUtils.HeaderLabel(headerRect, AudioMixerSnapshotListView.s_Styles.header, AudioMixerSnapshotListView.s_Styles.snapshotsIcon);
+      }
+      if (!((UnityEngine.Object) this.m_Controller != (UnityEngine.Object) null))
+        return;
+      int snapshotIndex = this.GetSnapshotIndex(this.m_Controller.TargetSnapshot);
+      if (snapshotIndex != this.m_ReorderableListWithRenameAndScrollView.list.index)
+      {
+        this.m_ReorderableListWithRenameAndScrollView.list.index = snapshotIndex;
+        this.m_ReorderableListWithRenameAndScrollView.FrameItem(snapshotIndex);
+      }
+      this.m_ReorderableListWithRenameAndScrollView.OnGUI(contentRect);
+      if (GUI.Button(new Rect(headerRect.xMax - 15f, headerRect.y + 3f, 15f, 15f), AudioMixerSnapshotListView.s_Styles.addButton, EditorStyles.label))
+        this.Add();
+    }
 
-			private static void SetAsStartupSnapshot(object userData)
-			{
-				AudioMixerSnapshotListView.SnapshotMenu.data data = userData as AudioMixerSnapshotListView.SnapshotMenu.data;
-				data.list.SetAsStartupSnapshot(data.snapshot);
-			}
+    public void SelectionChanged(int index)
+    {
+      if (index >= this.m_Snapshots.Count)
+        index = this.m_Snapshots.Count - 1;
+      this.m_Controller.TargetSnapshot = this.m_Snapshots[index];
+      this.UpdateViews();
+    }
 
-			private static void Rename(object userData)
-			{
-				AudioMixerSnapshotListView.SnapshotMenu.data data = userData as AudioMixerSnapshotListView.SnapshotMenu.data;
-				data.list.Rename(data.snapshot);
-			}
+    private string GetNameOfElement(int index)
+    {
+      return this.m_Snapshots[index].name;
+    }
 
-			private static void Duplicate(object userData)
-			{
-				AudioMixerSnapshotListView.SnapshotMenu.data data = userData as AudioMixerSnapshotListView.SnapshotMenu.data;
-				data.list.DuplicateCurrentSnapshot();
-			}
+    public void NameChanged(int index, string newName)
+    {
+      this.m_Snapshots[index].name = newName;
+      this.SaveToBackend();
+    }
 
-			private static void Delete(object userData)
-			{
-				AudioMixerSnapshotListView.SnapshotMenu.data data = userData as AudioMixerSnapshotListView.SnapshotMenu.data;
-				data.list.DeleteSnapshot(data.snapshot);
-			}
-		}
+    private void DuplicateCurrentSnapshot()
+    {
+      Undo.RecordObject((UnityEngine.Object) this.m_Controller, "Duplicate current snapshot");
+      this.m_Controller.CloneNewSnapshotFromTarget(true);
+      this.LoadFromBackend();
+      this.UpdateViews();
+    }
 
-		private ReorderableListWithRenameAndScrollView m_ReorderableListWithRenameAndScrollView;
+    private void Add()
+    {
+      Undo.RecordObject((UnityEngine.Object) this.m_Controller, "Add new snapshot");
+      this.m_Controller.CloneNewSnapshotFromTarget(true);
+      this.LoadFromBackend();
+      this.Rename(this.m_Controller.TargetSnapshot);
+      this.UpdateViews();
+    }
 
-		private AudioMixerController m_Controller;
+    private void DeleteSnapshot(AudioMixerSnapshotController snapshot)
+    {
+      if (this.m_Controller.snapshots.Length <= 1)
+      {
+        Debug.Log((object) "You must have at least 1 snapshot in an AudioMixer.");
+      }
+      else
+      {
+        this.m_Controller.RemoveSnapshot(snapshot);
+        this.LoadFromBackend();
+        this.m_ReorderableListWithRenameAndScrollView.list.index = this.GetSnapshotIndex(this.m_Controller.TargetSnapshot);
+        this.UpdateViews();
+      }
+    }
 
-		private List<AudioMixerSnapshotController> m_Snapshots;
+    private void Delete(int index)
+    {
+      this.DeleteSnapshot(this.m_Snapshots[index]);
+    }
 
-		private ReorderableListWithRenameAndScrollView.State m_State;
+    public void EndDragChild(ReorderableList list)
+    {
+      this.m_Snapshots = this.m_ReorderableListWithRenameAndScrollView.list.list as List<AudioMixerSnapshotController>;
+      this.SaveToBackend();
+    }
 
-		private static AudioMixerSnapshotListView.Styles s_Styles;
+    private void UpdateViews()
+    {
+      AudioMixerWindow editorWindowOfType = (AudioMixerWindow) WindowLayout.FindEditorWindowOfType(typeof (AudioMixerWindow));
+      if ((UnityEngine.Object) editorWindowOfType != (UnityEngine.Object) null)
+        editorWindowOfType.Repaint();
+      InspectorWindow.RepaintAllInspectors();
+    }
 
-		public AudioMixerSnapshotListView(ReorderableListWithRenameAndScrollView.State state)
-		{
-			this.m_State = state;
-		}
+    private void SetAsStartupSnapshot(AudioMixerSnapshotController snapshot)
+    {
+      Undo.RecordObject((UnityEngine.Object) this.m_Controller, "Set start snapshot");
+      this.m_Controller.startSnapshot = (AudioMixerSnapshot) snapshot;
+    }
 
-		public void OnMixerControllerChanged(AudioMixerController controller)
-		{
-			this.m_Controller = controller;
-			this.RecreateListControl();
-		}
+    private void Rename(AudioMixerSnapshotController snapshot)
+    {
+      this.m_ReorderableListWithRenameAndScrollView.BeginRename(this.GetSnapshotIndex(snapshot), 0.0f);
+    }
 
-		private int GetSnapshotIndex(AudioMixerSnapshotController snapshot)
-		{
-			int result;
-			for (int i = 0; i < this.m_Snapshots.Count; i++)
-			{
-				if (this.m_Snapshots[i] == snapshot)
-				{
-					result = i;
-					return result;
-				}
-			}
-			result = 0;
-			return result;
-		}
+    public void OnUndoRedoPerformed()
+    {
+      this.LoadFromBackend();
+    }
 
-		private void RecreateListControl()
-		{
-			if (!(this.m_Controller == null))
-			{
-				this.m_Snapshots = new List<AudioMixerSnapshotController>(this.m_Controller.snapshots);
-				this.m_ReorderableListWithRenameAndScrollView = new ReorderableListWithRenameAndScrollView(new ReorderableList(this.m_Snapshots, typeof(AudioMixerSnapshotController), true, false, false, false)
-				{
-					onReorderCallback = new ReorderableList.ReorderCallbackDelegate(this.EndDragChild),
-					elementHeight = 16f,
-					headerHeight = 0f,
-					footerHeight = 0f,
-					showDefaultBackground = false,
-					index = this.GetSnapshotIndex(this.m_Controller.TargetSnapshot)
-				}, this.m_State);
-				ReorderableListWithRenameAndScrollView expr_B0 = this.m_ReorderableListWithRenameAndScrollView;
-				expr_B0.onSelectionChanged = (Action<int>)Delegate.Combine(expr_B0.onSelectionChanged, new Action<int>(this.SelectionChanged));
-				ReorderableListWithRenameAndScrollView expr_D7 = this.m_ReorderableListWithRenameAndScrollView;
-				expr_D7.onNameChangedAtIndex = (Action<int, string>)Delegate.Combine(expr_D7.onNameChangedAtIndex, new Action<int, string>(this.NameChanged));
-				ReorderableListWithRenameAndScrollView expr_FE = this.m_ReorderableListWithRenameAndScrollView;
-				expr_FE.onDeleteItemAtIndex = (Action<int>)Delegate.Combine(expr_FE.onDeleteItemAtIndex, new Action<int>(this.Delete));
-				ReorderableListWithRenameAndScrollView expr_125 = this.m_ReorderableListWithRenameAndScrollView;
-				expr_125.onGetNameAtIndex = (Func<int, string>)Delegate.Combine(expr_125.onGetNameAtIndex, new Func<int, string>(this.GetNameOfElement));
-				ReorderableListWithRenameAndScrollView expr_14C = this.m_ReorderableListWithRenameAndScrollView;
-				expr_14C.onCustomDrawElement = (ReorderableList.ElementCallbackDelegate)Delegate.Combine(expr_14C.onCustomDrawElement, new ReorderableList.ElementCallbackDelegate(this.CustomDrawElement));
-			}
-		}
+    private class Styles
+    {
+      public GUIContent starIcon = new GUIContent((Texture) EditorGUIUtility.FindTexture("Favorite"), "Start snapshot");
+      public GUIContent header = new GUIContent("Snapshots", "A snapshot is a set of values for all parameters in the mixer. When using the mixer you modify parameters in the selected snapshot. Blend between multiple snapshots at runtime.");
+      public GUIContent addButton = new GUIContent("+");
+      public Texture2D snapshotsIcon = EditorGUIUtility.FindTexture("AudioMixerSnapshot Icon");
+    }
 
-		private void SaveToBackend()
-		{
-			this.m_Controller.snapshots = this.m_Snapshots.ToArray();
-			this.m_Controller.OnSubAssetChanged();
-		}
+    internal class SnapshotMenu
+    {
+      public static void Show(Rect buttonRect, AudioMixerSnapshotController snapshot, AudioMixerSnapshotListView list)
+      {
+        GenericMenu genericMenu1 = new GenericMenu();
+        AudioMixerSnapshotListView.SnapshotMenu.data data1 = new AudioMixerSnapshotListView.SnapshotMenu.data() { snapshot = snapshot, list = list };
+        GenericMenu genericMenu2 = genericMenu1;
+        GUIContent content1 = new GUIContent("Set as start Snapshot");
+        int num1 = 0;
+        // ISSUE: reference to a compiler-generated field
+        if (AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache0 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache0 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.SetAsStartupSnapshot);
+        }
+        // ISSUE: reference to a compiler-generated field
+        GenericMenu.MenuFunction2 fMgCache0 = AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache0;
+        AudioMixerSnapshotListView.SnapshotMenu.data data2 = data1;
+        genericMenu2.AddItem(content1, num1 != 0, fMgCache0, (object) data2);
+        genericMenu1.AddSeparator("");
+        GenericMenu genericMenu3 = genericMenu1;
+        GUIContent content2 = new GUIContent("Rename");
+        int num2 = 0;
+        // ISSUE: reference to a compiler-generated field
+        if (AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache1 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache1 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.Rename);
+        }
+        // ISSUE: reference to a compiler-generated field
+        GenericMenu.MenuFunction2 fMgCache1 = AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache1;
+        AudioMixerSnapshotListView.SnapshotMenu.data data3 = data1;
+        genericMenu3.AddItem(content2, num2 != 0, fMgCache1, (object) data3);
+        GenericMenu genericMenu4 = genericMenu1;
+        GUIContent content3 = new GUIContent("Duplicate");
+        int num3 = 0;
+        // ISSUE: reference to a compiler-generated field
+        if (AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache2 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache2 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.Duplicate);
+        }
+        // ISSUE: reference to a compiler-generated field
+        GenericMenu.MenuFunction2 fMgCache2 = AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache2;
+        AudioMixerSnapshotListView.SnapshotMenu.data data4 = data1;
+        genericMenu4.AddItem(content3, num3 != 0, fMgCache2, (object) data4);
+        GenericMenu genericMenu5 = genericMenu1;
+        GUIContent content4 = new GUIContent("Delete");
+        int num4 = 0;
+        // ISSUE: reference to a compiler-generated field
+        if (AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache3 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache3 = new GenericMenu.MenuFunction2(AudioMixerSnapshotListView.SnapshotMenu.Delete);
+        }
+        // ISSUE: reference to a compiler-generated field
+        GenericMenu.MenuFunction2 fMgCache3 = AudioMixerSnapshotListView.SnapshotMenu.\u003C\u003Ef__mg\u0024cache3;
+        AudioMixerSnapshotListView.SnapshotMenu.data data5 = data1;
+        genericMenu5.AddItem(content4, num4 != 0, fMgCache3, (object) data5);
+        genericMenu1.DropDown(buttonRect);
+      }
 
-		public void LoadFromBackend()
-		{
-			if (!(this.m_Controller == null))
-			{
-				this.m_Snapshots.Clear();
-				this.m_Snapshots.AddRange(this.m_Controller.snapshots);
-			}
-		}
+      private static void SetAsStartupSnapshot(object userData)
+      {
+        AudioMixerSnapshotListView.SnapshotMenu.data data = userData as AudioMixerSnapshotListView.SnapshotMenu.data;
+        data.list.SetAsStartupSnapshot(data.snapshot);
+      }
 
-		public void OnEvent()
-		{
-			if (!(this.m_Controller == null))
-			{
-				this.m_ReorderableListWithRenameAndScrollView.OnEvent();
-			}
-		}
+      private static void Rename(object userData)
+      {
+        AudioMixerSnapshotListView.SnapshotMenu.data data = userData as AudioMixerSnapshotListView.SnapshotMenu.data;
+        data.list.Rename(data.snapshot);
+      }
 
-		public void CustomDrawElement(Rect r, int index, bool isActive, bool isFocused)
-		{
-			Event current = Event.current;
-			if (current.type == EventType.MouseUp && current.button == 1 && r.Contains(current.mousePosition))
-			{
-				AudioMixerSnapshotListView.SnapshotMenu.Show(r, this.m_Snapshots[index], this);
-				current.Use();
-			}
-			bool isSelected = index == this.m_ReorderableListWithRenameAndScrollView.list.index && !this.m_ReorderableListWithRenameAndScrollView.IsRenamingIndex(index);
-			r.width -= 19f;
-			this.m_ReorderableListWithRenameAndScrollView.DrawElementText(r, index, isActive, isSelected, isFocused);
-			if (this.m_Controller.startSnapshot == this.m_Snapshots[index])
-			{
-				r.x = r.xMax + 5f + 5f;
-				r.y += (r.height - 14f) / 2f;
-				float num = 14f;
-				r.height = num;
-				r.width = num;
-				GUI.Label(r, AudioMixerSnapshotListView.s_Styles.starIcon, GUIStyle.none);
-			}
-		}
+      private static void Duplicate(object userData)
+      {
+        (userData as AudioMixerSnapshotListView.SnapshotMenu.data).list.DuplicateCurrentSnapshot();
+      }
 
-		public float GetTotalHeight()
-		{
-			float result;
-			if (this.m_Controller == null)
-			{
-				result = 0f;
-			}
-			else
-			{
-				result = this.m_ReorderableListWithRenameAndScrollView.list.GetHeight() + 22f;
-			}
-			return result;
-		}
+      private static void Delete(object userData)
+      {
+        AudioMixerSnapshotListView.SnapshotMenu.data data = userData as AudioMixerSnapshotListView.SnapshotMenu.data;
+        data.list.DeleteSnapshot(data.snapshot);
+      }
 
-		public void OnGUI(Rect rect)
-		{
-			if (AudioMixerSnapshotListView.s_Styles == null)
-			{
-				AudioMixerSnapshotListView.s_Styles = new AudioMixerSnapshotListView.Styles();
-			}
-			Rect r;
-			Rect rect2;
-			using (new EditorGUI.DisabledScope(this.m_Controller == null))
-			{
-				AudioMixerDrawUtils.DrawRegionBg(rect, out r, out rect2);
-				AudioMixerDrawUtils.HeaderLabel(r, AudioMixerSnapshotListView.s_Styles.header, AudioMixerSnapshotListView.s_Styles.snapshotsIcon);
-			}
-			if (this.m_Controller != null)
-			{
-				int snapshotIndex = this.GetSnapshotIndex(this.m_Controller.TargetSnapshot);
-				if (snapshotIndex != this.m_ReorderableListWithRenameAndScrollView.list.index)
-				{
-					this.m_ReorderableListWithRenameAndScrollView.list.index = snapshotIndex;
-					this.m_ReorderableListWithRenameAndScrollView.FrameItem(snapshotIndex);
-				}
-				this.m_ReorderableListWithRenameAndScrollView.OnGUI(rect2);
-				if (GUI.Button(new Rect(r.xMax - 15f, r.y + 3f, 15f, 15f), AudioMixerSnapshotListView.s_Styles.addButton, EditorStyles.label))
-				{
-					this.Add();
-				}
-			}
-		}
-
-		public void SelectionChanged(int index)
-		{
-			if (index >= this.m_Snapshots.Count)
-			{
-				index = this.m_Snapshots.Count - 1;
-			}
-			this.m_Controller.TargetSnapshot = this.m_Snapshots[index];
-			this.UpdateViews();
-		}
-
-		private string GetNameOfElement(int index)
-		{
-			return this.m_Snapshots[index].name;
-		}
-
-		public void NameChanged(int index, string newName)
-		{
-			this.m_Snapshots[index].name = newName;
-			this.SaveToBackend();
-		}
-
-		private void DuplicateCurrentSnapshot()
-		{
-			Undo.RecordObject(this.m_Controller, "Duplicate current snapshot");
-			this.m_Controller.CloneNewSnapshotFromTarget(true);
-			this.LoadFromBackend();
-			this.UpdateViews();
-		}
-
-		private void Add()
-		{
-			Undo.RecordObject(this.m_Controller, "Add new snapshot");
-			this.m_Controller.CloneNewSnapshotFromTarget(true);
-			this.LoadFromBackend();
-			this.Rename(this.m_Controller.TargetSnapshot);
-			this.UpdateViews();
-		}
-
-		private void DeleteSnapshot(AudioMixerSnapshotController snapshot)
-		{
-			AudioMixerSnapshotController[] snapshots = this.m_Controller.snapshots;
-			if (snapshots.Length <= 1)
-			{
-				Debug.Log("You must have at least 1 snapshot in an AudioMixer.");
-			}
-			else
-			{
-				this.m_Controller.RemoveSnapshot(snapshot);
-				this.LoadFromBackend();
-				this.m_ReorderableListWithRenameAndScrollView.list.index = this.GetSnapshotIndex(this.m_Controller.TargetSnapshot);
-				this.UpdateViews();
-			}
-		}
-
-		private void Delete(int index)
-		{
-			this.DeleteSnapshot(this.m_Snapshots[index]);
-		}
-
-		public void EndDragChild(ReorderableList list)
-		{
-			this.m_Snapshots = (this.m_ReorderableListWithRenameAndScrollView.list.list as List<AudioMixerSnapshotController>);
-			this.SaveToBackend();
-		}
-
-		private void UpdateViews()
-		{
-			AudioMixerWindow audioMixerWindow = (AudioMixerWindow)WindowLayout.FindEditorWindowOfType(typeof(AudioMixerWindow));
-			if (audioMixerWindow != null)
-			{
-				audioMixerWindow.Repaint();
-			}
-			InspectorWindow.RepaintAllInspectors();
-		}
-
-		private void SetAsStartupSnapshot(AudioMixerSnapshotController snapshot)
-		{
-			this.m_Controller.startSnapshot = snapshot;
-		}
-
-		private void Rename(AudioMixerSnapshotController snapshot)
-		{
-			this.m_ReorderableListWithRenameAndScrollView.BeginRename(this.GetSnapshotIndex(snapshot), 0f);
-		}
-
-		public void OnUndoRedoPerformed()
-		{
-			this.LoadFromBackend();
-		}
-	}
+      private class data
+      {
+        public AudioMixerSnapshotController snapshot;
+        public AudioMixerSnapshotListView list;
+      }
+    }
+  }
 }

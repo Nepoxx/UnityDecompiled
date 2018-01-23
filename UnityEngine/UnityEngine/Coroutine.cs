@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.Coroutine
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -5,23 +11,27 @@ using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[RequiredByNativeCode]
-	[StructLayout(LayoutKind.Sequential)]
-	public sealed class Coroutine : YieldInstruction
-	{
-		internal IntPtr m_Ptr;
+  /// <summary>
+  ///   <para>MonoBehaviour.StartCoroutine returns a Coroutine. Instances of this class are only used to reference these coroutines and do not hold any exposed properties or functions.</para>
+  /// </summary>
+  [RequiredByNativeCode]
+  [StructLayout(LayoutKind.Sequential)]
+  public sealed class Coroutine : YieldInstruction
+  {
+    internal IntPtr m_Ptr;
 
-		private Coroutine()
-		{
-		}
+    private Coroutine()
+    {
+    }
 
-		[GeneratedByOldBindingsGenerator, ThreadAndSerializationSafe]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern void ReleaseCoroutine();
+    [ThreadAndSerializationSafe]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void ReleaseCoroutine();
 
-		~Coroutine()
-		{
-			this.ReleaseCoroutine();
-		}
-	}
+    ~Coroutine()
+    {
+      this.ReleaseCoroutine();
+    }
+  }
 }

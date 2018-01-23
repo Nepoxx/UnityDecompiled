@@ -1,151 +1,132 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.CapsuleColliderEditor
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[CanEditMultipleObjects, CustomEditor(typeof(CapsuleCollider))]
-	internal class CapsuleColliderEditor : PrimitiveCollider3DEditor
-	{
-		private SerializedProperty m_Center;
+  [CustomEditor(typeof (CapsuleCollider))]
+  [CanEditMultipleObjects]
+  internal class CapsuleColliderEditor : PrimitiveCollider3DEditor
+  {
+    private readonly CapsuleBoundsHandle m_BoundsHandle = new CapsuleBoundsHandle();
+    private SerializedProperty m_Center;
+    private SerializedProperty m_Radius;
+    private SerializedProperty m_Height;
+    private SerializedProperty m_Direction;
 
-		private SerializedProperty m_Radius;
+    public override void OnEnable()
+    {
+      base.OnEnable();
+      this.m_Center = this.serializedObject.FindProperty("m_Center");
+      this.m_Radius = this.serializedObject.FindProperty("m_Radius");
+      this.m_Height = this.serializedObject.FindProperty("m_Height");
+      this.m_Direction = this.serializedObject.FindProperty("m_Direction");
+    }
 
-		private SerializedProperty m_Height;
+    public override void OnInspectorGUI()
+    {
+      this.serializedObject.Update();
+      this.InspectorEditButtonGUI();
+      EditorGUILayout.PropertyField(this.m_IsTrigger);
+      EditorGUILayout.PropertyField(this.m_Material);
+      EditorGUILayout.PropertyField(this.m_Center);
+      EditorGUILayout.PropertyField(this.m_Radius);
+      EditorGUILayout.PropertyField(this.m_Height);
+      EditorGUILayout.PropertyField(this.m_Direction);
+      this.serializedObject.ApplyModifiedProperties();
+    }
 
-		private SerializedProperty m_Direction;
+    protected override PrimitiveBoundsHandle boundsHandle
+    {
+      get
+      {
+        return (PrimitiveBoundsHandle) this.m_BoundsHandle;
+      }
+    }
 
-		private readonly CapsuleBoundsHandle m_BoundsHandle = new CapsuleBoundsHandle();
+    protected override void CopyColliderPropertiesToHandle()
+    {
+      CapsuleCollider target = (CapsuleCollider) this.target;
+      this.m_BoundsHandle.center = this.TransformColliderCenterToHandleSpace(target.transform, target.center);
+      float radiusScaleFactor;
+      Vector3 colliderHandleScale = this.GetCapsuleColliderHandleScale(target.transform.lossyScale, target.direction, out radiusScaleFactor);
+      CapsuleBoundsHandle boundsHandle = this.m_BoundsHandle;
+      float num1 = 0.0f;
+      this.m_BoundsHandle.radius = num1;
+      double num2 = (double) num1;
+      boundsHandle.height = (float) num2;
+      this.m_BoundsHandle.height = target.height * Mathf.Abs(colliderHandleScale[target.direction]);
+      this.m_BoundsHandle.radius = target.radius * radiusScaleFactor;
+      switch (target.direction)
+      {
+        case 0:
+          this.m_BoundsHandle.heightAxis = CapsuleBoundsHandle.HeightAxis.X;
+          break;
+        case 1:
+          this.m_BoundsHandle.heightAxis = CapsuleBoundsHandle.HeightAxis.Y;
+          break;
+        case 2:
+          this.m_BoundsHandle.heightAxis = CapsuleBoundsHandle.HeightAxis.Z;
+          break;
+      }
+    }
 
-		protected override PrimitiveBoundsHandle boundsHandle
-		{
-			get
-			{
-				return this.m_BoundsHandle;
-			}
-		}
+    protected override void CopyHandlePropertiesToCollider()
+    {
+      CapsuleCollider target = (CapsuleCollider) this.target;
+      target.center = this.TransformHandleCenterToColliderSpace(target.transform, this.m_BoundsHandle.center);
+      float radiusScaleFactor;
+      Vector3 vector3 = this.InvertScaleVector(this.GetCapsuleColliderHandleScale(target.transform.lossyScale, target.direction, out radiusScaleFactor));
+      if ((double) radiusScaleFactor != 0.0)
+        target.radius = this.m_BoundsHandle.radius / radiusScaleFactor;
+      if ((double) vector3[target.direction] == 0.0)
+        return;
+      target.height = this.m_BoundsHandle.height * Mathf.Abs(vector3[target.direction]);
+    }
 
-		public override void OnEnable()
-		{
-			base.OnEnable();
-			this.m_Center = base.serializedObject.FindProperty("m_Center");
-			this.m_Radius = base.serializedObject.FindProperty("m_Radius");
-			this.m_Height = base.serializedObject.FindProperty("m_Height");
-			this.m_Direction = base.serializedObject.FindProperty("m_Direction");
-		}
+    protected override void OnSceneGUI()
+    {
+      CapsuleCollider target = (CapsuleCollider) this.target;
+      float radiusScaleFactor;
+      this.GetCapsuleColliderHandleScale(target.transform.lossyScale, target.direction, out radiusScaleFactor);
+      this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.All;
+      if ((double) radiusScaleFactor == 0.0)
+      {
+        switch (target.direction)
+        {
+          case 0:
+            this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.X;
+            break;
+          case 1:
+            this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.Y;
+            break;
+          case 2:
+            this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.Z;
+            break;
+        }
+      }
+      base.OnSceneGUI();
+    }
 
-		public override void OnInspectorGUI()
-		{
-			base.serializedObject.Update();
-			base.InspectorEditButtonGUI();
-			EditorGUILayout.PropertyField(this.m_IsTrigger, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_Material, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_Center, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_Radius, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_Height, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_Direction, new GUILayoutOption[0]);
-			base.serializedObject.ApplyModifiedProperties();
-		}
-
-		protected override void CopyColliderPropertiesToHandle()
-		{
-			CapsuleCollider capsuleCollider = (CapsuleCollider)base.target;
-			this.m_BoundsHandle.center = base.TransformColliderCenterToHandleSpace(capsuleCollider.transform, capsuleCollider.center);
-			float num;
-			Vector3 capsuleColliderHandleScale = this.GetCapsuleColliderHandleScale(capsuleCollider.transform.lossyScale, capsuleCollider.direction, out num);
-			CapsuleBoundsHandle arg_5D_0 = this.m_BoundsHandle;
-			float num2 = 0f;
-			this.m_BoundsHandle.radius = num2;
-			arg_5D_0.height = num2;
-			this.m_BoundsHandle.height = capsuleCollider.height * Mathf.Abs(capsuleColliderHandleScale[capsuleCollider.direction]);
-			this.m_BoundsHandle.radius = capsuleCollider.radius * num;
-			int direction = capsuleCollider.direction;
-			if (direction != 0)
-			{
-				if (direction != 1)
-				{
-					if (direction == 2)
-					{
-						this.m_BoundsHandle.heightAxis = CapsuleBoundsHandle.HeightAxis.Z;
-					}
-				}
-				else
-				{
-					this.m_BoundsHandle.heightAxis = CapsuleBoundsHandle.HeightAxis.Y;
-				}
-			}
-			else
-			{
-				this.m_BoundsHandle.heightAxis = CapsuleBoundsHandle.HeightAxis.X;
-			}
-		}
-
-		protected override void CopyHandlePropertiesToCollider()
-		{
-			CapsuleCollider capsuleCollider = (CapsuleCollider)base.target;
-			capsuleCollider.center = base.TransformHandleCenterToColliderSpace(capsuleCollider.transform, this.m_BoundsHandle.center);
-			float num;
-			Vector3 scaleVector = this.GetCapsuleColliderHandleScale(capsuleCollider.transform.lossyScale, capsuleCollider.direction, out num);
-			scaleVector = base.InvertScaleVector(scaleVector);
-			if (num != 0f)
-			{
-				capsuleCollider.radius = this.m_BoundsHandle.radius / num;
-			}
-			if (scaleVector[capsuleCollider.direction] != 0f)
-			{
-				capsuleCollider.height = this.m_BoundsHandle.height * Mathf.Abs(scaleVector[capsuleCollider.direction]);
-			}
-		}
-
-		protected override void OnSceneGUI()
-		{
-			CapsuleCollider capsuleCollider = (CapsuleCollider)base.target;
-			float num;
-			this.GetCapsuleColliderHandleScale(capsuleCollider.transform.lossyScale, capsuleCollider.direction, out num);
-			this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.All;
-			if (num == 0f)
-			{
-				int direction = capsuleCollider.direction;
-				if (direction != 0)
-				{
-					if (direction != 1)
-					{
-						if (direction == 2)
-						{
-							this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.Z;
-						}
-					}
-					else
-					{
-						this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.Y;
-					}
-				}
-				else
-				{
-					this.boundsHandle.axes = PrimitiveBoundsHandle.Axes.X;
-				}
-			}
-			base.OnSceneGUI();
-		}
-
-		private Vector3 GetCapsuleColliderHandleScale(Vector3 lossyScale, int capsuleDirection, out float radiusScaleFactor)
-		{
-			radiusScaleFactor = 0f;
-			for (int i = 0; i < 3; i++)
-			{
-				if (i != capsuleDirection)
-				{
-					radiusScaleFactor = Mathf.Max(radiusScaleFactor, Mathf.Abs(lossyScale[i]));
-				}
-			}
-			for (int j = 0; j < 3; j++)
-			{
-				if (j != capsuleDirection)
-				{
-					lossyScale[j] = Mathf.Sign(lossyScale[j]) * radiusScaleFactor;
-				}
-			}
-			return lossyScale;
-		}
-	}
+    private Vector3 GetCapsuleColliderHandleScale(Vector3 lossyScale, int capsuleDirection, out float radiusScaleFactor)
+    {
+      radiusScaleFactor = 0.0f;
+      for (int index = 0; index < 3; ++index)
+      {
+        if (index != capsuleDirection)
+          radiusScaleFactor = Mathf.Max(radiusScaleFactor, Mathf.Abs(lossyScale[index]));
+      }
+      for (int index = 0; index < 3; ++index)
+      {
+        if (index != capsuleDirection)
+          lossyScale[index] = Mathf.Sign(lossyScale[index]) * radiusScaleFactor;
+      }
+      return lossyScale;
+    }
+  }
 }

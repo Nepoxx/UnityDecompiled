@@ -1,391 +1,320 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.RenameOverlay
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using UnityEditorInternal;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[Serializable]
-	internal class RenameOverlay
-	{
-		[SerializeField]
-		private bool m_UserAcceptedRename;
+  [Serializable]
+  internal class RenameOverlay
+  {
+    private static GUIStyle s_DefaultTextFieldStyle = (GUIStyle) null;
+    private static int s_TextFieldHash = "RenameFieldTextField".GetHashCode();
+    [SerializeField]
+    private bool m_IsRenaming = false;
+    [SerializeField]
+    private EventType m_OriginalEventType = EventType.Ignore;
+    [SerializeField]
+    private bool m_IsRenamingFilename = false;
+    private string k_RenameOverlayFocusName = "RenameOverlayField";
+    [SerializeField]
+    private bool m_UserAcceptedRename;
+    [SerializeField]
+    private string m_Name;
+    [SerializeField]
+    private string m_OriginalName;
+    [SerializeField]
+    private Rect m_EditFieldRect;
+    [SerializeField]
+    private int m_UserData;
+    [SerializeField]
+    private bool m_IsWaitingForDelay;
+    [SerializeField]
+    private GUIView m_ClientGUIView;
+    [NonSerialized]
+    private Rect m_LastScreenPosition;
+    [NonSerialized]
+    private bool m_UndoRedoWasPerformed;
+    [NonSerialized]
+    private DelayedCallback m_DelayedCallback;
+    private int m_TextFieldControlID;
 
-		[SerializeField]
-		private string m_Name;
+    public string name
+    {
+      get
+      {
+        return this.m_Name;
+      }
+    }
 
-		[SerializeField]
-		private string m_OriginalName;
+    public string originalName
+    {
+      get
+      {
+        return this.m_OriginalName;
+      }
+    }
 
-		[SerializeField]
-		private Rect m_EditFieldRect;
+    public bool userAcceptedRename
+    {
+      get
+      {
+        return this.m_UserAcceptedRename;
+      }
+    }
 
-		[SerializeField]
-		private int m_UserData;
+    public int userData
+    {
+      get
+      {
+        return this.m_UserData;
+      }
+    }
 
-		[SerializeField]
-		private bool m_IsWaitingForDelay;
+    public bool isWaitingForDelay
+    {
+      get
+      {
+        return this.m_IsWaitingForDelay;
+      }
+    }
 
-		[SerializeField]
-		private bool m_IsRenaming = false;
+    public Rect editFieldRect
+    {
+      get
+      {
+        return this.m_EditFieldRect;
+      }
+      set
+      {
+        this.m_EditFieldRect = value;
+      }
+    }
 
-		[SerializeField]
-		private EventType m_OriginalEventType = EventType.Ignore;
+    public bool isRenamingFilename
+    {
+      get
+      {
+        return this.m_IsRenamingFilename;
+      }
+      set
+      {
+        this.m_IsRenamingFilename = value;
+      }
+    }
 
-		[SerializeField]
-		private bool m_IsRenamingFilename = false;
+    public bool BeginRename(string name, int userData, float delay)
+    {
+      if (this.m_IsRenaming)
+        return false;
+      this.m_Name = name;
+      this.m_OriginalName = name;
+      this.m_UserData = userData;
+      this.m_UserAcceptedRename = false;
+      this.m_IsWaitingForDelay = (double) delay > 0.0;
+      this.m_IsRenaming = true;
+      this.m_EditFieldRect = new Rect(0.0f, 0.0f, 0.0f, 0.0f);
+      this.m_ClientGUIView = GUIView.current;
+      if ((double) delay > 0.0)
+        this.m_DelayedCallback = new DelayedCallback(new Action(this.BeginRenameInternalCallback), (double) delay);
+      else
+        this.BeginRenameInternalCallback();
+      return true;
+    }
 
-		[SerializeField]
-		private GUIView m_ClientGUIView;
+    private void BeginRenameInternalCallback()
+    {
+      EditorGUI.s_RecycledEditor.text = this.m_Name;
+      EditorGUI.s_RecycledEditor.SelectAll();
+      this.RepaintClientView();
+      this.m_IsWaitingForDelay = false;
+      Undo.undoRedoPerformed -= new Undo.UndoRedoCallback(this.UndoRedoWasPerformed);
+      Undo.undoRedoPerformed += new Undo.UndoRedoCallback(this.UndoRedoWasPerformed);
+    }
 
-		[NonSerialized]
-		private Rect m_LastScreenPosition;
+    public void EndRename(bool acceptChanges)
+    {
+      EditorGUIUtility.editingTextField = false;
+      if (!this.m_IsRenaming)
+        return;
+      Undo.undoRedoPerformed -= new Undo.UndoRedoCallback(this.UndoRedoWasPerformed);
+      if (this.m_DelayedCallback != null)
+        this.m_DelayedCallback.Clear();
+      this.RemoveMessage();
+      if (this.isRenamingFilename)
+        this.m_Name = InternalEditorUtility.RemoveInvalidCharsFromFileName(this.m_Name, true);
+      this.m_IsRenaming = false;
+      this.m_IsWaitingForDelay = false;
+      this.m_UserAcceptedRename = acceptChanges;
+      this.RepaintClientView();
+    }
 
-		[NonSerialized]
-		private bool m_UndoRedoWasPerformed;
+    private void RepaintClientView()
+    {
+      if (!((UnityEngine.Object) this.m_ClientGUIView != (UnityEngine.Object) null))
+        return;
+      this.m_ClientGUIView.Repaint();
+    }
 
-		[NonSerialized]
-		private DelayedCallback m_DelayedCallback;
+    public void Clear()
+    {
+      this.m_IsRenaming = false;
+      this.m_UserAcceptedRename = false;
+      this.m_Name = "";
+      this.m_OriginalName = "";
+      this.m_EditFieldRect = new Rect();
+      this.m_UserData = 0;
+      this.m_IsWaitingForDelay = false;
+      this.m_OriginalEventType = EventType.Ignore;
+      Undo.undoRedoPerformed -= new Undo.UndoRedoCallback(this.UndoRedoWasPerformed);
+    }
 
-		private string k_RenameOverlayFocusName = "RenameOverlayField";
+    private void UndoRedoWasPerformed()
+    {
+      this.m_UndoRedoWasPerformed = true;
+    }
 
-		private static GUIStyle s_DefaultTextFieldStyle = null;
+    public bool HasKeyboardFocus()
+    {
+      return GUI.GetNameOfFocusedControl() == this.k_RenameOverlayFocusName;
+    }
 
-		private static int s_TextFieldHash = "RenameFieldTextField".GetHashCode();
+    public bool IsRenaming()
+    {
+      return this.m_IsRenaming;
+    }
 
-		private int m_TextFieldControlID;
+    public bool OnEvent()
+    {
+      if (!this.m_IsRenaming)
+        return true;
+      if (!this.m_IsWaitingForDelay)
+      {
+        GUIUtility.GetControlID(84895748, FocusType.Passive);
+        GUI.SetNextControlName(this.k_RenameOverlayFocusName);
+        EditorGUI.FocusTextInControl(this.k_RenameOverlayFocusName);
+        this.m_TextFieldControlID = GUIUtility.GetControlID(RenameOverlay.s_TextFieldHash, FocusType.Keyboard, this.m_EditFieldRect);
+      }
+      this.m_OriginalEventType = Event.current.type;
+      if (!this.m_IsWaitingForDelay || this.m_OriginalEventType != EventType.MouseDown && this.m_OriginalEventType != EventType.KeyDown)
+        return true;
+      this.EndRename(false);
+      return false;
+    }
 
-		public string name
-		{
-			get
-			{
-				return this.m_Name;
-			}
-		}
+    public bool OnGUI()
+    {
+      return this.OnGUI((GUIStyle) null);
+    }
 
-		public string originalName
-		{
-			get
-			{
-				return this.m_OriginalName;
-			}
-		}
+    public bool OnGUI(GUIStyle textFieldStyle)
+    {
+      if (this.m_IsWaitingForDelay)
+        return true;
+      if (!this.m_IsRenaming)
+        return false;
+      if (this.m_UndoRedoWasPerformed)
+      {
+        this.m_UndoRedoWasPerformed = false;
+        this.EndRename(false);
+        return false;
+      }
+      if ((double) this.m_EditFieldRect.width <= 0.0 || (double) this.m_EditFieldRect.height <= 0.0 || this.m_TextFieldControlID == 0)
+      {
+        HandleUtility.Repaint();
+        return true;
+      }
+      Event current = Event.current;
+      if (current.type == EventType.KeyDown)
+      {
+        if (current.keyCode == KeyCode.Escape)
+        {
+          current.Use();
+          this.EndRename(false);
+          return false;
+        }
+        if (current.keyCode == KeyCode.Return || current.keyCode == KeyCode.KeypadEnter)
+        {
+          current.Use();
+          this.EndRename(true);
+          return false;
+        }
+      }
+      if (this.m_OriginalEventType == EventType.MouseDown && !this.m_EditFieldRect.Contains(Event.current.mousePosition))
+      {
+        this.EndRename(true);
+        return false;
+      }
+      this.m_Name = this.DoTextField(this.m_Name, textFieldStyle);
+      if (current.type == EventType.ScrollWheel)
+        current.Use();
+      return true;
+    }
 
-		public bool userAcceptedRename
-		{
-			get
-			{
-				return this.m_UserAcceptedRename;
-			}
-		}
+    private string DoTextField(string text, GUIStyle textFieldStyle)
+    {
+      if (this.m_TextFieldControlID == 0)
+        Debug.LogError((object) "RenameOverlay: Ensure to call OnEvent() as early as possible in the OnGUI of the current EditorWindow!");
+      if (RenameOverlay.s_DefaultTextFieldStyle == null)
+        RenameOverlay.s_DefaultTextFieldStyle = (GUIStyle) "PR TextField";
+      if (this.isRenamingFilename)
+        this.EatInvalidChars();
+      GUI.changed = false;
+      if (GUIUtility.keyboardControl != this.m_TextFieldControlID)
+        GUIUtility.keyboardControl = this.m_TextFieldControlID;
+      GUIStyle style = textFieldStyle ?? RenameOverlay.s_DefaultTextFieldStyle;
+      Rect position = EditorGUI.IndentedRect(this.m_EditFieldRect);
+      position.xMin -= (float) style.padding.left;
+      bool changed;
+      return EditorGUI.DoTextField(EditorGUI.s_RecycledEditor, this.m_TextFieldControlID, position, text, style, (string) null, out changed, false, false, false);
+    }
 
-		public int userData
-		{
-			get
-			{
-				return this.m_UserData;
-			}
-		}
+    private void EatInvalidChars()
+    {
+      if (!this.isRenamingFilename)
+        return;
+      Event current = Event.current;
+      if (GUIUtility.keyboardControl == this.m_TextFieldControlID && current.GetTypeForControl(this.m_TextFieldControlID) == EventType.KeyDown)
+      {
+        string msg = "";
+        string invalidFilenameChars = EditorUtility.GetInvalidFilenameChars();
+        if (invalidFilenameChars.IndexOf(current.character) > -1)
+          msg = "A file name can't contain any of the following characters:\t" + invalidFilenameChars;
+        if (msg != "")
+        {
+          current.Use();
+          this.ShowMessage(msg);
+        }
+        else
+          this.RemoveMessage();
+      }
+      if (current.type == EventType.Repaint)
+      {
+        Rect screenRect = this.GetScreenRect();
+        if (!Mathf.Approximately(this.m_LastScreenPosition.x, screenRect.x) || !Mathf.Approximately(this.m_LastScreenPosition.y, screenRect.y))
+          this.RemoveMessage();
+        this.m_LastScreenPosition = screenRect;
+      }
+    }
 
-		public bool isWaitingForDelay
-		{
-			get
-			{
-				return this.m_IsWaitingForDelay;
-			}
-		}
+    private Rect GetScreenRect()
+    {
+      return GUIUtility.GUIToScreenRect(this.m_EditFieldRect);
+    }
 
-		public Rect editFieldRect
-		{
-			get
-			{
-				return this.m_EditFieldRect;
-			}
-			set
-			{
-				this.m_EditFieldRect = value;
-			}
-		}
+    private void ShowMessage(string msg)
+    {
+      TooltipView.Show(msg, this.GetScreenRect());
+    }
 
-		public bool isRenamingFilename
-		{
-			get
-			{
-				return this.m_IsRenamingFilename;
-			}
-			set
-			{
-				this.m_IsRenamingFilename = value;
-			}
-		}
-
-		public bool BeginRename(string name, int userData, float delay)
-		{
-			bool result;
-			if (this.m_IsRenaming)
-			{
-				Debug.LogError("BeginRename fail: already renaming");
-				result = false;
-			}
-			else
-			{
-				this.m_Name = name;
-				this.m_OriginalName = name;
-				this.m_UserData = userData;
-				this.m_UserAcceptedRename = false;
-				this.m_IsWaitingForDelay = (delay > 0f);
-				this.m_IsRenaming = true;
-				this.m_EditFieldRect = new Rect(0f, 0f, 0f, 0f);
-				this.m_ClientGUIView = GUIView.current;
-				if (delay > 0f)
-				{
-					this.m_DelayedCallback = new DelayedCallback(new Action(this.BeginRenameInternalCallback), (double)delay);
-				}
-				else
-				{
-					this.BeginRenameInternalCallback();
-				}
-				result = true;
-			}
-			return result;
-		}
-
-		private void BeginRenameInternalCallback()
-		{
-			EditorGUI.s_RecycledEditor.text = this.m_Name;
-			EditorGUI.s_RecycledEditor.SelectAll();
-			this.RepaintClientView();
-			this.m_IsWaitingForDelay = false;
-			Undo.undoRedoPerformed = (Undo.UndoRedoCallback)Delegate.Remove(Undo.undoRedoPerformed, new Undo.UndoRedoCallback(this.UndoRedoWasPerformed));
-			Undo.undoRedoPerformed = (Undo.UndoRedoCallback)Delegate.Combine(Undo.undoRedoPerformed, new Undo.UndoRedoCallback(this.UndoRedoWasPerformed));
-		}
-
-		public void EndRename(bool acceptChanges)
-		{
-			EditorGUIUtility.editingTextField = false;
-			if (this.m_IsRenaming)
-			{
-				Undo.undoRedoPerformed = (Undo.UndoRedoCallback)Delegate.Remove(Undo.undoRedoPerformed, new Undo.UndoRedoCallback(this.UndoRedoWasPerformed));
-				if (this.m_DelayedCallback != null)
-				{
-					this.m_DelayedCallback.Clear();
-				}
-				this.RemoveMessage();
-				if (this.isRenamingFilename)
-				{
-					this.m_Name = InternalEditorUtility.RemoveInvalidCharsFromFileName(this.m_Name, true);
-				}
-				this.m_IsRenaming = false;
-				this.m_IsWaitingForDelay = false;
-				this.m_UserAcceptedRename = acceptChanges;
-				this.RepaintClientView();
-			}
-		}
-
-		private void RepaintClientView()
-		{
-			if (this.m_ClientGUIView != null)
-			{
-				this.m_ClientGUIView.Repaint();
-			}
-		}
-
-		public void Clear()
-		{
-			this.m_IsRenaming = false;
-			this.m_UserAcceptedRename = false;
-			this.m_Name = "";
-			this.m_OriginalName = "";
-			this.m_EditFieldRect = default(Rect);
-			this.m_UserData = 0;
-			this.m_IsWaitingForDelay = false;
-			this.m_OriginalEventType = EventType.Ignore;
-			Undo.undoRedoPerformed = (Undo.UndoRedoCallback)Delegate.Remove(Undo.undoRedoPerformed, new Undo.UndoRedoCallback(this.UndoRedoWasPerformed));
-		}
-
-		private void UndoRedoWasPerformed()
-		{
-			this.m_UndoRedoWasPerformed = true;
-		}
-
-		public bool HasKeyboardFocus()
-		{
-			return GUI.GetNameOfFocusedControl() == this.k_RenameOverlayFocusName;
-		}
-
-		public bool IsRenaming()
-		{
-			return this.m_IsRenaming;
-		}
-
-		public bool OnEvent()
-		{
-			bool result;
-			if (!this.m_IsRenaming)
-			{
-				result = true;
-			}
-			else
-			{
-				if (!this.m_IsWaitingForDelay)
-				{
-					GUIUtility.GetControlID(84895748, FocusType.Passive);
-					GUI.SetNextControlName(this.k_RenameOverlayFocusName);
-					EditorGUI.FocusTextInControl(this.k_RenameOverlayFocusName);
-					this.m_TextFieldControlID = GUIUtility.GetControlID(RenameOverlay.s_TextFieldHash, FocusType.Keyboard, this.m_EditFieldRect);
-				}
-				this.m_OriginalEventType = Event.current.type;
-				if (this.m_IsWaitingForDelay && (this.m_OriginalEventType == EventType.MouseDown || this.m_OriginalEventType == EventType.KeyDown))
-				{
-					this.EndRename(false);
-					result = false;
-				}
-				else
-				{
-					result = true;
-				}
-			}
-			return result;
-		}
-
-		public bool OnGUI()
-		{
-			return this.OnGUI(null);
-		}
-
-		public bool OnGUI(GUIStyle textFieldStyle)
-		{
-			bool result;
-			if (this.m_IsWaitingForDelay)
-			{
-				result = true;
-			}
-			else if (!this.m_IsRenaming)
-			{
-				result = false;
-			}
-			else if (this.m_UndoRedoWasPerformed)
-			{
-				this.m_UndoRedoWasPerformed = false;
-				this.EndRename(false);
-				result = false;
-			}
-			else if (this.m_EditFieldRect.width <= 0f || this.m_EditFieldRect.height <= 0f || this.m_TextFieldControlID == 0)
-			{
-				HandleUtility.Repaint();
-				result = true;
-			}
-			else
-			{
-				Event current = Event.current;
-				if (current.type == EventType.KeyDown)
-				{
-					if (current.keyCode == KeyCode.Escape)
-					{
-						current.Use();
-						this.EndRename(false);
-						result = false;
-						return result;
-					}
-					if (current.keyCode == KeyCode.Return || current.keyCode == KeyCode.KeypadEnter)
-					{
-						current.Use();
-						this.EndRename(true);
-						result = false;
-						return result;
-					}
-				}
-				if (this.m_OriginalEventType == EventType.MouseDown && !this.m_EditFieldRect.Contains(Event.current.mousePosition))
-				{
-					this.EndRename(true);
-					result = false;
-				}
-				else
-				{
-					this.m_Name = this.DoTextField(this.m_Name, textFieldStyle);
-					if (current.type == EventType.ScrollWheel)
-					{
-						current.Use();
-					}
-					result = true;
-				}
-			}
-			return result;
-		}
-
-		private string DoTextField(string text, GUIStyle textFieldStyle)
-		{
-			if (this.m_TextFieldControlID == 0)
-			{
-				Debug.LogError("RenameOverlay: Ensure to call OnEvent() as early as possible in the OnGUI of the current EditorWindow!");
-			}
-			if (RenameOverlay.s_DefaultTextFieldStyle == null)
-			{
-				RenameOverlay.s_DefaultTextFieldStyle = "PR TextField";
-			}
-			if (this.isRenamingFilename)
-			{
-				this.EatInvalidChars();
-			}
-			GUI.changed = false;
-			if (GUIUtility.keyboardControl != this.m_TextFieldControlID)
-			{
-				GUIUtility.keyboardControl = this.m_TextFieldControlID;
-			}
-			GUIStyle gUIStyle = textFieldStyle ?? RenameOverlay.s_DefaultTextFieldStyle;
-			Rect position = EditorGUI.IndentedRect(this.m_EditFieldRect);
-			position.xMin -= (float)gUIStyle.padding.left;
-			bool flag;
-			return EditorGUI.DoTextField(EditorGUI.s_RecycledEditor, this.m_TextFieldControlID, position, text, gUIStyle, null, out flag, false, false, false);
-		}
-
-		private void EatInvalidChars()
-		{
-			if (this.isRenamingFilename)
-			{
-				Event current = Event.current;
-				if (GUIUtility.keyboardControl == this.m_TextFieldControlID && current.GetTypeForControl(this.m_TextFieldControlID) == EventType.KeyDown)
-				{
-					string text = "";
-					string invalidFilenameChars = EditorUtility.GetInvalidFilenameChars();
-					if (invalidFilenameChars.IndexOf(current.character) > -1)
-					{
-						text = "A file name can't contain any of the following characters:\t" + invalidFilenameChars;
-					}
-					if (text != "")
-					{
-						current.Use();
-						this.ShowMessage(text);
-					}
-					else
-					{
-						this.RemoveMessage();
-					}
-				}
-				if (current.type == EventType.Repaint)
-				{
-					Rect screenRect = this.GetScreenRect();
-					if (!Mathf.Approximately(this.m_LastScreenPosition.x, screenRect.x) || !Mathf.Approximately(this.m_LastScreenPosition.y, screenRect.y))
-					{
-						this.RemoveMessage();
-					}
-					this.m_LastScreenPosition = screenRect;
-				}
-			}
-		}
-
-		private Rect GetScreenRect()
-		{
-			return GUIUtility.GUIToScreenRect(this.m_EditFieldRect);
-		}
-
-		private void ShowMessage(string msg)
-		{
-			TooltipView.Show(msg, this.GetScreenRect());
-		}
-
-		private void RemoveMessage()
-		{
-			TooltipView.Close();
-		}
-	}
+    private void RemoveMessage()
+    {
+      TooltipView.Close();
+    }
+  }
 }

@@ -1,103 +1,63 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.IHierarchyProperty
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal interface IHierarchyProperty
-	{
-		int instanceID
-		{
-			get;
-		}
+  internal interface IHierarchyProperty
+  {
+    void Reset();
 
-		UnityEngine.Object pptrValue
-		{
-			get;
-		}
+    int instanceID { get; }
 
-		string name
-		{
-			get;
-		}
+    Object pptrValue { get; }
 
-		bool hasChildren
-		{
-			get;
-		}
+    string name { get; }
 
-		int depth
-		{
-			get;
-		}
+    bool hasChildren { get; }
 
-		int row
-		{
-			get;
-		}
+    int depth { get; }
 
-		int colorCode
-		{
-			get;
-		}
+    int row { get; }
 
-		string guid
-		{
-			get;
-		}
+    int colorCode { get; }
 
-		Texture2D icon
-		{
-			get;
-		}
+    string guid { get; }
 
-		bool isValid
-		{
-			get;
-		}
+    Texture2D icon { get; }
 
-		bool isMainRepresentation
-		{
-			get;
-		}
+    bool isValid { get; }
 
-		bool hasFullPreviewImage
-		{
-			get;
-		}
+    bool isMainRepresentation { get; }
 
-		IconDrawStyle iconDrawStyle
-		{
-			get;
-		}
+    bool hasFullPreviewImage { get; }
 
-		bool isFolder
-		{
-			get;
-		}
+    IconDrawStyle iconDrawStyle { get; }
 
-		int[] ancestors
-		{
-			get;
-		}
+    bool isFolder { get; }
 
-		void Reset();
+    bool IsExpanded(int[] expanded);
 
-		bool IsExpanded(int[] expanded);
+    bool Next(int[] expanded);
 
-		bool Next(int[] expanded);
+    bool NextWithDepthCheck(int[] expanded, int minDepth);
 
-		bool NextWithDepthCheck(int[] expanded, int minDepth);
+    bool Previous(int[] expanded);
 
-		bool Previous(int[] expanded);
+    bool Parent();
 
-		bool Parent();
+    int[] ancestors { get; }
 
-		bool Find(int instanceID, int[] expanded);
+    bool Find(int instanceID, int[] expanded);
 
-		int[] FindAllAncestors(int[] instanceIDs);
+    int[] FindAllAncestors(int[] instanceIDs);
 
-		bool Skip(int count, int[] expanded);
+    bool Skip(int count, int[] expanded);
 
-		int CountRemaining(int[] expanded);
-	}
+    int CountRemaining(int[] expanded);
+  }
 }

@@ -1,4 +1,9 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.WWWForm
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -6,218 +11,170 @@ using UnityEngine.Internal;
 
 namespace UnityEngine
 {
-	public class WWWForm
-	{
-		private List<byte[]> formData;
+  public class WWWForm
+  {
+    private bool containsFiles = false;
+    private List<byte[]> formData;
+    private List<string> fieldNames;
+    private List<string> fileNames;
+    private List<string> types;
+    private byte[] boundary;
 
-		private List<string> fieldNames;
+    public WWWForm()
+    {
+      this.formData = new List<byte[]>();
+      this.fieldNames = new List<string>();
+      this.fileNames = new List<string>();
+      this.types = new List<string>();
+      this.boundary = new byte[40];
+      for (int index = 0; index < 40; ++index)
+      {
+        int num = Random.Range(48, 110);
+        if (num > 57)
+          num += 7;
+        if (num > 90)
+          num += 6;
+        this.boundary[index] = (byte) num;
+      }
+    }
 
-		private List<string> fileNames;
+    internal static Encoding DefaultEncoding
+    {
+      get
+      {
+        return Encoding.ASCII;
+      }
+    }
 
-		private List<string> types;
+    public void AddField(string fieldName, string value)
+    {
+      this.AddField(fieldName, value, Encoding.UTF8);
+    }
 
-		private byte[] boundary;
+    public void AddField(string fieldName, string value, Encoding e)
+    {
+      this.fieldNames.Add(fieldName);
+      this.fileNames.Add((string) null);
+      this.formData.Add(e.GetBytes(value));
+      this.types.Add("text/plain; charset=\"" + e.WebName + "\"");
+    }
 
-		private bool containsFiles = false;
+    public void AddField(string fieldName, int i)
+    {
+      this.AddField(fieldName, i.ToString());
+    }
 
-		internal static Encoding DefaultEncoding
-		{
-			get
-			{
-				return Encoding.ASCII;
-			}
-		}
+    [ExcludeFromDocs]
+    public void AddBinaryData(string fieldName, byte[] contents)
+    {
+      this.AddBinaryData(fieldName, contents, (string) null, (string) null);
+    }
 
-		public Dictionary<string, string> headers
-		{
-			get
-			{
-				Dictionary<string, string> dictionary = new Dictionary<string, string>();
-				if (this.containsFiles)
-				{
-					dictionary["Content-Type"] = "multipart/form-data; boundary=\"" + Encoding.UTF8.GetString(this.boundary, 0, this.boundary.Length) + "\"";
-				}
-				else
-				{
-					dictionary["Content-Type"] = "application/x-www-form-urlencoded";
-				}
-				return dictionary;
-			}
-		}
+    [ExcludeFromDocs]
+    public void AddBinaryData(string fieldName, byte[] contents, string fileName)
+    {
+      this.AddBinaryData(fieldName, contents, fileName, (string) null);
+    }
 
-		public byte[] data
-		{
-			get
-			{
-				byte[] result;
-				if (this.containsFiles)
-				{
-					byte[] bytes = WWWForm.DefaultEncoding.GetBytes("--");
-					byte[] bytes2 = WWWForm.DefaultEncoding.GetBytes("\r\n");
-					byte[] bytes3 = WWWForm.DefaultEncoding.GetBytes("Content-Type: ");
-					byte[] bytes4 = WWWForm.DefaultEncoding.GetBytes("Content-disposition: form-data; name=\"");
-					byte[] bytes5 = WWWForm.DefaultEncoding.GetBytes("\"");
-					byte[] bytes6 = WWWForm.DefaultEncoding.GetBytes("; filename=\"");
-					using (MemoryStream memoryStream = new MemoryStream(1024))
-					{
-						for (int i = 0; i < this.formData.Count; i++)
-						{
-							memoryStream.Write(bytes2, 0, bytes2.Length);
-							memoryStream.Write(bytes, 0, bytes.Length);
-							memoryStream.Write(this.boundary, 0, this.boundary.Length);
-							memoryStream.Write(bytes2, 0, bytes2.Length);
-							memoryStream.Write(bytes3, 0, bytes3.Length);
-							byte[] bytes7 = Encoding.UTF8.GetBytes(this.types[i]);
-							memoryStream.Write(bytes7, 0, bytes7.Length);
-							memoryStream.Write(bytes2, 0, bytes2.Length);
-							memoryStream.Write(bytes4, 0, bytes4.Length);
-							string text = "";
-							string text2 = this.fieldNames[i];
-							if (!WWWTranscoder.SevenBitClean(text2, Encoding.UTF8) || text2.IndexOf("=?") > -1)
-							{
-								text2 = string.Concat(new string[]
-								{
-									"=?",
-									text,
-									"?Q?",
-									WWWTranscoder.QPEncode(text2, Encoding.UTF8),
-									"?="
-								});
-							}
-							byte[] bytes8 = Encoding.UTF8.GetBytes(text2);
-							memoryStream.Write(bytes8, 0, bytes8.Length);
-							memoryStream.Write(bytes5, 0, bytes5.Length);
-							if (this.fileNames[i] != null)
-							{
-								string text3 = this.fileNames[i];
-								if (!WWWTranscoder.SevenBitClean(text3, Encoding.UTF8) || text3.IndexOf("=?") > -1)
-								{
-									text3 = string.Concat(new string[]
-									{
-										"=?",
-										text,
-										"?Q?",
-										WWWTranscoder.QPEncode(text3, Encoding.UTF8),
-										"?="
-									});
-								}
-								byte[] bytes9 = Encoding.UTF8.GetBytes(text3);
-								memoryStream.Write(bytes6, 0, bytes6.Length);
-								memoryStream.Write(bytes9, 0, bytes9.Length);
-								memoryStream.Write(bytes5, 0, bytes5.Length);
-							}
-							memoryStream.Write(bytes2, 0, bytes2.Length);
-							memoryStream.Write(bytes2, 0, bytes2.Length);
-							byte[] array = this.formData[i];
-							memoryStream.Write(array, 0, array.Length);
-						}
-						memoryStream.Write(bytes2, 0, bytes2.Length);
-						memoryStream.Write(bytes, 0, bytes.Length);
-						memoryStream.Write(this.boundary, 0, this.boundary.Length);
-						memoryStream.Write(bytes, 0, bytes.Length);
-						memoryStream.Write(bytes2, 0, bytes2.Length);
-						result = memoryStream.ToArray();
-						return result;
-					}
-				}
-				byte[] bytes10 = WWWForm.DefaultEncoding.GetBytes("&");
-				byte[] bytes11 = WWWForm.DefaultEncoding.GetBytes("=");
-				using (MemoryStream memoryStream2 = new MemoryStream(1024))
-				{
-					for (int j = 0; j < this.formData.Count; j++)
-					{
-						byte[] array2 = WWWTranscoder.URLEncode(Encoding.UTF8.GetBytes(this.fieldNames[j]));
-						byte[] toEncode = this.formData[j];
-						byte[] array3 = WWWTranscoder.URLEncode(toEncode);
-						if (j > 0)
-						{
-							memoryStream2.Write(bytes10, 0, bytes10.Length);
-						}
-						memoryStream2.Write(array2, 0, array2.Length);
-						memoryStream2.Write(bytes11, 0, bytes11.Length);
-						memoryStream2.Write(array3, 0, array3.Length);
-					}
-					result = memoryStream2.ToArray();
-				}
-				return result;
-			}
-		}
+    public void AddBinaryData(string fieldName, byte[] contents, [DefaultValue("null")] string fileName, [DefaultValue("null")] string mimeType)
+    {
+      this.containsFiles = true;
+      bool flag = contents.Length > 8 && (int) contents[0] == 137 && ((int) contents[1] == 80 && (int) contents[2] == 78) && ((int) contents[3] == 71 && (int) contents[4] == 13 && ((int) contents[5] == 10 && (int) contents[6] == 26)) && (int) contents[7] == 10;
+      if (fileName == null)
+        fileName = fieldName + (!flag ? ".dat" : ".png");
+      if (mimeType == null)
+        mimeType = !flag ? "application/octet-stream" : "image/png";
+      this.fieldNames.Add(fieldName);
+      this.fileNames.Add(fileName);
+      this.formData.Add(contents);
+      this.types.Add(mimeType);
+    }
 
-		public WWWForm()
-		{
-			this.formData = new List<byte[]>();
-			this.fieldNames = new List<string>();
-			this.fileNames = new List<string>();
-			this.types = new List<string>();
-			this.boundary = new byte[40];
-			for (int i = 0; i < 40; i++)
-			{
-				int num = Random.Range(48, 110);
-				if (num > 57)
-				{
-					num += 7;
-				}
-				if (num > 90)
-				{
-					num += 6;
-				}
-				this.boundary[i] = (byte)num;
-			}
-		}
+    public Dictionary<string, string> headers
+    {
+      get
+      {
+        Dictionary<string, string> dictionary = new Dictionary<string, string>();
+        dictionary["Content-Type"] = !this.containsFiles ? "application/x-www-form-urlencoded" : "multipart/form-data; boundary=\"" + Encoding.UTF8.GetString(this.boundary, 0, this.boundary.Length) + "\"";
+        return dictionary;
+      }
+    }
 
-		public void AddField(string fieldName, string value)
-		{
-			this.AddField(fieldName, value, Encoding.UTF8);
-		}
-
-		public void AddField(string fieldName, string value, Encoding e)
-		{
-			this.fieldNames.Add(fieldName);
-			this.fileNames.Add(null);
-			this.formData.Add(e.GetBytes(value));
-			this.types.Add("text/plain; charset=\"" + e.WebName + "\"");
-		}
-
-		public void AddField(string fieldName, int i)
-		{
-			this.AddField(fieldName, i.ToString());
-		}
-
-		[ExcludeFromDocs]
-		public void AddBinaryData(string fieldName, byte[] contents)
-		{
-			this.AddBinaryData(fieldName, contents, null, null);
-		}
-
-		[ExcludeFromDocs]
-		public void AddBinaryData(string fieldName, byte[] contents, string fileName)
-		{
-			this.AddBinaryData(fieldName, contents, fileName, null);
-		}
-
-		public void AddBinaryData(string fieldName, byte[] contents, [DefaultValue("null")] string fileName, [DefaultValue("null")] string mimeType)
-		{
-			this.containsFiles = true;
-			bool flag = contents.Length > 8 && contents[0] == 137 && contents[1] == 80 && contents[2] == 78 && contents[3] == 71 && contents[4] == 13 && contents[5] == 10 && contents[6] == 26 && contents[7] == 10;
-			if (fileName == null)
-			{
-				fileName = fieldName + ((!flag) ? ".dat" : ".png");
-			}
-			if (mimeType == null)
-			{
-				if (flag)
-				{
-					mimeType = "image/png";
-				}
-				else
-				{
-					mimeType = "application/octet-stream";
-				}
-			}
-			this.fieldNames.Add(fieldName);
-			this.fileNames.Add(fileName);
-			this.formData.Add(contents);
-			this.types.Add(mimeType);
-		}
-	}
+    public byte[] data
+    {
+      get
+      {
+        if (this.containsFiles)
+        {
+          byte[] bytes1 = WWWForm.DefaultEncoding.GetBytes("--");
+          byte[] bytes2 = WWWForm.DefaultEncoding.GetBytes("\r\n");
+          byte[] bytes3 = WWWForm.DefaultEncoding.GetBytes("Content-Type: ");
+          byte[] bytes4 = WWWForm.DefaultEncoding.GetBytes("Content-disposition: form-data; name=\"");
+          byte[] bytes5 = WWWForm.DefaultEncoding.GetBytes("\"");
+          byte[] bytes6 = WWWForm.DefaultEncoding.GetBytes("; filename=\"");
+          using (MemoryStream memoryStream = new MemoryStream(1024))
+          {
+            for (int index = 0; index < this.formData.Count; ++index)
+            {
+              memoryStream.Write(bytes2, 0, bytes2.Length);
+              memoryStream.Write(bytes1, 0, bytes1.Length);
+              memoryStream.Write(this.boundary, 0, this.boundary.Length);
+              memoryStream.Write(bytes2, 0, bytes2.Length);
+              memoryStream.Write(bytes3, 0, bytes3.Length);
+              byte[] bytes7 = Encoding.UTF8.GetBytes(this.types[index]);
+              memoryStream.Write(bytes7, 0, bytes7.Length);
+              memoryStream.Write(bytes2, 0, bytes2.Length);
+              memoryStream.Write(bytes4, 0, bytes4.Length);
+              string headerName = Encoding.UTF8.HeaderName;
+              string str1 = this.fieldNames[index];
+              if (!WWWTranscoder.SevenBitClean(str1, Encoding.UTF8) || str1.IndexOf("=?") > -1)
+                str1 = "=?" + headerName + "?Q?" + WWWTranscoder.QPEncode(str1, Encoding.UTF8) + "?=";
+              byte[] bytes8 = Encoding.UTF8.GetBytes(str1);
+              memoryStream.Write(bytes8, 0, bytes8.Length);
+              memoryStream.Write(bytes5, 0, bytes5.Length);
+              if (this.fileNames[index] != null)
+              {
+                string str2 = this.fileNames[index];
+                if (!WWWTranscoder.SevenBitClean(str2, Encoding.UTF8) || str2.IndexOf("=?") > -1)
+                  str2 = "=?" + headerName + "?Q?" + WWWTranscoder.QPEncode(str2, Encoding.UTF8) + "?=";
+                byte[] bytes9 = Encoding.UTF8.GetBytes(str2);
+                memoryStream.Write(bytes6, 0, bytes6.Length);
+                memoryStream.Write(bytes9, 0, bytes9.Length);
+                memoryStream.Write(bytes5, 0, bytes5.Length);
+              }
+              memoryStream.Write(bytes2, 0, bytes2.Length);
+              memoryStream.Write(bytes2, 0, bytes2.Length);
+              byte[] buffer = this.formData[index];
+              memoryStream.Write(buffer, 0, buffer.Length);
+            }
+            memoryStream.Write(bytes2, 0, bytes2.Length);
+            memoryStream.Write(bytes1, 0, bytes1.Length);
+            memoryStream.Write(this.boundary, 0, this.boundary.Length);
+            memoryStream.Write(bytes1, 0, bytes1.Length);
+            memoryStream.Write(bytes2, 0, bytes2.Length);
+            return memoryStream.ToArray();
+          }
+        }
+        else
+        {
+          byte[] bytes1 = WWWForm.DefaultEncoding.GetBytes("&");
+          byte[] bytes2 = WWWForm.DefaultEncoding.GetBytes("=");
+          using (MemoryStream memoryStream = new MemoryStream(1024))
+          {
+            for (int index = 0; index < this.formData.Count; ++index)
+            {
+              byte[] buffer1 = WWWTranscoder.DataEncode(Encoding.UTF8.GetBytes(this.fieldNames[index]));
+              byte[] buffer2 = WWWTranscoder.DataEncode(this.formData[index]);
+              if (index > 0)
+                memoryStream.Write(bytes1, 0, bytes1.Length);
+              memoryStream.Write(buffer1, 0, buffer1.Length);
+              memoryStream.Write(bytes2, 0, bytes2.Length);
+              memoryStream.Write(buffer2, 0, buffer2.Length);
+            }
+            return memoryStream.ToArray();
+          }
+        }
+      }
+    }
+  }
 }

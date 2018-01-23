@@ -1,142 +1,124 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.RaycastHit2D
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[UsedByNativeCode]
-	public struct RaycastHit2D
-	{
-		private Vector2 m_Centroid;
+  [UsedByNativeCode]
+  public struct RaycastHit2D
+  {
+    private Vector2 m_Centroid;
+    private Vector2 m_Point;
+    private Vector2 m_Normal;
+    private float m_Distance;
+    private float m_Fraction;
+    private Collider2D m_Collider;
 
-		private Vector2 m_Point;
+    public Vector2 centroid
+    {
+      get
+      {
+        return this.m_Centroid;
+      }
+      set
+      {
+        this.m_Centroid = value;
+      }
+    }
 
-		private Vector2 m_Normal;
+    public Vector2 point
+    {
+      get
+      {
+        return this.m_Point;
+      }
+      set
+      {
+        this.m_Point = value;
+      }
+    }
 
-		private float m_Distance;
+    public Vector2 normal
+    {
+      get
+      {
+        return this.m_Normal;
+      }
+      set
+      {
+        this.m_Normal = value;
+      }
+    }
 
-		private float m_Fraction;
+    public float distance
+    {
+      get
+      {
+        return this.m_Distance;
+      }
+      set
+      {
+        this.m_Distance = value;
+      }
+    }
 
-		private Collider2D m_Collider;
+    public float fraction
+    {
+      get
+      {
+        return this.m_Fraction;
+      }
+      set
+      {
+        this.m_Fraction = value;
+      }
+    }
 
-		public Vector2 centroid
-		{
-			get
-			{
-				return this.m_Centroid;
-			}
-			set
-			{
-				this.m_Centroid = value;
-			}
-		}
+    public Collider2D collider
+    {
+      get
+      {
+        return this.m_Collider;
+      }
+    }
 
-		public Vector2 point
-		{
-			get
-			{
-				return this.m_Point;
-			}
-			set
-			{
-				this.m_Point = value;
-			}
-		}
+    public Rigidbody2D rigidbody
+    {
+      get
+      {
+        return !((Object) this.collider != (Object) null) ? (Rigidbody2D) null : this.collider.attachedRigidbody;
+      }
+    }
 
-		public Vector2 normal
-		{
-			get
-			{
-				return this.m_Normal;
-			}
-			set
-			{
-				this.m_Normal = value;
-			}
-		}
+    public Transform transform
+    {
+      get
+      {
+        Rigidbody2D rigidbody = this.rigidbody;
+        if ((Object) rigidbody != (Object) null)
+          return rigidbody.transform;
+        if ((Object) this.collider != (Object) null)
+          return this.collider.transform;
+        return (Transform) null;
+      }
+    }
 
-		public float distance
-		{
-			get
-			{
-				return this.m_Distance;
-			}
-			set
-			{
-				this.m_Distance = value;
-			}
-		}
+    public static implicit operator bool(RaycastHit2D hit)
+    {
+      return (Object) hit.collider != (Object) null;
+    }
 
-		public float fraction
-		{
-			get
-			{
-				return this.m_Fraction;
-			}
-			set
-			{
-				this.m_Fraction = value;
-			}
-		}
-
-		public Collider2D collider
-		{
-			get
-			{
-				return this.m_Collider;
-			}
-		}
-
-		public Rigidbody2D rigidbody
-		{
-			get
-			{
-				return (!(this.collider != null)) ? null : this.collider.attachedRigidbody;
-			}
-		}
-
-		public Transform transform
-		{
-			get
-			{
-				Rigidbody2D rigidbody = this.rigidbody;
-				Transform result;
-				if (rigidbody != null)
-				{
-					result = rigidbody.transform;
-				}
-				else if (this.collider != null)
-				{
-					result = this.collider.transform;
-				}
-				else
-				{
-					result = null;
-				}
-				return result;
-			}
-		}
-
-		public static implicit operator bool(RaycastHit2D hit)
-		{
-			return hit.collider != null;
-		}
-
-		public int CompareTo(RaycastHit2D other)
-		{
-			int result;
-			if (this.collider == null)
-			{
-				result = 1;
-			}
-			else if (other.collider == null)
-			{
-				result = -1;
-			}
-			else
-			{
-				result = this.fraction.CompareTo(other.fraction);
-			}
-			return result;
-		}
-	}
+    public int CompareTo(RaycastHit2D other)
+    {
+      if ((Object) this.collider == (Object) null)
+        return 1;
+      if ((Object) other.collider == (Object) null)
+        return -1;
+      return this.fraction.CompareTo(other.fraction);
+    }
+  }
 }

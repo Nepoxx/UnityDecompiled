@@ -1,96 +1,85 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.TerrainEditorUtility
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class TerrainEditorUtility
-	{
-		internal static void RemoveSplatTexture(TerrainData terrainData, int index)
-		{
-			Undo.RegisterCompleteObjectUndo(terrainData, "Remove texture");
-			int alphamapWidth = terrainData.alphamapWidth;
-			int alphamapHeight = terrainData.alphamapHeight;
-			float[,,] alphamaps = terrainData.GetAlphamaps(0, 0, alphamapWidth, alphamapHeight);
-			int length = alphamaps.GetLength(2);
-			int num = length - 1;
-			float[,,] array = new float[alphamapHeight, alphamapWidth, num];
-			for (int i = 0; i < alphamapHeight; i++)
-			{
-				for (int j = 0; j < alphamapWidth; j++)
-				{
-					for (int k = 0; k < index; k++)
-					{
-						array[i, j, k] = alphamaps[i, j, k];
-					}
-					for (int l = index + 1; l < length; l++)
-					{
-						array[i, j, l - 1] = alphamaps[i, j, l];
-					}
-				}
-			}
-			for (int m = 0; m < alphamapHeight; m++)
-			{
-				for (int n = 0; n < alphamapWidth; n++)
-				{
-					float num2 = 0f;
-					for (int num3 = 0; num3 < num; num3++)
-					{
-						num2 += array[m, n, num3];
-					}
-					if ((double)num2 >= 0.01)
-					{
-						float num4 = 1f / num2;
-						for (int num5 = 0; num5 < num; num5++)
-						{
-							array[m, n, num5] *= num4;
-						}
-					}
-					else
-					{
-						for (int num6 = 0; num6 < num; num6++)
-						{
-							array[m, n, num6] = ((num6 != 0) ? 0f : 1f);
-						}
-					}
-				}
-			}
-			SplatPrototype[] splatPrototypes = terrainData.splatPrototypes;
-			SplatPrototype[] array2 = new SplatPrototype[splatPrototypes.Length - 1];
-			for (int num7 = 0; num7 < index; num7++)
-			{
-				array2[num7] = splatPrototypes[num7];
-			}
-			for (int num8 = index + 1; num8 < length; num8++)
-			{
-				array2[num8 - 1] = splatPrototypes[num8];
-			}
-			terrainData.splatPrototypes = array2;
-			terrainData.SetAlphamaps(0, 0, array);
-		}
+  internal class TerrainEditorUtility
+  {
+    internal static void RemoveSplatTexture(TerrainData terrainData, int index)
+    {
+      Undo.RegisterCompleteObjectUndo((Object) terrainData, "Remove texture");
+      int alphamapWidth = terrainData.alphamapWidth;
+      int alphamapHeight = terrainData.alphamapHeight;
+      float[,,] alphamaps = terrainData.GetAlphamaps(0, 0, alphamapWidth, alphamapHeight);
+      int length1 = alphamaps.GetLength(2);
+      int length2 = length1 - 1;
+      float[,,] map = new float[alphamapHeight, alphamapWidth, length2];
+      for (int index1 = 0; index1 < alphamapHeight; ++index1)
+      {
+        for (int index2 = 0; index2 < alphamapWidth; ++index2)
+        {
+          for (int index3 = 0; index3 < index; ++index3)
+            map[index1, index2, index3] = alphamaps[index1, index2, index3];
+          for (int index3 = index + 1; index3 < length1; ++index3)
+            map[index1, index2, index3 - 1] = alphamaps[index1, index2, index3];
+        }
+      }
+      for (int index1 = 0; index1 < alphamapHeight; ++index1)
+      {
+        for (int index2 = 0; index2 < alphamapWidth; ++index2)
+        {
+          float num1 = 0.0f;
+          for (int index3 = 0; index3 < length2; ++index3)
+            num1 += map[index1, index2, index3];
+          if ((double) num1 >= 0.01)
+          {
+            float num2 = 1f / num1;
+            for (int index3 = 0; index3 < length2; ++index3)
+              map[index1, index2, index3] *= num2;
+          }
+          else
+          {
+            for (int index3 = 0; index3 < length2; ++index3)
+              map[index1, index2, index3] = index3 != 0 ? 0.0f : 1f;
+          }
+        }
+      }
+      SplatPrototype[] splatPrototypes = terrainData.splatPrototypes;
+      SplatPrototype[] splatPrototypeArray = new SplatPrototype[splatPrototypes.Length - 1];
+      for (int index1 = 0; index1 < index; ++index1)
+        splatPrototypeArray[index1] = splatPrototypes[index1];
+      for (int index1 = index + 1; index1 < length1; ++index1)
+        splatPrototypeArray[index1 - 1] = splatPrototypes[index1];
+      terrainData.splatPrototypes = splatPrototypeArray;
+      terrainData.SetAlphamaps(0, 0, map);
+    }
 
-		internal static void RemoveTree(Terrain terrain, int index)
-		{
-			TerrainData terrainData = terrain.terrainData;
-			if (!(terrainData == null))
-			{
-				Undo.RegisterCompleteObjectUndo(terrainData, "Remove tree");
-				terrainData.RemoveTreePrototype(index);
-			}
-		}
+    internal static void RemoveTree(Terrain terrain, int index)
+    {
+      TerrainData terrainData = terrain.terrainData;
+      if ((Object) terrainData == (Object) null)
+        return;
+      Undo.RegisterCompleteObjectUndo((Object) terrainData, "Remove tree");
+      terrainData.RemoveTreePrototype(index);
+    }
 
-		internal static void RemoveDetail(Terrain terrain, int index)
-		{
-			TerrainData terrainData = terrain.terrainData;
-			if (!(terrainData == null))
-			{
-				Undo.RegisterCompleteObjectUndo(terrainData, "Remove detail object");
-				terrainData.RemoveDetailPrototype(index);
-			}
-		}
+    internal static void RemoveDetail(Terrain terrain, int index)
+    {
+      TerrainData terrainData = terrain.terrainData;
+      if ((Object) terrainData == (Object) null)
+        return;
+      Undo.RegisterCompleteObjectUndo((Object) terrainData, "Remove detail object");
+      terrainData.RemoveDetailPrototype(index);
+    }
 
-		internal static bool IsLODTreePrototype(GameObject prefab)
-		{
-			return prefab != null && prefab.GetComponent<LODGroup>() != null;
-		}
-	}
+    internal static bool IsLODTreePrototype(GameObject prefab)
+    {
+      return (Object) prefab != (Object) null && (Object) prefab.GetComponent<LODGroup>() != (Object) null;
+    }
+  }
 }

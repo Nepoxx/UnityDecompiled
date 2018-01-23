@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.PackageImportTreeView
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -9,657 +15,520 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class PackageImportTreeView
-	{
-		public enum EnabledState
-		{
-			NotSet = -1,
-			None,
-			All,
-			Mixed
-		}
+  internal class PackageImportTreeView
+  {
+    private static readonly bool s_UseFoldouts = true;
+    private List<PackageImportTreeView.PackageImportTreeViewItem> m_Selection = new List<PackageImportTreeView.PackageImportTreeViewItem>();
+    private TreeViewController m_TreeView;
+    private PackageImport m_PackageImport;
 
-		private class PackageImportTreeViewItem : TreeViewItem
-		{
-			private PackageImportTreeView.EnabledState m_EnableState;
+    public PackageImportTreeView(PackageImport packageImport, TreeViewState treeViewState, Rect startRect)
+    {
+      this.m_PackageImport = packageImport;
+      this.m_TreeView = new TreeViewController((EditorWindow) this.m_PackageImport, treeViewState);
+      PackageImportTreeView.PackageImportTreeViewDataSource treeViewDataSource = new PackageImportTreeView.PackageImportTreeViewDataSource(this.m_TreeView, this);
+      PackageImportTreeView.PackageImportTreeViewGUI importTreeViewGui = new PackageImportTreeView.PackageImportTreeViewGUI(this.m_TreeView, this);
+      this.m_TreeView.Init(startRect, (ITreeViewDataSource) treeViewDataSource, (ITreeViewGUI) importTreeViewGui, (ITreeViewDragging) null);
+      this.m_TreeView.ReloadData();
+      this.m_TreeView.selectionChangedCallback += new Action<int[]>(this.SelectionChanged);
+      importTreeViewGui.itemWasToggled += new Action<PackageImportTreeView.PackageImportTreeViewItem>(this.ItemWasToggled);
+      this.ComputeEnabledStateForFolders();
+    }
 
-			public ImportPackageItem item
-			{
-				get;
-				set;
-			}
+    public bool canReInstall
+    {
+      get
+      {
+        return this.m_PackageImport.canReInstall;
+      }
+    }
 
-			public PackageImportTreeView.EnabledState enableState
-			{
-				get
-				{
-					return this.m_EnableState;
-				}
-				set
-				{
-					if (this.item == null || !this.item.projectAsset)
-					{
-						this.m_EnableState = value;
-						if (this.item != null)
-						{
-							this.item.enabledStatus = (int)value;
-						}
-					}
-				}
-			}
+    public bool doReInstall
+    {
+      get
+      {
+        return this.m_PackageImport.doReInstall;
+      }
+    }
 
-			public PackageImportTreeViewItem(ImportPackageItem itemIn, int id, int depth, TreeViewItem parent, string displayName) : base(id, depth, parent, displayName)
-			{
-				this.item = itemIn;
-				if (this.item == null)
-				{
-					this.m_EnableState = PackageImportTreeView.EnabledState.All;
-				}
-				else
-				{
-					this.m_EnableState = (PackageImportTreeView.EnabledState)this.item.enabledStatus;
-				}
-			}
-		}
+    public ImportPackageItem[] packageItems
+    {
+      get
+      {
+        return this.m_PackageImport.packageItems;
+      }
+    }
 
-		private class PackageImportTreeViewGUI : TreeViewGUI
-		{
-			internal static class Constants
-			{
-				public static Texture2D folderIcon;
+    private void ComputeEnabledStateForFolders()
+    {
+      PackageImportTreeView.PackageImportTreeViewItem root = this.m_TreeView.data.root as PackageImportTreeView.PackageImportTreeViewItem;
+      this.RecursiveComputeEnabledStateForFolders(root, new HashSet<PackageImportTreeView.PackageImportTreeViewItem>()
+      {
+        root
+      });
+    }
 
-				public static GUIContent badgeNew;
+    private void RecursiveComputeEnabledStateForFolders(PackageImportTreeView.PackageImportTreeViewItem pitem, HashSet<PackageImportTreeView.PackageImportTreeViewItem> done)
+    {
+      if (pitem.item != null && !pitem.item.isFolder)
+        return;
+      if (pitem.hasChildren)
+      {
+        foreach (TreeViewItem child in pitem.children)
+          this.RecursiveComputeEnabledStateForFolders(child as PackageImportTreeView.PackageImportTreeViewItem, done);
+      }
+      if (done.Contains(pitem))
+        return;
+      PackageImportTreeView.EnabledState childrenEnabledState = this.GetFolderChildrenEnabledState(pitem);
+      pitem.enableState = childrenEnabledState;
+      if (childrenEnabledState == PackageImportTreeView.EnabledState.Mixed)
+      {
+        done.Add(pitem);
+        for (PackageImportTreeView.PackageImportTreeViewItem parent = pitem.parent as PackageImportTreeView.PackageImportTreeViewItem; parent != null; parent = parent.parent as PackageImportTreeView.PackageImportTreeViewItem)
+        {
+          if (!done.Contains(parent))
+          {
+            parent.enableState = PackageImportTreeView.EnabledState.Mixed;
+            done.Add(parent);
+          }
+        }
+      }
+    }
 
-				public static GUIContent badgeDelete;
+    private bool ItemShouldBeConsideredForEnabledCheck(PackageImportTreeView.PackageImportTreeViewItem pitem)
+    {
+      if (pitem == null)
+        return false;
+      if (pitem.item == null)
+        return true;
+      ImportPackageItem importPackageItem = pitem.item;
+      return !importPackageItem.projectAsset && (importPackageItem.isFolder || importPackageItem.assetChanged || this.doReInstall);
+    }
 
-				public static GUIContent badgeWarn;
+    private PackageImportTreeView.EnabledState GetFolderChildrenEnabledState(PackageImportTreeView.PackageImportTreeViewItem folder)
+    {
+      if (folder.item != null && !folder.item.isFolder)
+        Debug.LogError((object) "Should be a folder item!");
+      if (!folder.hasChildren)
+        return PackageImportTreeView.EnabledState.None;
+      PackageImportTreeView.EnabledState enabledState = PackageImportTreeView.EnabledState.NotSet;
+      int index1;
+      for (index1 = 0; index1 < folder.children.Count; ++index1)
+      {
+        PackageImportTreeView.PackageImportTreeViewItem child = folder.children[index1] as PackageImportTreeView.PackageImportTreeViewItem;
+        if (this.ItemShouldBeConsideredForEnabledCheck(child))
+        {
+          enabledState = child.enableState;
+          break;
+        }
+      }
+      for (int index2 = index1 + 1; index2 < folder.children.Count; ++index2)
+      {
+        PackageImportTreeView.PackageImportTreeViewItem child = folder.children[index2] as PackageImportTreeView.PackageImportTreeViewItem;
+        if (this.ItemShouldBeConsideredForEnabledCheck(child) && enabledState != child.enableState)
+        {
+          enabledState = PackageImportTreeView.EnabledState.Mixed;
+          break;
+        }
+      }
+      if (enabledState == PackageImportTreeView.EnabledState.NotSet)
+        return PackageImportTreeView.EnabledState.None;
+      return enabledState;
+    }
 
-				public static GUIContent badgeChange;
+    private void SelectionChanged(int[] selectedIDs)
+    {
+      this.m_Selection = new List<PackageImportTreeView.PackageImportTreeViewItem>();
+      foreach (TreeViewItem row in (IEnumerable<TreeViewItem>) this.m_TreeView.data.GetRows())
+      {
+        if (((IEnumerable<int>) selectedIDs).Contains<int>(row.id))
+        {
+          PackageImportTreeView.PackageImportTreeViewItem importTreeViewItem = row as PackageImportTreeView.PackageImportTreeViewItem;
+          if (importTreeViewItem != null)
+            this.m_Selection.Add(importTreeViewItem);
+        }
+      }
+      ImportPackageItem importPackageItem = this.m_Selection[0].item;
+      if (this.m_Selection.Count == 1 && importPackageItem != null && !string.IsNullOrEmpty(importPackageItem.previewPath))
+        (this.m_TreeView.gui as PackageImportTreeView.PackageImportTreeViewGUI).showPreviewForID = this.m_Selection[0].id;
+      else
+        PopupWindowWithoutFocus.Hide();
+    }
 
-				public static GUIStyle paddinglessStyle;
+    public void OnGUI(Rect rect)
+    {
+      if (Event.current.type == EventType.ScrollWheel)
+        PopupWindowWithoutFocus.Hide();
+      int controlId = GUIUtility.GetControlID(FocusType.Keyboard);
+      this.m_TreeView.OnGUI(rect, controlId);
+      if (Event.current.type != EventType.KeyDown || Event.current.keyCode != KeyCode.Space || (this.m_Selection == null || this.m_Selection.Count <= 0) || GUIUtility.keyboardControl != controlId)
+        return;
+      PackageImportTreeView.PackageImportTreeViewItem importTreeViewItem = this.m_Selection[0];
+      if (importTreeViewItem != null)
+      {
+        PackageImportTreeView.EnabledState enabledState = importTreeViewItem.enableState != PackageImportTreeView.EnabledState.None ? PackageImportTreeView.EnabledState.None : PackageImportTreeView.EnabledState.All;
+        importTreeViewItem.enableState = enabledState;
+        this.ItemWasToggled(this.m_Selection[0]);
+      }
+      Event.current.Use();
+    }
 
-				static Constants()
-				{
-					PackageImportTreeView.PackageImportTreeViewGUI.Constants.folderIcon = EditorGUIUtility.FindTexture(EditorResourcesUtility.folderIconName);
-					PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeNew = EditorGUIUtility.IconContent("PackageBadgeNew", "|This is a new Asset");
-					PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeDelete = EditorGUIUtility.IconContent("PackageBadgeDelete", "|These files will be deleted!");
-					PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeWarn = EditorGUIUtility.IconContent("console.warnicon", "|Warning: File exists in project, but with different GUID. Will override existing asset which may be undesired.");
-					PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeChange = EditorGUIUtility.IconContent("playLoopOff", "|This file is new or has changed.");
-					PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle = new GUIStyle();
-					PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle.padding = new RectOffset(0, 0, 0, 0);
-				}
-			}
+    public void SetAllEnabled(PackageImportTreeView.EnabledState state)
+    {
+      this.EnableChildrenRecursive(this.m_TreeView.data.root, state);
+      this.ComputeEnabledStateForFolders();
+    }
 
-			public Action<PackageImportTreeView.PackageImportTreeViewItem> itemWasToggled;
+    private void ItemWasToggled(PackageImportTreeView.PackageImportTreeViewItem pitem)
+    {
+      if (this.m_Selection.Count <= 1)
+      {
+        this.EnableChildrenRecursive((TreeViewItem) pitem, pitem.enableState);
+      }
+      else
+      {
+        foreach (PackageImportTreeView.PackageImportTreeViewItem importTreeViewItem in this.m_Selection)
+          importTreeViewItem.enableState = pitem.enableState;
+      }
+      this.ComputeEnabledStateForFolders();
+    }
 
-			private PackageImportTreeView m_PackageImportView;
+    private void EnableChildrenRecursive(TreeViewItem parentItem, PackageImportTreeView.EnabledState state)
+    {
+      if (!parentItem.hasChildren)
+        return;
+      foreach (TreeViewItem child in parentItem.children)
+      {
+        PackageImportTreeView.PackageImportTreeViewItem importTreeViewItem = child as PackageImportTreeView.PackageImportTreeViewItem;
+        importTreeViewItem.enableState = state;
+        this.EnableChildrenRecursive((TreeViewItem) importTreeViewItem, state);
+      }
+    }
 
-			protected float k_FoldoutWidth = 12f;
+    public enum EnabledState
+    {
+      NotSet = -1,
+      None = 0,
+      All = 1,
+      Mixed = 2,
+    }
 
-			public int showPreviewForID
-			{
-				get;
-				set;
-			}
+    private class PackageImportTreeViewItem : TreeViewItem
+    {
+      private PackageImportTreeView.EnabledState m_EnableState;
 
-			public PackageImportTreeViewGUI(TreeViewController treeView, PackageImportTreeView view) : base(treeView)
-			{
-				this.m_PackageImportView = view;
-				this.k_BaseIndent = 4f;
-				if (!PackageImportTreeView.s_UseFoldouts)
-				{
-					this.k_FoldoutWidth = 0f;
-				}
-			}
+      public PackageImportTreeViewItem(ImportPackageItem itemIn, int id, int depth, TreeViewItem parent, string displayName)
+        : base(id, depth, parent, displayName)
+      {
+        this.item = itemIn;
+        if (this.item == null)
+          this.m_EnableState = PackageImportTreeView.EnabledState.All;
+        else
+          this.m_EnableState = (PackageImportTreeView.EnabledState) this.item.enabledStatus;
+      }
 
-			public override void OnRowGUI(Rect rowRect, TreeViewItem tvItem, int row, bool selected, bool focused)
-			{
-				this.k_IndentWidth = 18f;
-				this.k_FoldoutWidth = 18f;
-				PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = tvItem as PackageImportTreeView.PackageImportTreeViewItem;
-				ImportPackageItem item = packageImportTreeViewItem.item;
-				bool flag = Event.current.type == EventType.Repaint;
-				if (selected && flag)
-				{
-					TreeViewGUI.Styles.selectionStyle.Draw(rowRect, false, false, true, focused);
-				}
-				bool flag2 = item != null;
-				bool flag3 = item == null || item.isFolder;
-				bool flag4 = item != null && item.assetChanged;
-				bool flag5 = item != null && item.pathConflict;
-				bool flag6 = item == null || item.exists;
-				bool flag7 = item != null && item.projectAsset;
-				bool doReInstall = this.m_PackageImportView.doReInstall;
-				if (this.m_TreeView.data.IsExpandable(tvItem))
-				{
-					this.DoFoldout(rowRect, tvItem, row);
-				}
-				Rect toggleRect = new Rect(this.k_BaseIndent + (float)tvItem.depth * base.indentWidth + this.k_FoldoutWidth, rowRect.y, 18f, rowRect.height);
-				if ((flag3 && !flag7) || (flag2 && !flag7 && (flag4 || doReInstall)))
-				{
-					this.DoToggle(packageImportTreeViewItem, toggleRect);
-				}
-				using (new EditorGUI.DisabledScope(!flag2 || flag7))
-				{
-					Rect contentRect = new Rect(toggleRect.xMax, rowRect.y, rowRect.width, rowRect.height);
-					this.DoIconAndText(tvItem, contentRect, selected, focused);
-					this.DoPreviewPopup(packageImportTreeViewItem, rowRect);
-					if (flag && flag2 && flag5)
-					{
-						Rect position = new Rect(rowRect.xMax - 58f, rowRect.y, rowRect.height, rowRect.height);
-						EditorGUIUtility.SetIconSize(new Vector2(rowRect.height, rowRect.height));
-						GUI.Label(position, PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeWarn);
-						EditorGUIUtility.SetIconSize(Vector2.zero);
-					}
-					if (flag && flag2 && !flag6 && !flag5)
-					{
-						Texture image = PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeNew.image;
-						Rect position2 = new Rect(rowRect.xMax - (float)image.width - 6f, rowRect.y + (rowRect.height - (float)image.height) / 2f, (float)image.width, (float)image.height);
-						GUI.Label(position2, PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeNew, PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle);
-					}
-					if (flag && doReInstall && flag7)
-					{
-						Texture image2 = PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeDelete.image;
-						Rect position3 = new Rect(rowRect.xMax - (float)image2.width - 6f, rowRect.y + (rowRect.height - (float)image2.height) / 2f, (float)image2.width, (float)image2.height);
-						GUI.Label(position3, PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeDelete, PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle);
-					}
-					if (flag && flag2 && (flag6 || flag5) && flag4)
-					{
-						Texture image3 = PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeChange.image;
-						Rect position4 = new Rect(rowRect.xMax - (float)image3.width - 6f, rowRect.y, rowRect.height, rowRect.height);
-						GUI.Label(position4, PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeChange, PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle);
-					}
-				}
-			}
+      public ImportPackageItem item { get; set; }
 
-			private static void Toggle(ImportPackageItem[] items, PackageImportTreeView.PackageImportTreeViewItem pitem, Rect toggleRect)
-			{
-				bool flag = pitem.enableState > PackageImportTreeView.EnabledState.None;
-				bool flag2 = pitem.item == null || pitem.item.isFolder;
-				GUIStyle style = EditorStyles.toggle;
-				bool flag3 = flag2 && pitem.enableState == PackageImportTreeView.EnabledState.Mixed;
-				if (flag3)
-				{
-					style = EditorStyles.toggleMixed;
-				}
-				bool flag4 = GUI.Toggle(toggleRect, flag, GUIContent.none, style);
-				if (flag4 != flag)
-				{
-					pitem.enableState = ((!flag4) ? PackageImportTreeView.EnabledState.None : PackageImportTreeView.EnabledState.All);
-				}
-			}
+      public PackageImportTreeView.EnabledState enableState
+      {
+        get
+        {
+          return this.m_EnableState;
+        }
+        set
+        {
+          if (this.item != null && this.item.projectAsset)
+            return;
+          this.m_EnableState = value;
+          if (this.item != null)
+            this.item.enabledStatus = (int) value;
+        }
+      }
+    }
 
-			private void DoToggle(PackageImportTreeView.PackageImportTreeViewItem pitem, Rect toggleRect)
-			{
-				EditorGUI.BeginChangeCheck();
-				PackageImportTreeView.PackageImportTreeViewGUI.Toggle(this.m_PackageImportView.packageItems, pitem, toggleRect);
-				if (EditorGUI.EndChangeCheck())
-				{
-					if (this.m_TreeView.GetSelection().Length <= 1 || !this.m_TreeView.GetSelection().Contains(pitem.id))
-					{
-						this.m_TreeView.SetSelection(new int[]
-						{
-							pitem.id
-						}, false);
-						this.m_TreeView.NotifyListenersThatSelectionChanged();
-					}
-					if (this.itemWasToggled != null)
-					{
-						this.itemWasToggled(pitem);
-					}
-					Event.current.Use();
-				}
-			}
+    private class PackageImportTreeViewGUI : TreeViewGUI
+    {
+      protected float k_FoldoutWidth = 12f;
+      public Action<PackageImportTreeView.PackageImportTreeViewItem> itemWasToggled;
+      private PackageImportTreeView m_PackageImportView;
 
-			private void DoPreviewPopup(PackageImportTreeView.PackageImportTreeViewItem pitem, Rect rowRect)
-			{
-				ImportPackageItem item = pitem.item;
-				if (item != null)
-				{
-					if (Event.current.type == EventType.MouseDown && rowRect.Contains(Event.current.mousePosition) && !PopupWindowWithoutFocus.IsVisible())
-					{
-						this.showPreviewForID = pitem.id;
-					}
-					if (pitem.id == this.showPreviewForID && Event.current.type != EventType.Layout)
-					{
-						this.showPreviewForID = 0;
-						if (!string.IsNullOrEmpty(item.previewPath))
-						{
-							Texture2D preview = PackageImport.GetPreview(item.previewPath);
-							Rect activatorRect = rowRect;
-							activatorRect.width = EditorGUIUtility.currentViewWidth;
-							PopupWindowWithoutFocus.Show(activatorRect, new PackageImportTreeView.PreviewPopup(preview), new PopupLocationHelper.PopupLocation[]
-							{
-								PopupLocationHelper.PopupLocation.Right,
-								PopupLocationHelper.PopupLocation.Left,
-								PopupLocationHelper.PopupLocation.Below
-							});
-						}
-					}
-				}
-			}
+      public PackageImportTreeViewGUI(TreeViewController treeView, PackageImportTreeView view)
+        : base(treeView)
+      {
+        this.m_PackageImportView = view;
+        this.k_BaseIndent = 4f;
+        if (PackageImportTreeView.s_UseFoldouts)
+          return;
+        this.k_FoldoutWidth = 0.0f;
+      }
 
-			private void DoIconAndText(TreeViewItem item, Rect contentRect, bool selected, bool focused)
-			{
-				EditorGUIUtility.SetIconSize(new Vector2(this.k_IconWidth, this.k_IconWidth));
-				GUIStyle lineStyle = TreeViewGUI.Styles.lineStyle;
-				lineStyle.padding.left = 0;
-				if (Event.current.type == EventType.Repaint)
-				{
-					lineStyle.Draw(contentRect, GUIContent.Temp(item.displayName, this.GetIconForItem(item)), false, false, selected, focused);
-				}
-				EditorGUIUtility.SetIconSize(Vector2.zero);
-			}
+      public int showPreviewForID { get; set; }
 
-			protected override Texture GetIconForItem(TreeViewItem tvItem)
-			{
-				PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = tvItem as PackageImportTreeView.PackageImportTreeViewItem;
-				ImportPackageItem item = packageImportTreeViewItem.item;
-				Texture result;
-				if (item == null || item.isFolder)
-				{
-					result = PackageImportTreeView.PackageImportTreeViewGUI.Constants.folderIcon;
-				}
-				else
-				{
-					Texture cachedIcon = AssetDatabase.GetCachedIcon(item.destinationAssetPath);
-					if (cachedIcon != null)
-					{
-						result = cachedIcon;
-					}
-					else
-					{
-						result = InternalEditorUtility.GetIconForFile(item.destinationAssetPath);
-					}
-				}
-				return result;
-			}
+      public override void OnRowGUI(Rect rowRect, TreeViewItem tvItem, int row, bool selected, bool focused)
+      {
+        this.k_IndentWidth = 18f;
+        this.k_FoldoutWidth = 18f;
+        PackageImportTreeView.PackageImportTreeViewItem pitem = tvItem as PackageImportTreeView.PackageImportTreeViewItem;
+        ImportPackageItem importPackageItem = pitem.item;
+        bool flag1 = Event.current.type == EventType.Repaint;
+        if (selected && flag1)
+          TreeViewGUI.Styles.selectionStyle.Draw(rowRect, false, false, true, focused);
+        bool flag2 = importPackageItem != null;
+        bool flag3 = importPackageItem == null || importPackageItem.isFolder;
+        bool flag4 = importPackageItem != null && importPackageItem.assetChanged;
+        bool flag5 = importPackageItem != null && importPackageItem.pathConflict;
+        bool flag6 = importPackageItem == null || importPackageItem.exists;
+        bool flag7 = importPackageItem != null && importPackageItem.projectAsset;
+        bool doReInstall = this.m_PackageImportView.doReInstall;
+        if (this.m_TreeView.data.IsExpandable(tvItem))
+          this.DoFoldout(rowRect, tvItem, row);
+        Rect toggleRect = new Rect(this.k_BaseIndent + (float) tvItem.depth * this.indentWidth + this.k_FoldoutWidth, rowRect.y, 18f, rowRect.height);
+        if (flag3 && !flag7 || flag2 && !flag7 && (flag4 || doReInstall))
+          this.DoToggle(pitem, toggleRect);
+        using (new EditorGUI.DisabledScope(!flag2 || flag7))
+        {
+          Rect contentRect = new Rect(toggleRect.xMax, rowRect.y, rowRect.width, rowRect.height);
+          this.DoIconAndText(tvItem, contentRect, selected, focused);
+          this.DoPreviewPopup(pitem, rowRect);
+          if (flag1 && flag2 && flag5)
+          {
+            Rect position = new Rect(rowRect.xMax - 58f, rowRect.y, rowRect.height, rowRect.height);
+            EditorGUIUtility.SetIconSize(new Vector2(rowRect.height, rowRect.height));
+            GUI.Label(position, PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeWarn);
+            EditorGUIUtility.SetIconSize(Vector2.zero);
+          }
+          if (flag1 && flag2 && (!flag6 && !flag5))
+          {
+            Texture image = PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeNew.image;
+            GUI.Label(new Rect((float) ((double) rowRect.xMax - (double) image.width - 6.0), rowRect.y + (float) (((double) rowRect.height - (double) image.height) / 2.0), (float) image.width, (float) image.height), PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeNew, PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle);
+          }
+          if (flag1 && doReInstall && flag7)
+          {
+            Texture image = PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeDelete.image;
+            GUI.Label(new Rect((float) ((double) rowRect.xMax - (double) image.width - 6.0), rowRect.y + (float) (((double) rowRect.height - (double) image.height) / 2.0), (float) image.width, (float) image.height), PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeDelete, PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle);
+          }
+          if (!flag1 || !flag2 || !flag6 && !flag5 || !flag4)
+            return;
+          Texture image1 = PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeChange.image;
+          GUI.Label(new Rect((float) ((double) rowRect.xMax - (double) image1.width - 6.0), rowRect.y, rowRect.height, rowRect.height), PackageImportTreeView.PackageImportTreeViewGUI.Constants.badgeChange, PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle);
+        }
+      }
 
-			protected override void RenameEnded()
-			{
-			}
-		}
+      private static void Toggle(ImportPackageItem[] items, PackageImportTreeView.PackageImportTreeViewItem pitem, Rect toggleRect)
+      {
+        bool flag1 = pitem.enableState > PackageImportTreeView.EnabledState.None;
+        bool flag2 = pitem.item == null || pitem.item.isFolder;
+        GUIStyle style = EditorStyles.toggle;
+        if (flag2 && pitem.enableState == PackageImportTreeView.EnabledState.Mixed)
+          style = EditorStyles.toggleMixed;
+        bool flag3 = GUI.Toggle(toggleRect, flag1, GUIContent.none, style);
+        if (flag3 == flag1)
+          return;
+        pitem.enableState = !flag3 ? PackageImportTreeView.EnabledState.None : PackageImportTreeView.EnabledState.All;
+      }
 
-		private class PackageImportTreeViewDataSource : TreeViewDataSource
-		{
-			private PackageImportTreeView m_PackageImportView;
+      private void DoToggle(PackageImportTreeView.PackageImportTreeViewItem pitem, Rect toggleRect)
+      {
+        EditorGUI.BeginChangeCheck();
+        PackageImportTreeView.PackageImportTreeViewGUI.Toggle(this.m_PackageImportView.packageItems, pitem, toggleRect);
+        if (!EditorGUI.EndChangeCheck())
+          return;
+        if (this.m_TreeView.GetSelection().Length <= 1 || !((IEnumerable<int>) this.m_TreeView.GetSelection()).Contains<int>(pitem.id))
+        {
+          this.m_TreeView.SetSelection(new int[1]
+          {
+            pitem.id
+          }, false);
+          this.m_TreeView.NotifyListenersThatSelectionChanged();
+        }
+        if (this.itemWasToggled != null)
+          this.itemWasToggled(pitem);
+        Event.current.Use();
+      }
 
-			public PackageImportTreeViewDataSource(TreeViewController treeView, PackageImportTreeView view) : base(treeView)
-			{
-				this.m_PackageImportView = view;
-				base.rootIsCollapsable = false;
-				base.showRootItem = false;
-			}
+      private void DoPreviewPopup(PackageImportTreeView.PackageImportTreeViewItem pitem, Rect rowRect)
+      {
+        ImportPackageItem importPackageItem = pitem.item;
+        if (importPackageItem == null)
+          return;
+        if (Event.current.type == EventType.MouseDown && rowRect.Contains(Event.current.mousePosition) && !PopupWindowWithoutFocus.IsVisible())
+          this.showPreviewForID = pitem.id;
+        if (pitem.id == this.showPreviewForID && Event.current.type != EventType.Layout)
+        {
+          this.showPreviewForID = 0;
+          if (!string.IsNullOrEmpty(importPackageItem.previewPath))
+          {
+            Texture2D preview = PackageImport.GetPreview(importPackageItem.previewPath);
+            Rect activatorRect = rowRect;
+            activatorRect.width = EditorGUIUtility.currentViewWidth;
+            PopupWindowWithoutFocus.Show(activatorRect, (PopupWindowContent) new PackageImportTreeView.PreviewPopup(preview), new PopupLocationHelper.PopupLocation[3]
+            {
+              PopupLocationHelper.PopupLocation.Right,
+              PopupLocationHelper.PopupLocation.Left,
+              PopupLocationHelper.PopupLocation.Below
+            });
+          }
+        }
+      }
 
-			public override bool IsRenamingItemAllowed(TreeViewItem item)
-			{
-				return false;
-			}
+      private void DoIconAndText(TreeViewItem item, Rect contentRect, bool selected, bool focused)
+      {
+        EditorGUIUtility.SetIconSize(new Vector2(this.k_IconWidth, this.k_IconWidth));
+        GUIStyle lineStyle = TreeViewGUI.Styles.lineStyle;
+        lineStyle.padding.left = 0;
+        contentRect.height += 5f;
+        if (Event.current.type == EventType.Repaint)
+          lineStyle.Draw(contentRect, GUIContent.Temp(item.displayName, this.GetIconForItem(item)), false, false, selected, focused);
+        EditorGUIUtility.SetIconSize(Vector2.zero);
+      }
 
-			public override bool IsExpandable(TreeViewItem item)
-			{
-				return PackageImportTreeView.s_UseFoldouts && base.IsExpandable(item);
-			}
+      protected override Texture GetIconForItem(TreeViewItem tvItem)
+      {
+        ImportPackageItem importPackageItem = (tvItem as PackageImportTreeView.PackageImportTreeViewItem).item;
+        if (importPackageItem == null || importPackageItem.isFolder)
+          return (Texture) PackageImportTreeView.PackageImportTreeViewGUI.Constants.folderIcon;
+        Texture cachedIcon = AssetDatabase.GetCachedIcon(importPackageItem.destinationAssetPath);
+        if ((UnityEngine.Object) cachedIcon != (UnityEngine.Object) null)
+          return cachedIcon;
+        return (Texture) InternalEditorUtility.GetIconForFile(importPackageItem.destinationAssetPath);
+      }
 
-			public override void FetchData()
-			{
-				int depth = -1;
-				this.m_RootItem = new PackageImportTreeView.PackageImportTreeViewItem(null, "Assets".GetHashCode(), depth, null, "InvisibleAssetsFolder");
-				bool flag = true;
-				if (flag)
-				{
-					this.m_TreeView.state.expandedIDs.Add(this.m_RootItem.id);
-				}
-				ImportPackageItem[] packageItems = this.m_PackageImportView.packageItems;
-				Dictionary<string, PackageImportTreeView.PackageImportTreeViewItem> dictionary = new Dictionary<string, PackageImportTreeView.PackageImportTreeViewItem>();
-				for (int i = 0; i < packageItems.Length; i++)
-				{
-					ImportPackageItem importPackageItem = packageItems[i];
-					if (!PackageImport.HasInvalidCharInFilePath(importPackageItem.destinationAssetPath))
-					{
-						string displayName = Path.GetFileName(importPackageItem.destinationAssetPath).ConvertSeparatorsToUnity();
-						string folderPath = Path.GetDirectoryName(importPackageItem.destinationAssetPath).ConvertSeparatorsToUnity();
-						TreeViewItem treeViewItem = this.EnsureFolderPath(folderPath, dictionary, flag);
-						if (treeViewItem != null)
-						{
-							int hashCode = importPackageItem.destinationAssetPath.GetHashCode();
-							PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = new PackageImportTreeView.PackageImportTreeViewItem(importPackageItem, hashCode, treeViewItem.depth + 1, treeViewItem, displayName);
-							treeViewItem.AddChild(packageImportTreeViewItem);
-							if (flag)
-							{
-								this.m_TreeView.state.expandedIDs.Add(hashCode);
-							}
-							if (importPackageItem.isFolder)
-							{
-								dictionary[importPackageItem.destinationAssetPath] = packageImportTreeViewItem;
-							}
-						}
-					}
-				}
-				if (flag)
-				{
-					this.m_TreeView.state.expandedIDs.Sort();
-				}
-			}
+      protected override void RenameEnded()
+      {
+      }
 
-			private TreeViewItem EnsureFolderPath(string folderPath, Dictionary<string, PackageImportTreeView.PackageImportTreeViewItem> treeViewFolders, bool initExpandedState)
-			{
-				TreeViewItem result;
-				if (folderPath == "")
-				{
-					result = this.m_RootItem;
-				}
-				else
-				{
-					int hashCode = folderPath.GetHashCode();
-					TreeViewItem treeViewItem = TreeViewUtility.FindItem(hashCode, this.m_RootItem);
-					if (treeViewItem != null)
-					{
-						result = treeViewItem;
-					}
-					else
-					{
-						string[] array = folderPath.Split(new char[]
-						{
-							'/'
-						});
-						string text = "";
-						TreeViewItem treeViewItem2 = this.m_RootItem;
-						int num = -1;
-						for (int i = 0; i < array.Length; i++)
-						{
-							string text2 = array[i];
-							if (text != "")
-							{
-								text += '/';
-							}
-							text += text2;
-							if (i != 0 || !(text == "Assets"))
-							{
-								num++;
-								hashCode = text.GetHashCode();
-								PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem;
-								if (treeViewFolders.TryGetValue(text, out packageImportTreeViewItem))
-								{
-									treeViewItem2 = packageImportTreeViewItem;
-								}
-								else
-								{
-									PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem2 = new PackageImportTreeView.PackageImportTreeViewItem(null, hashCode, num, treeViewItem2, text2);
-									treeViewItem2.AddChild(packageImportTreeViewItem2);
-									treeViewItem2 = packageImportTreeViewItem2;
-									if (initExpandedState)
-									{
-										this.m_TreeView.state.expandedIDs.Add(hashCode);
-									}
-									treeViewFolders[text] = packageImportTreeViewItem2;
-								}
-							}
-						}
-						result = treeViewItem2;
-					}
-				}
-				return result;
-			}
-		}
+      internal static class Constants
+      {
+        public static Texture2D folderIcon = EditorGUIUtility.FindTexture(EditorResourcesUtility.folderIconName);
+        public static GUIContent badgeNew = EditorGUIUtility.IconContent("PackageBadgeNew", "|This is a new Asset");
+        public static GUIContent badgeDelete = EditorGUIUtility.IconContent("PackageBadgeDelete", "|These files will be deleted!");
+        public static GUIContent badgeWarn = EditorGUIUtility.IconContent("console.warnicon", "|Warning: File exists in project, but with different GUID. Will override existing asset which may be undesired.");
+        public static GUIContent badgeChange = EditorGUIUtility.IconContent("playLoopOff", "|This file is new or has changed.");
+        public static GUIStyle paddinglessStyle = new GUIStyle();
 
-		private class PreviewPopup : PopupWindowContent
-		{
-			private readonly Texture2D m_Preview;
+        static Constants()
+        {
+          PackageImportTreeView.PackageImportTreeViewGUI.Constants.paddinglessStyle.padding = new RectOffset(0, 0, 0, 0);
+        }
+      }
+    }
 
-			private readonly Vector2 kPreviewSize = new Vector2(128f, 128f);
+    private class PackageImportTreeViewDataSource : TreeViewDataSource
+    {
+      private PackageImportTreeView m_PackageImportView;
 
-			public PreviewPopup(Texture2D preview)
-			{
-				this.m_Preview = preview;
-			}
+      public PackageImportTreeViewDataSource(TreeViewController treeView, PackageImportTreeView view)
+        : base(treeView)
+      {
+        this.m_PackageImportView = view;
+        this.rootIsCollapsable = false;
+        this.showRootItem = false;
+      }
 
-			public override void OnGUI(Rect rect)
-			{
-				PackageImport.DrawTexture(rect, this.m_Preview, false);
-			}
+      public override bool IsRenamingItemAllowed(TreeViewItem item)
+      {
+        return false;
+      }
 
-			public override Vector2 GetWindowSize()
-			{
-				return this.kPreviewSize;
-			}
-		}
+      public override bool IsExpandable(TreeViewItem item)
+      {
+        if (!PackageImportTreeView.s_UseFoldouts)
+          return false;
+        return base.IsExpandable(item);
+      }
 
-		private TreeViewController m_TreeView;
+      public override void FetchData()
+      {
+        this.m_RootItem = (TreeViewItem) new PackageImportTreeView.PackageImportTreeViewItem((ImportPackageItem) null, "Assets".GetHashCode(), -1, (TreeViewItem) null, "InvisibleAssetsFolder");
+        bool initExpandedState = true;
+        if (initExpandedState)
+          this.m_TreeView.state.expandedIDs.Add(this.m_RootItem.id);
+        ImportPackageItem[] packageItems = this.m_PackageImportView.packageItems;
+        Dictionary<string, PackageImportTreeView.PackageImportTreeViewItem> treeViewFolders = new Dictionary<string, PackageImportTreeView.PackageImportTreeViewItem>();
+        for (int index = 0; index < packageItems.Length; ++index)
+        {
+          ImportPackageItem itemIn = packageItems[index];
+          if (!PackageImport.HasInvalidCharInFilePath(itemIn.destinationAssetPath))
+          {
+            string unity = Path.GetFileName(itemIn.destinationAssetPath).ConvertSeparatorsToUnity();
+            TreeViewItem parent = this.EnsureFolderPath(Path.GetDirectoryName(itemIn.destinationAssetPath).ConvertSeparatorsToUnity(), treeViewFolders, initExpandedState);
+            if (parent != null)
+            {
+              int hashCode = itemIn.destinationAssetPath.GetHashCode();
+              PackageImportTreeView.PackageImportTreeViewItem importTreeViewItem = new PackageImportTreeView.PackageImportTreeViewItem(itemIn, hashCode, parent.depth + 1, parent, unity);
+              parent.AddChild((TreeViewItem) importTreeViewItem);
+              if (initExpandedState)
+                this.m_TreeView.state.expandedIDs.Add(hashCode);
+              if (itemIn.isFolder)
+                treeViewFolders[itemIn.destinationAssetPath] = importTreeViewItem;
+            }
+          }
+        }
+        if (!initExpandedState)
+          return;
+        this.m_TreeView.state.expandedIDs.Sort();
+      }
 
-		private List<PackageImportTreeView.PackageImportTreeViewItem> m_Selection = new List<PackageImportTreeView.PackageImportTreeViewItem>();
+      private TreeViewItem EnsureFolderPath(string folderPath, Dictionary<string, PackageImportTreeView.PackageImportTreeViewItem> treeViewFolders, bool initExpandedState)
+      {
+        if (folderPath == "")
+          return this.m_RootItem;
+        TreeViewItem treeViewItem = TreeViewUtility.FindItem(folderPath.GetHashCode(), this.m_RootItem);
+        if (treeViewItem != null)
+          return treeViewItem;
+        string[] strArray = folderPath.Split('/');
+        string key = "";
+        TreeViewItem parent = this.m_RootItem;
+        int depth = -1;
+        for (int index = 0; index < strArray.Length; ++index)
+        {
+          string displayName = strArray[index];
+          if (key != "")
+            key += (string) (object) '/';
+          key += displayName;
+          if (index != 0 || !(key == "Assets"))
+          {
+            ++depth;
+            int hashCode = key.GetHashCode();
+            PackageImportTreeView.PackageImportTreeViewItem importTreeViewItem1;
+            if (treeViewFolders.TryGetValue(key, out importTreeViewItem1))
+            {
+              parent = (TreeViewItem) importTreeViewItem1;
+            }
+            else
+            {
+              PackageImportTreeView.PackageImportTreeViewItem importTreeViewItem2 = new PackageImportTreeView.PackageImportTreeViewItem((ImportPackageItem) null, hashCode, depth, parent, displayName);
+              parent.AddChild((TreeViewItem) importTreeViewItem2);
+              parent = (TreeViewItem) importTreeViewItem2;
+              if (initExpandedState)
+                this.m_TreeView.state.expandedIDs.Add(hashCode);
+              treeViewFolders[key] = importTreeViewItem2;
+            }
+          }
+        }
+        return parent;
+      }
+    }
 
-		private static readonly bool s_UseFoldouts = true;
+    private class PreviewPopup : PopupWindowContent
+    {
+      private readonly Vector2 kPreviewSize = new Vector2(128f, 128f);
+      private readonly Texture2D m_Preview;
 
-		private PackageImport m_PackageImport;
+      public PreviewPopup(Texture2D preview)
+      {
+        this.m_Preview = preview;
+      }
 
-		public bool canReInstall
-		{
-			get
-			{
-				return this.m_PackageImport.canReInstall;
-			}
-		}
+      public override void OnGUI(Rect rect)
+      {
+        PackageImport.DrawTexture(rect, this.m_Preview, false);
+      }
 
-		public bool doReInstall
-		{
-			get
-			{
-				return this.m_PackageImport.doReInstall;
-			}
-		}
-
-		public ImportPackageItem[] packageItems
-		{
-			get
-			{
-				return this.m_PackageImport.packageItems;
-			}
-		}
-
-		public PackageImportTreeView(PackageImport packageImport, TreeViewState treeViewState, Rect startRect)
-		{
-			this.m_PackageImport = packageImport;
-			this.m_TreeView = new TreeViewController(this.m_PackageImport, treeViewState);
-			PackageImportTreeView.PackageImportTreeViewDataSource data = new PackageImportTreeView.PackageImportTreeViewDataSource(this.m_TreeView, this);
-			PackageImportTreeView.PackageImportTreeViewGUI packageImportTreeViewGUI = new PackageImportTreeView.PackageImportTreeViewGUI(this.m_TreeView, this);
-			this.m_TreeView.Init(startRect, data, packageImportTreeViewGUI, null);
-			this.m_TreeView.ReloadData();
-			TreeViewController expr_65 = this.m_TreeView;
-			expr_65.selectionChangedCallback = (Action<int[]>)Delegate.Combine(expr_65.selectionChangedCallback, new Action<int[]>(this.SelectionChanged));
-			PackageImportTreeView.PackageImportTreeViewGUI expr_87 = packageImportTreeViewGUI;
-			expr_87.itemWasToggled = (Action<PackageImportTreeView.PackageImportTreeViewItem>)Delegate.Combine(expr_87.itemWasToggled, new Action<PackageImportTreeView.PackageImportTreeViewItem>(this.ItemWasToggled));
-			this.ComputeEnabledStateForFolders();
-		}
-
-		private void ComputeEnabledStateForFolders()
-		{
-			PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = this.m_TreeView.data.root as PackageImportTreeView.PackageImportTreeViewItem;
-			this.RecursiveComputeEnabledStateForFolders(packageImportTreeViewItem, new HashSet<PackageImportTreeView.PackageImportTreeViewItem>
-			{
-				packageImportTreeViewItem
-			});
-		}
-
-		private void RecursiveComputeEnabledStateForFolders(PackageImportTreeView.PackageImportTreeViewItem pitem, HashSet<PackageImportTreeView.PackageImportTreeViewItem> done)
-		{
-			if (pitem.item == null || pitem.item.isFolder)
-			{
-				if (pitem.hasChildren)
-				{
-					foreach (TreeViewItem current in pitem.children)
-					{
-						this.RecursiveComputeEnabledStateForFolders(current as PackageImportTreeView.PackageImportTreeViewItem, done);
-					}
-				}
-				if (!done.Contains(pitem))
-				{
-					PackageImportTreeView.EnabledState folderChildrenEnabledState = this.GetFolderChildrenEnabledState(pitem);
-					pitem.enableState = folderChildrenEnabledState;
-					if (folderChildrenEnabledState == PackageImportTreeView.EnabledState.Mixed)
-					{
-						done.Add(pitem);
-						for (PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = pitem.parent as PackageImportTreeView.PackageImportTreeViewItem; packageImportTreeViewItem != null; packageImportTreeViewItem = (packageImportTreeViewItem.parent as PackageImportTreeView.PackageImportTreeViewItem))
-						{
-							if (!done.Contains(packageImportTreeViewItem))
-							{
-								packageImportTreeViewItem.enableState = PackageImportTreeView.EnabledState.Mixed;
-								done.Add(packageImportTreeViewItem);
-							}
-						}
-					}
-				}
-			}
-		}
-
-		private bool ItemShouldBeConsideredForEnabledCheck(PackageImportTreeView.PackageImportTreeViewItem pitem)
-		{
-			bool result;
-			if (pitem == null)
-			{
-				result = false;
-			}
-			else if (pitem.item == null)
-			{
-				result = true;
-			}
-			else
-			{
-				ImportPackageItem item = pitem.item;
-				result = (!item.projectAsset && (item.isFolder || item.assetChanged || this.doReInstall));
-			}
-			return result;
-		}
-
-		private PackageImportTreeView.EnabledState GetFolderChildrenEnabledState(PackageImportTreeView.PackageImportTreeViewItem folder)
-		{
-			if (folder.item != null && !folder.item.isFolder)
-			{
-				Debug.LogError("Should be a folder item!");
-			}
-			PackageImportTreeView.EnabledState result;
-			if (!folder.hasChildren)
-			{
-				result = PackageImportTreeView.EnabledState.None;
-			}
-			else
-			{
-				PackageImportTreeView.EnabledState enabledState = PackageImportTreeView.EnabledState.NotSet;
-				int i;
-				for (i = 0; i < folder.children.Count; i++)
-				{
-					PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = folder.children[i] as PackageImportTreeView.PackageImportTreeViewItem;
-					if (this.ItemShouldBeConsideredForEnabledCheck(packageImportTreeViewItem))
-					{
-						enabledState = packageImportTreeViewItem.enableState;
-						break;
-					}
-				}
-				for (i++; i < folder.children.Count; i++)
-				{
-					PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem2 = folder.children[i] as PackageImportTreeView.PackageImportTreeViewItem;
-					if (this.ItemShouldBeConsideredForEnabledCheck(packageImportTreeViewItem2))
-					{
-						if (enabledState != packageImportTreeViewItem2.enableState)
-						{
-							enabledState = PackageImportTreeView.EnabledState.Mixed;
-							break;
-						}
-					}
-				}
-				if (enabledState == PackageImportTreeView.EnabledState.NotSet)
-				{
-					result = PackageImportTreeView.EnabledState.None;
-				}
-				else
-				{
-					result = enabledState;
-				}
-			}
-			return result;
-		}
-
-		private void SelectionChanged(int[] selectedIDs)
-		{
-			this.m_Selection = new List<PackageImportTreeView.PackageImportTreeViewItem>();
-			IList<TreeViewItem> rows = this.m_TreeView.data.GetRows();
-			foreach (TreeViewItem current in rows)
-			{
-				if (selectedIDs.Contains(current.id))
-				{
-					PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = current as PackageImportTreeView.PackageImportTreeViewItem;
-					if (packageImportTreeViewItem != null)
-					{
-						this.m_Selection.Add(packageImportTreeViewItem);
-					}
-				}
-			}
-			ImportPackageItem item = this.m_Selection[0].item;
-			if (this.m_Selection.Count == 1 && item != null && !string.IsNullOrEmpty(item.previewPath))
-			{
-				PackageImportTreeView.PackageImportTreeViewGUI packageImportTreeViewGUI = this.m_TreeView.gui as PackageImportTreeView.PackageImportTreeViewGUI;
-				packageImportTreeViewGUI.showPreviewForID = this.m_Selection[0].id;
-			}
-			else
-			{
-				PopupWindowWithoutFocus.Hide();
-			}
-		}
-
-		public void OnGUI(Rect rect)
-		{
-			if (Event.current.type == EventType.ScrollWheel)
-			{
-				PopupWindowWithoutFocus.Hide();
-			}
-			int controlID = GUIUtility.GetControlID(FocusType.Keyboard);
-			this.m_TreeView.OnGUI(rect, controlID);
-			if (Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Space && this.m_Selection != null && this.m_Selection.Count > 0 && GUIUtility.keyboardControl == controlID)
-			{
-				PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = this.m_Selection[0];
-				if (packageImportTreeViewItem != null)
-				{
-					PackageImportTreeView.EnabledState enableState = (packageImportTreeViewItem.enableState != PackageImportTreeView.EnabledState.None) ? PackageImportTreeView.EnabledState.None : PackageImportTreeView.EnabledState.All;
-					packageImportTreeViewItem.enableState = enableState;
-					this.ItemWasToggled(this.m_Selection[0]);
-				}
-				Event.current.Use();
-			}
-		}
-
-		public void SetAllEnabled(PackageImportTreeView.EnabledState state)
-		{
-			this.EnableChildrenRecursive(this.m_TreeView.data.root, state);
-			this.ComputeEnabledStateForFolders();
-		}
-
-		private void ItemWasToggled(PackageImportTreeView.PackageImportTreeViewItem pitem)
-		{
-			if (this.m_Selection.Count <= 1)
-			{
-				this.EnableChildrenRecursive(pitem, pitem.enableState);
-			}
-			else
-			{
-				foreach (PackageImportTreeView.PackageImportTreeViewItem current in this.m_Selection)
-				{
-					current.enableState = pitem.enableState;
-				}
-			}
-			this.ComputeEnabledStateForFolders();
-		}
-
-		private void EnableChildrenRecursive(TreeViewItem parentItem, PackageImportTreeView.EnabledState state)
-		{
-			if (parentItem.hasChildren)
-			{
-				foreach (TreeViewItem current in parentItem.children)
-				{
-					PackageImportTreeView.PackageImportTreeViewItem packageImportTreeViewItem = current as PackageImportTreeView.PackageImportTreeViewItem;
-					packageImportTreeViewItem.enableState = state;
-					this.EnableChildrenRecursive(packageImportTreeViewItem, state);
-				}
-			}
-		}
-	}
+      public override Vector2 GetWindowSize()
+      {
+        return this.kPreviewSize;
+      }
+    }
+  }
 }

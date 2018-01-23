@@ -1,56 +1,44 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.PropertyHandlerCache
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class PropertyHandlerCache
-	{
-		protected Dictionary<int, PropertyHandler> m_PropertyHandlers = new Dictionary<int, PropertyHandler>();
+  internal class PropertyHandlerCache
+  {
+    protected Dictionary<int, PropertyHandler> m_PropertyHandlers = new Dictionary<int, PropertyHandler>();
 
-		internal PropertyHandler GetHandler(SerializedProperty property)
-		{
-			int propertyHash = PropertyHandlerCache.GetPropertyHash(property);
-			PropertyHandler propertyHandler;
-			PropertyHandler result;
-			if (this.m_PropertyHandlers.TryGetValue(propertyHash, out propertyHandler))
-			{
-				result = propertyHandler;
-			}
-			else
-			{
-				result = null;
-			}
-			return result;
-		}
+    internal PropertyHandler GetHandler(SerializedProperty property)
+    {
+      PropertyHandler propertyHandler;
+      if (this.m_PropertyHandlers.TryGetValue(PropertyHandlerCache.GetPropertyHash(property), out propertyHandler))
+        return propertyHandler;
+      return (PropertyHandler) null;
+    }
 
-		internal void SetHandler(SerializedProperty property, PropertyHandler handler)
-		{
-			int propertyHash = PropertyHandlerCache.GetPropertyHash(property);
-			this.m_PropertyHandlers[propertyHash] = handler;
-		}
+    internal void SetHandler(SerializedProperty property, PropertyHandler handler)
+    {
+      this.m_PropertyHandlers[PropertyHandlerCache.GetPropertyHash(property)] = handler;
+    }
 
-		private static int GetPropertyHash(SerializedProperty property)
-		{
-			int result;
-			if (property.serializedObject.targetObject == null)
-			{
-				result = 0;
-			}
-			else
-			{
-				int num = property.serializedObject.targetObject.GetInstanceID() ^ property.hashCodeForPropertyPathWithoutArrayIndex;
-				if (property.propertyType == SerializedPropertyType.ObjectReference)
-				{
-					num ^= property.objectReferenceInstanceIDValue;
-				}
-				result = num;
-			}
-			return result;
-		}
+    private static int GetPropertyHash(SerializedProperty property)
+    {
+      if (property.serializedObject.targetObject == (Object) null)
+        return 0;
+      int num = property.serializedObject.targetObject.GetInstanceID() ^ property.hashCodeForPropertyPathWithoutArrayIndex;
+      if (property.propertyType == SerializedPropertyType.ObjectReference)
+        num ^= property.objectReferenceInstanceIDValue;
+      return num;
+    }
 
-		public void Clear()
-		{
-			this.m_PropertyHandlers.Clear();
-		}
-	}
+    public void Clear()
+    {
+      this.m_PropertyHandlers.Clear();
+    }
+  }
 }

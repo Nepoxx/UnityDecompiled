@@ -1,75 +1,67 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.HeightmapFilters
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class HeightmapFilters
-	{
-		private static void WobbleStuff(float[,] heights, TerrainData terrain)
-		{
-			for (int i = 0; i < heights.GetLength(0); i++)
-			{
-				for (int j = 0; j < heights.GetLength(1); j++)
-				{
-					heights[i, j] = (heights[i, j] + 1f) / 2f;
-				}
-			}
-		}
+  internal class HeightmapFilters
+  {
+    private static void WobbleStuff(float[,] heights, TerrainData terrain)
+    {
+      for (int index1 = 0; index1 < heights.GetLength(0); ++index1)
+      {
+        for (int index2 = 0; index2 < heights.GetLength(1); ++index2)
+          heights[index1, index2] = (float) (((double) heights[index1, index2] + 1.0) / 2.0);
+      }
+    }
 
-		private static void Noise(float[,] heights, TerrainData terrain)
-		{
-			for (int i = 0; i < heights.GetLength(0); i++)
-			{
-				for (int j = 0; j < heights.GetLength(1); j++)
-				{
-					heights[i, j] += UnityEngine.Random.value * 0.01f;
-				}
-			}
-		}
+    private static void Noise(float[,] heights, TerrainData terrain)
+    {
+      for (int index1 = 0; index1 < heights.GetLength(0); ++index1)
+      {
+        for (int index2 = 0; index2 < heights.GetLength(1); ++index2)
+          heights[index1, index2] += Random.value * 0.01f;
+      }
+    }
 
-		public static void Smooth(float[,] heights, TerrainData terrain)
-		{
-			float[,] array = heights.Clone() as float[,];
-			int length = heights.GetLength(1);
-			int length2 = heights.GetLength(0);
-			for (int i = 1; i < length2 - 1; i++)
-			{
-				for (int j = 1; j < length - 1; j++)
-				{
-					float num = 0f;
-					num += array[i, j];
-					num += array[i, j - 1];
-					num += array[i, j + 1];
-					num += array[i - 1, j];
-					num += array[i + 1, j];
-					num /= 5f;
-					heights[i, j] = num;
-				}
-			}
-		}
+    public static void Smooth(float[,] heights, TerrainData terrain)
+    {
+      float[,] numArray = heights.Clone() as float[,];
+      int length1 = heights.GetLength(1);
+      int length2 = heights.GetLength(0);
+      for (int index1 = 1; index1 < length2 - 1; ++index1)
+      {
+        for (int index2 = 1; index2 < length1 - 1; ++index2)
+        {
+          float num = (0.0f + numArray[index1, index2] + numArray[index1, index2 - 1] + numArray[index1, index2 + 1] + numArray[index1 - 1, index2] + numArray[index1 + 1, index2]) / 5f;
+          heights[index1, index2] = num;
+        }
+      }
+    }
 
-		public static void Smooth(TerrainData terrain)
-		{
-			int heightmapWidth = terrain.heightmapWidth;
-			int heightmapHeight = terrain.heightmapHeight;
-			float[,] heights = terrain.GetHeights(0, 0, heightmapWidth, heightmapHeight);
-			HeightmapFilters.Smooth(heights, terrain);
-			terrain.SetHeights(0, 0, heights);
-		}
+    public static void Smooth(TerrainData terrain)
+    {
+      int heightmapWidth = terrain.heightmapWidth;
+      int heightmapHeight = terrain.heightmapHeight;
+      float[,] heights = terrain.GetHeights(0, 0, heightmapWidth, heightmapHeight);
+      HeightmapFilters.Smooth(heights, terrain);
+      terrain.SetHeights(0, 0, heights);
+    }
 
-		public static void Flatten(TerrainData terrain, float height)
-		{
-			int heightmapWidth = terrain.heightmapWidth;
-			int heightmapHeight = terrain.heightmapHeight;
-			float[,] array = new float[heightmapHeight, heightmapWidth];
-			for (int i = 0; i < array.GetLength(0); i++)
-			{
-				for (int j = 0; j < array.GetLength(1); j++)
-				{
-					array[i, j] = height;
-				}
-			}
-			terrain.SetHeights(0, 0, array);
-		}
-	}
+    public static void Flatten(TerrainData terrain, float height)
+    {
+      int heightmapWidth = terrain.heightmapWidth;
+      float[,] heights = new float[terrain.heightmapHeight, heightmapWidth];
+      for (int index1 = 0; index1 < heights.GetLength(0); ++index1)
+      {
+        for (int index2 = 0; index2 < heights.GetLength(1); ++index2)
+          heights[index1, index2] = height;
+      }
+      terrain.SetHeights(0, 0, heights);
+    }
+  }
 }

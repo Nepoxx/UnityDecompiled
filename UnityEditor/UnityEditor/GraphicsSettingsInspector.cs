@@ -1,5 +1,11 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.GraphicsSettingsInspector
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEditor.AnimatedValues;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.Experimental.Rendering;
@@ -7,182 +13,163 @@ using UnityEngine.Rendering;
 
 namespace UnityEditor
 {
-	[CustomEditor(typeof(GraphicsSettings))]
-	internal class GraphicsSettingsInspector : Editor
-	{
-		internal class Styles
-		{
-			public static readonly GUIContent showEditorWindow = new GUIContent("Open Editor...");
+  [CustomEditor(typeof (GraphicsSettings))]
+  internal class GraphicsSettingsInspector : ProjectSettingsBaseEditor
+  {
+    private bool showTierSettingsUI = true;
+    private AnimBool tierSettingsAnimator = (AnimBool) null;
+    private Editor m_TierSettingsEditor;
+    private Editor m_BuiltinShadersEditor;
+    private Editor m_AlwaysIncludedShadersEditor;
+    private Editor m_ShaderStrippingEditor;
+    private Editor m_ShaderPreloadEditor;
+    private SerializedProperty m_TransparencySortMode;
+    private SerializedProperty m_TransparencySortAxis;
+    private SerializedProperty m_ScriptableRenderLoop;
 
-			public static readonly GUIContent closeEditorWindow = new GUIContent("Close Editor");
+    private Object graphicsSettings
+    {
+      get
+      {
+        return GraphicsSettings.GetGraphicsSettings();
+      }
+    }
 
-			public static readonly GUIContent tierSettings = EditorGUIUtility.TextContent("Tier Settings");
+    private Editor tierSettingsEditor
+    {
+      get
+      {
+        Editor.CreateCachedEditor(this.graphicsSettings, typeof (GraphicsSettingsWindow.TierSettingsEditor), ref this.m_TierSettingsEditor);
+        ((GraphicsSettingsWindow.TierSettingsEditor) this.m_TierSettingsEditor).verticalLayout = true;
+        return this.m_TierSettingsEditor;
+      }
+    }
 
-			public static readonly GUIContent builtinSettings = EditorGUIUtility.TextContent("Built-in Shader Settings");
+    private Editor builtinShadersEditor
+    {
+      get
+      {
+        Editor.CreateCachedEditor(this.graphicsSettings, typeof (GraphicsSettingsWindow.BuiltinShadersEditor), ref this.m_BuiltinShadersEditor);
+        return this.m_BuiltinShadersEditor;
+      }
+    }
 
-			public static readonly GUIContent shaderStrippingSettings = EditorGUIUtility.TextContent("Shader Stripping");
+    private Editor alwaysIncludedShadersEditor
+    {
+      get
+      {
+        Editor.CreateCachedEditor(this.graphicsSettings, typeof (GraphicsSettingsWindow.AlwaysIncludedShadersEditor), ref this.m_AlwaysIncludedShadersEditor);
+        return this.m_AlwaysIncludedShadersEditor;
+      }
+    }
 
-			public static readonly GUIContent shaderPreloadSettings = EditorGUIUtility.TextContent("Shader Preloading");
+    private Editor shaderStrippingEditor
+    {
+      get
+      {
+        Editor.CreateCachedEditor(this.graphicsSettings, typeof (GraphicsSettingsWindow.ShaderStrippingEditor), ref this.m_ShaderStrippingEditor);
+        return this.m_ShaderStrippingEditor;
+      }
+    }
 
-			public static readonly GUIContent cameraSettings = EditorGUIUtility.TextContent("Camera Settings");
+    private Editor shaderPreloadEditor
+    {
+      get
+      {
+        Editor.CreateCachedEditor(this.graphicsSettings, typeof (GraphicsSettingsWindow.ShaderPreloadEditor), ref this.m_ShaderPreloadEditor);
+        return this.m_ShaderPreloadEditor;
+      }
+    }
 
-			public static readonly GUIContent renderLoopSettings = EditorGUIUtility.TextContent("Scriptable RenderLoop Settings");
+    public void OnEnable()
+    {
+      this.m_TransparencySortMode = this.serializedObject.FindProperty("m_TransparencySortMode");
+      this.m_TransparencySortAxis = this.serializedObject.FindProperty("m_TransparencySortAxis");
+      this.m_ScriptableRenderLoop = this.serializedObject.FindProperty("m_CustomRenderPipeline");
+    }
 
-			public static readonly GUIContent renderLoopLabel = EditorGUIUtility.TextContent("Scriptable Render Loop");
-		}
+    private void HandleEditorWindowButton()
+    {
+      TierSettingsWindow instance = TierSettingsWindow.GetInstance();
+      if (!GUILayout.Button(!((Object) instance == (Object) null) ? GraphicsSettingsInspector.Styles.closeEditorWindow : GraphicsSettingsInspector.Styles.showEditorWindow, EditorStyles.miniButton, new GUILayoutOption[1]{ GUILayout.Width(110f) }))
+        return;
+      if ((bool) ((Object) instance))
+      {
+        instance.Close();
+      }
+      else
+      {
+        TierSettingsWindow.CreateWindow();
+        TierSettingsWindow.GetInstance().Show();
+      }
+    }
 
-		private Editor m_TierSettingsEditor;
+    private void TierSettingsGUI()
+    {
+      if (this.tierSettingsAnimator == null)
+        this.tierSettingsAnimator = new AnimBool(this.showTierSettingsUI, new UnityAction(((Editor) this).Repaint));
+      bool enabled = GUI.enabled;
+      GUI.enabled = true;
+      EditorGUILayout.BeginVertical(GUI.skin.box, new GUILayoutOption[0]);
+      EditorGUILayout.BeginHorizontal();
+      Rect rect = GUILayoutUtility.GetRect(20f, 18f);
+      rect.x += 3f;
+      rect.width += 6f;
+      this.showTierSettingsUI = GUI.Toggle(rect, this.showTierSettingsUI, GraphicsSettingsInspector.Styles.tierSettings, EditorStyles.inspectorTitlebarText);
+      this.HandleEditorWindowButton();
+      EditorGUILayout.EndHorizontal();
+      this.tierSettingsAnimator.target = this.showTierSettingsUI;
+      GUI.enabled = enabled;
+      if (EditorGUILayout.BeginFadeGroup(this.tierSettingsAnimator.faded) && (Object) TierSettingsWindow.GetInstance() == (Object) null)
+        this.tierSettingsEditor.OnInspectorGUI();
+      EditorGUILayout.EndFadeGroup();
+      EditorGUILayout.EndVertical();
+    }
 
-		private Editor m_BuiltinShadersEditor;
+    public override void OnInspectorGUI()
+    {
+      this.serializedObject.Update();
+      GUILayout.Label(GraphicsSettingsInspector.Styles.renderPipeSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
+      Rect controlRect = EditorGUILayout.GetControlRect(true, EditorGUI.GetPropertyHeight(this.m_ScriptableRenderLoop), new GUILayoutOption[0]);
+      EditorGUI.BeginProperty(controlRect, GraphicsSettingsInspector.Styles.renderPipeLabel, this.m_ScriptableRenderLoop);
+      this.m_ScriptableRenderLoop.objectReferenceValue = EditorGUI.ObjectField(controlRect, this.m_ScriptableRenderLoop.objectReferenceValue, typeof (RenderPipelineAsset), false);
+      EditorGUI.EndProperty();
+      EditorGUILayout.Space();
+      bool flag = (Object) GraphicsSettings.renderPipelineAsset != (Object) null;
+      if (flag)
+        EditorGUILayout.HelpBox("A Scriptable Render Pipeline is in use, some settings will not be used and are hidden", MessageType.Info);
+      if (!flag)
+      {
+        GUILayout.Label(GraphicsSettingsInspector.Styles.cameraSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
+        EditorGUILayout.PropertyField(this.m_TransparencySortMode);
+        EditorGUILayout.PropertyField(this.m_TransparencySortAxis);
+        EditorGUILayout.Space();
+        this.TierSettingsGUI();
+      }
+      GUILayout.Label(GraphicsSettingsInspector.Styles.builtinSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
+      if (!flag)
+        this.builtinShadersEditor.OnInspectorGUI();
+      this.alwaysIncludedShadersEditor.OnInspectorGUI();
+      EditorGUILayout.Space();
+      GUILayout.Label(GraphicsSettingsInspector.Styles.shaderStrippingSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
+      this.shaderStrippingEditor.OnInspectorGUI();
+      EditorGUILayout.Space();
+      GUILayout.Label(GraphicsSettingsInspector.Styles.shaderPreloadSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
+      this.shaderPreloadEditor.OnInspectorGUI();
+      this.serializedObject.ApplyModifiedProperties();
+    }
 
-		private Editor m_AlwaysIncludedShadersEditor;
-
-		private Editor m_ShaderStrippingEditor;
-
-		private Editor m_ShaderPreloadEditor;
-
-		private SerializedProperty m_TransparencySortMode;
-
-		private SerializedProperty m_TransparencySortAxis;
-
-		private SerializedProperty m_ScriptableRenderLoop;
-
-		private bool showTierSettingsUI = true;
-
-		private AnimBool tierSettingsAnimator = null;
-
-		private UnityEngine.Object graphicsSettings
-		{
-			get
-			{
-				return GraphicsSettings.GetGraphicsSettings();
-			}
-		}
-
-		private Editor tierSettingsEditor
-		{
-			get
-			{
-				Editor.CreateCachedEditor(this.graphicsSettings, typeof(GraphicsSettingsWindow.TierSettingsEditor), ref this.m_TierSettingsEditor);
-				((GraphicsSettingsWindow.TierSettingsEditor)this.m_TierSettingsEditor).verticalLayout = true;
-				return this.m_TierSettingsEditor;
-			}
-		}
-
-		private Editor builtinShadersEditor
-		{
-			get
-			{
-				Editor.CreateCachedEditor(this.graphicsSettings, typeof(GraphicsSettingsWindow.BuiltinShadersEditor), ref this.m_BuiltinShadersEditor);
-				return this.m_BuiltinShadersEditor;
-			}
-		}
-
-		private Editor alwaysIncludedShadersEditor
-		{
-			get
-			{
-				Editor.CreateCachedEditor(this.graphicsSettings, typeof(GraphicsSettingsWindow.AlwaysIncludedShadersEditor), ref this.m_AlwaysIncludedShadersEditor);
-				return this.m_AlwaysIncludedShadersEditor;
-			}
-		}
-
-		private Editor shaderStrippingEditor
-		{
-			get
-			{
-				Editor.CreateCachedEditor(this.graphicsSettings, typeof(GraphicsSettingsWindow.ShaderStrippingEditor), ref this.m_ShaderStrippingEditor);
-				return this.m_ShaderStrippingEditor;
-			}
-		}
-
-		private Editor shaderPreloadEditor
-		{
-			get
-			{
-				Editor.CreateCachedEditor(this.graphicsSettings, typeof(GraphicsSettingsWindow.ShaderPreloadEditor), ref this.m_ShaderPreloadEditor);
-				return this.m_ShaderPreloadEditor;
-			}
-		}
-
-		public void OnEnable()
-		{
-			this.m_TransparencySortMode = base.serializedObject.FindProperty("m_TransparencySortMode");
-			this.m_TransparencySortAxis = base.serializedObject.FindProperty("m_TransparencySortAxis");
-			this.m_ScriptableRenderLoop = base.serializedObject.FindProperty("m_CustomRenderPipeline");
-		}
-
-		private void HandleEditorWindowButton()
-		{
-			TierSettingsWindow instance = TierSettingsWindow.GetInstance();
-			GUIContent content = (!(instance == null)) ? GraphicsSettingsInspector.Styles.closeEditorWindow : GraphicsSettingsInspector.Styles.showEditorWindow;
-			if (GUILayout.Button(content, EditorStyles.miniButton, new GUILayoutOption[]
-			{
-				GUILayout.Width(110f)
-			}))
-			{
-				if (instance)
-				{
-					instance.Close();
-				}
-				else
-				{
-					TierSettingsWindow.CreateWindow();
-					TierSettingsWindow.GetInstance().Show();
-				}
-			}
-		}
-
-		private void TierSettingsGUI()
-		{
-			if (this.tierSettingsAnimator == null)
-			{
-				this.tierSettingsAnimator = new AnimBool(this.showTierSettingsUI, new UnityAction(base.Repaint));
-			}
-			bool enabled = GUI.enabled;
-			GUI.enabled = true;
-			EditorGUILayout.BeginVertical(GUI.skin.box, new GUILayoutOption[0]);
-			EditorGUILayout.BeginHorizontal(new GUILayoutOption[0]);
-			Rect rect = GUILayoutUtility.GetRect(20f, 18f);
-			rect.x += 3f;
-			rect.width += 6f;
-			this.showTierSettingsUI = GUI.Toggle(rect, this.showTierSettingsUI, GraphicsSettingsInspector.Styles.tierSettings, EditorStyles.inspectorTitlebarText);
-			this.HandleEditorWindowButton();
-			EditorGUILayout.EndHorizontal();
-			this.tierSettingsAnimator.target = this.showTierSettingsUI;
-			GUI.enabled = enabled;
-			if (EditorGUILayout.BeginFadeGroup(this.tierSettingsAnimator.faded) && TierSettingsWindow.GetInstance() == null)
-			{
-				this.tierSettingsEditor.OnInspectorGUI();
-			}
-			EditorGUILayout.EndFadeGroup();
-			EditorGUILayout.EndVertical();
-		}
-
-		public override void OnInspectorGUI()
-		{
-			base.serializedObject.Update();
-			GUILayout.Label(GraphicsSettingsInspector.Styles.renderLoopSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
-			Rect controlRect = EditorGUILayout.GetControlRect(true, EditorGUI.GetPropertyHeight(this.m_ScriptableRenderLoop), new GUILayoutOption[0]);
-			EditorGUI.BeginProperty(controlRect, GraphicsSettingsInspector.Styles.renderLoopLabel, this.m_ScriptableRenderLoop);
-			this.m_ScriptableRenderLoop.objectReferenceValue = EditorGUI.ObjectField(controlRect, this.m_ScriptableRenderLoop.objectReferenceValue, typeof(RenderPipelineAsset), false);
-			EditorGUI.EndProperty();
-			EditorGUILayout.Space();
-			GUILayout.Label(GraphicsSettingsInspector.Styles.cameraSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_TransparencySortMode, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_TransparencySortAxis, new GUILayoutOption[0]);
-			EditorGUILayout.Space();
-			this.TierSettingsGUI();
-			GUILayout.Label(GraphicsSettingsInspector.Styles.builtinSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
-			this.builtinShadersEditor.OnInspectorGUI();
-			this.alwaysIncludedShadersEditor.OnInspectorGUI();
-			EditorGUILayout.Space();
-			GUILayout.Label(GraphicsSettingsInspector.Styles.shaderStrippingSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
-			this.shaderStrippingEditor.OnInspectorGUI();
-			EditorGUILayout.Space();
-			GUILayout.Label(GraphicsSettingsInspector.Styles.shaderPreloadSettings, EditorStyles.boldLabel, new GUILayoutOption[0]);
-			this.shaderPreloadEditor.OnInspectorGUI();
-			base.serializedObject.ApplyModifiedProperties();
-		}
-	}
+    internal class Styles
+    {
+      public static readonly GUIContent showEditorWindow = new GUIContent("Open Editor...");
+      public static readonly GUIContent closeEditorWindow = new GUIContent("Close Editor");
+      public static readonly GUIContent tierSettings = EditorGUIUtility.TextContent("Tier Settings");
+      public static readonly GUIContent builtinSettings = EditorGUIUtility.TextContent("Built-in Shader Settings");
+      public static readonly GUIContent shaderStrippingSettings = EditorGUIUtility.TextContent("Shader Stripping");
+      public static readonly GUIContent shaderPreloadSettings = EditorGUIUtility.TextContent("Shader Preloading");
+      public static readonly GUIContent cameraSettings = EditorGUIUtility.TextContent("Camera Settings");
+      public static readonly GUIContent renderPipeSettings = EditorGUIUtility.TextContent("Scriptable Render Pipeline Settings");
+      public static readonly GUIContent renderPipeLabel = EditorGUIUtility.TextContent("Scriptable Render Pipeline");
+    }
+  }
 }

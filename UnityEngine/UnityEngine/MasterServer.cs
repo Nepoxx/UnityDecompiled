@@ -1,77 +1,90 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.MasterServer
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System.Runtime.CompilerServices;
 using UnityEngine.Internal;
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	public sealed class MasterServer
-	{
-		public static extern string ipAddress
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+  /// <summary>
+  ///   <para>The Master Server is used to make matchmaking between servers and clients easy.</para>
+  /// </summary>
+  public sealed class MasterServer
+  {
+    /// <summary>
+    ///   <para>The IP address of the master server.</para>
+    /// </summary>
+    public static extern string ipAddress { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		public static extern int port
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    /// <summary>
+    ///   <para>The connection port of the master server.</para>
+    /// </summary>
+    public static extern int port { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		public static extern int updateRate
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    /// <summary>
+    ///   <para>Request a host list from the master server.</para>
+    /// </summary>
+    /// <param name="gameTypeName"></param>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void RequestHostList(string gameTypeName);
 
-		public static extern bool dedicatedServer
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    /// <summary>
+    ///   <para>Check for the latest host list received by using MasterServer.RequestHostList.</para>
+    /// </summary>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern HostData[] PollHostList();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void RequestHostList(string gameTypeName);
+    /// <summary>
+    ///   <para>Register this server on the master server.</para>
+    /// </summary>
+    /// <param name="gameTypeName"></param>
+    /// <param name="gameName"></param>
+    /// <param name="comment"></param>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void RegisterHost(string gameTypeName, string gameName, [DefaultValue("\"\"")] string comment);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern HostData[] PollHostList();
+    /// <summary>
+    ///   <para>Register this server on the master server.</para>
+    /// </summary>
+    /// <param name="gameTypeName"></param>
+    /// <param name="gameName"></param>
+    /// <param name="comment"></param>
+    [ExcludeFromDocs]
+    public static void RegisterHost(string gameTypeName, string gameName)
+    {
+      string comment = "";
+      MasterServer.RegisterHost(gameTypeName, gameName, comment);
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void RegisterHost(string gameTypeName, string gameName, [DefaultValue("\"\"")] string comment);
+    /// <summary>
+    ///   <para>Unregister this server from the master server.</para>
+    /// </summary>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void UnregisterHost();
 
-		[ExcludeFromDocs]
-		public static void RegisterHost(string gameTypeName, string gameName)
-		{
-			string comment = "";
-			MasterServer.RegisterHost(gameTypeName, gameName, comment);
-		}
+    /// <summary>
+    ///   <para>Clear the host list which was received by MasterServer.PollHostList.</para>
+    /// </summary>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void ClearHostList();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void UnregisterHost();
+    /// <summary>
+    ///   <para>Set the minimum update rate for master server host information update.</para>
+    /// </summary>
+    public static extern int updateRate { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void ClearHostList();
-	}
+    /// <summary>
+    ///   <para>Report this machine as a dedicated server.</para>
+    /// </summary>
+    public static extern bool dedicatedServer { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] set; }
+  }
 }

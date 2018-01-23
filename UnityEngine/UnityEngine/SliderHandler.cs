@@ -1,375 +1,251 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.SliderHandler
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	internal struct SliderHandler
-	{
-		private readonly Rect position;
+  internal struct SliderHandler
+  {
+    private readonly Rect position;
+    private readonly float currentValue;
+    private readonly float size;
+    private readonly float start;
+    private readonly float end;
+    private readonly GUIStyle slider;
+    private readonly GUIStyle thumb;
+    private readonly bool horiz;
+    private readonly int id;
 
-		private readonly float currentValue;
+    public SliderHandler(Rect position, float currentValue, float size, float start, float end, GUIStyle slider, GUIStyle thumb, bool horiz, int id)
+    {
+      this.position = position;
+      this.currentValue = currentValue;
+      this.size = size;
+      this.start = start;
+      this.end = end;
+      this.slider = slider;
+      this.thumb = thumb;
+      this.horiz = horiz;
+      this.id = id;
+    }
 
-		private readonly float size;
+    public float Handle()
+    {
+      if (this.slider == null || this.thumb == null)
+        return this.currentValue;
+      switch (this.CurrentEventType())
+      {
+        case EventType.MouseDown:
+          return this.OnMouseDown();
+        case EventType.MouseUp:
+          return this.OnMouseUp();
+        case EventType.MouseDrag:
+          return this.OnMouseDrag();
+        case EventType.Repaint:
+          return this.OnRepaint();
+        default:
+          return this.currentValue;
+      }
+    }
 
-		private readonly float start;
+    private float OnMouseDown()
+    {
+      if (!this.position.Contains(this.CurrentEvent().mousePosition) || this.IsEmptySlider())
+        return this.currentValue;
+      GUI.scrollTroughSide = 0;
+      GUIUtility.hotControl = this.id;
+      this.CurrentEvent().Use();
+      if (this.ThumbSelectionRect().Contains(this.CurrentEvent().mousePosition))
+      {
+        this.StartDraggingWithValue(this.ClampedCurrentValue());
+        return this.currentValue;
+      }
+      GUI.changed = true;
+      if (this.SupportsPageMovements())
+      {
+        this.SliderState().isDragging = false;
+        GUI.nextScrollStepTime = SystemClock.now.AddMilliseconds(250.0);
+        GUI.scrollTroughSide = this.CurrentScrollTroughSide();
+        return this.PageMovementValue();
+      }
+      float dragStartValue = this.ValueForCurrentMousePosition();
+      this.StartDraggingWithValue(dragStartValue);
+      return this.Clamp(dragStartValue);
+    }
 
-		private readonly float end;
+    private float OnMouseDrag()
+    {
+      if (GUIUtility.hotControl != this.id)
+        return this.currentValue;
+      SliderState sliderState = this.SliderState();
+      if (!sliderState.isDragging)
+        return this.currentValue;
+      GUI.changed = true;
+      this.CurrentEvent().Use();
+      float num = this.MousePosition() - sliderState.dragStartPos;
+      return this.Clamp(sliderState.dragStartValue + num / this.ValuesPerPixel());
+    }
 
-		private readonly GUIStyle slider;
+    private float OnMouseUp()
+    {
+      if (GUIUtility.hotControl == this.id)
+      {
+        this.CurrentEvent().Use();
+        GUIUtility.hotControl = 0;
+      }
+      return this.currentValue;
+    }
 
-		private readonly GUIStyle thumb;
+    private float OnRepaint()
+    {
+      this.slider.Draw(this.position, GUIContent.none, this.id);
+      if (!this.IsEmptySlider())
+        this.thumb.Draw(this.ThumbRect(), GUIContent.none, this.id);
+      if (GUIUtility.hotControl != this.id || (!this.position.Contains(this.CurrentEvent().mousePosition) || this.IsEmptySlider()))
+        return this.currentValue;
+      if (this.ThumbRect().Contains(this.CurrentEvent().mousePosition))
+      {
+        if (GUI.scrollTroughSide != 0)
+          GUIUtility.hotControl = 0;
+        return this.currentValue;
+      }
+      GUI.InternalRepaintEditorWindow();
+      if (SystemClock.now < GUI.nextScrollStepTime || this.CurrentScrollTroughSide() != GUI.scrollTroughSide)
+        return this.currentValue;
+      GUI.nextScrollStepTime = SystemClock.now.AddMilliseconds(30.0);
+      if (!this.SupportsPageMovements())
+        return this.ClampedCurrentValue();
+      this.SliderState().isDragging = false;
+      GUI.changed = true;
+      return this.PageMovementValue();
+    }
 
-		private readonly bool horiz;
+    private EventType CurrentEventType()
+    {
+      return this.CurrentEvent().GetTypeForControl(this.id);
+    }
 
-		private readonly int id;
+    private int CurrentScrollTroughSide()
+    {
+      return (!this.horiz ? (double) this.CurrentEvent().mousePosition.y : (double) this.CurrentEvent().mousePosition.x) <= (!this.horiz ? (double) this.ThumbRect().y : (double) this.ThumbRect().x) ? -1 : 1;
+    }
 
-		public SliderHandler(Rect position, float currentValue, float size, float start, float end, GUIStyle slider, GUIStyle thumb, bool horiz, int id)
-		{
-			this.position = position;
-			this.currentValue = currentValue;
-			this.size = size;
-			this.start = start;
-			this.end = end;
-			this.slider = slider;
-			this.thumb = thumb;
-			this.horiz = horiz;
-			this.id = id;
-		}
+    private bool IsEmptySlider()
+    {
+      return (double) this.start == (double) this.end;
+    }
 
-		public float Handle()
-		{
-			float result;
-			if (this.slider == null || this.thumb == null)
-			{
-				result = this.currentValue;
-			}
-			else
-			{
-				switch (this.CurrentEventType())
-				{
-				case EventType.MouseDown:
-					result = this.OnMouseDown();
-					return result;
-				case EventType.MouseUp:
-					result = this.OnMouseUp();
-					return result;
-				case EventType.MouseDrag:
-					result = this.OnMouseDrag();
-					return result;
-				case EventType.Repaint:
-					result = this.OnRepaint();
-					return result;
-				}
-				result = this.currentValue;
-			}
-			return result;
-		}
+    private bool SupportsPageMovements()
+    {
+      return (double) this.size != 0.0 && GUI.usePageScrollbars;
+    }
 
-		private float OnMouseDown()
-		{
-			float result;
-			if (!this.position.Contains(this.CurrentEvent().mousePosition) || this.IsEmptySlider())
-			{
-				result = this.currentValue;
-			}
-			else
-			{
-				GUI.scrollTroughSide = 0;
-				GUIUtility.hotControl = this.id;
-				this.CurrentEvent().Use();
-				if (this.ThumbSelectionRect().Contains(this.CurrentEvent().mousePosition))
-				{
-					this.StartDraggingWithValue(this.ClampedCurrentValue());
-					result = this.currentValue;
-				}
-				else
-				{
-					GUI.changed = true;
-					if (this.SupportsPageMovements())
-					{
-						this.SliderState().isDragging = false;
-						GUI.nextScrollStepTime = SystemClock.now.AddMilliseconds(250.0);
-						GUI.scrollTroughSide = this.CurrentScrollTroughSide();
-						result = this.PageMovementValue();
-					}
-					else
-					{
-						float num = this.ValueForCurrentMousePosition();
-						this.StartDraggingWithValue(num);
-						result = this.Clamp(num);
-					}
-				}
-			}
-			return result;
-		}
+    private float PageMovementValue()
+    {
+      float currentValue = this.currentValue;
+      int num = (double) this.start <= (double) this.end ? 1 : -1;
+      return this.Clamp((double) this.MousePosition() <= (double) this.PageUpMovementBound() ? currentValue - (float) ((double) this.size * (double) num * 0.899999976158142) : currentValue + (float) ((double) this.size * (double) num * 0.899999976158142));
+    }
 
-		private float OnMouseDrag()
-		{
-			float result;
-			if (GUIUtility.hotControl != this.id)
-			{
-				result = this.currentValue;
-			}
-			else
-			{
-				SliderState sliderState = this.SliderState();
-				if (!sliderState.isDragging)
-				{
-					result = this.currentValue;
-				}
-				else
-				{
-					GUI.changed = true;
-					this.CurrentEvent().Use();
-					float num = this.MousePosition() - sliderState.dragStartPos;
-					float value = sliderState.dragStartValue + num / this.ValuesPerPixel();
-					result = this.Clamp(value);
-				}
-			}
-			return result;
-		}
+    private float PageUpMovementBound()
+    {
+      if (this.horiz)
+        return this.ThumbRect().xMax - this.position.x;
+      return this.ThumbRect().yMax - this.position.y;
+    }
 
-		private float OnMouseUp()
-		{
-			if (GUIUtility.hotControl == this.id)
-			{
-				this.CurrentEvent().Use();
-				GUIUtility.hotControl = 0;
-			}
-			return this.currentValue;
-		}
+    private Event CurrentEvent()
+    {
+      return Event.current;
+    }
 
-		private float OnRepaint()
-		{
-			this.slider.Draw(this.position, GUIContent.none, this.id);
-			if (!this.IsEmptySlider())
-			{
-				this.thumb.Draw(this.ThumbRect(), GUIContent.none, this.id);
-			}
-			float result;
-			if (GUIUtility.hotControl != this.id || !this.position.Contains(this.CurrentEvent().mousePosition) || this.IsEmptySlider())
-			{
-				result = this.currentValue;
-			}
-			else if (this.ThumbRect().Contains(this.CurrentEvent().mousePosition))
-			{
-				if (GUI.scrollTroughSide != 0)
-				{
-					GUIUtility.hotControl = 0;
-				}
-				result = this.currentValue;
-			}
-			else
-			{
-				GUI.InternalRepaintEditorWindow();
-				if (SystemClock.now < GUI.nextScrollStepTime)
-				{
-					result = this.currentValue;
-				}
-				else if (this.CurrentScrollTroughSide() != GUI.scrollTroughSide)
-				{
-					result = this.currentValue;
-				}
-				else
-				{
-					GUI.nextScrollStepTime = SystemClock.now.AddMilliseconds(30.0);
-					if (this.SupportsPageMovements())
-					{
-						this.SliderState().isDragging = false;
-						GUI.changed = true;
-						result = this.PageMovementValue();
-					}
-					else
-					{
-						result = this.ClampedCurrentValue();
-					}
-				}
-			}
-			return result;
-		}
+    private float ValueForCurrentMousePosition()
+    {
+      if (this.horiz)
+        return (float) (((double) this.MousePosition() - (double) this.ThumbRect().width * 0.5) / (double) this.ValuesPerPixel() + (double) this.start - (double) this.size * 0.5);
+      return (float) (((double) this.MousePosition() - (double) this.ThumbRect().height * 0.5) / (double) this.ValuesPerPixel() + (double) this.start - (double) this.size * 0.5);
+    }
 
-		private EventType CurrentEventType()
-		{
-			return this.CurrentEvent().GetTypeForControl(this.id);
-		}
+    private float Clamp(float value)
+    {
+      return Mathf.Clamp(value, this.MinValue(), this.MaxValue());
+    }
 
-		private int CurrentScrollTroughSide()
-		{
-			float num = (!this.horiz) ? this.CurrentEvent().mousePosition.y : this.CurrentEvent().mousePosition.x;
-			float num2 = (!this.horiz) ? this.ThumbRect().y : this.ThumbRect().x;
-			return (num <= num2) ? -1 : 1;
-		}
+    private Rect ThumbSelectionRect()
+    {
+      return this.ThumbRect();
+    }
 
-		private bool IsEmptySlider()
-		{
-			return this.start == this.end;
-		}
+    private void StartDraggingWithValue(float dragStartValue)
+    {
+      SliderState sliderState = this.SliderState();
+      sliderState.dragStartPos = this.MousePosition();
+      sliderState.dragStartValue = dragStartValue;
+      sliderState.isDragging = true;
+    }
 
-		private bool SupportsPageMovements()
-		{
-			return this.size != 0f && GUI.usePageScrollbars;
-		}
+    private SliderState SliderState()
+    {
+      return (SliderState) GUIUtility.GetStateObject(typeof (SliderState), this.id);
+    }
 
-		private float PageMovementValue()
-		{
-			float num = this.currentValue;
-			int num2 = (this.start <= this.end) ? 1 : -1;
-			if (this.MousePosition() > this.PageUpMovementBound())
-			{
-				num += this.size * (float)num2 * 0.9f;
-			}
-			else
-			{
-				num -= this.size * (float)num2 * 0.9f;
-			}
-			return this.Clamp(num);
-		}
+    private Rect ThumbRect()
+    {
+      return !this.horiz ? this.VerticalThumbRect() : this.HorizontalThumbRect();
+    }
 
-		private float PageUpMovementBound()
-		{
-			float result;
-			if (this.horiz)
-			{
-				result = this.ThumbRect().xMax - this.position.x;
-			}
-			else
-			{
-				result = this.ThumbRect().yMax - this.position.y;
-			}
-			return result;
-		}
+    private Rect VerticalThumbRect()
+    {
+      float num = this.ValuesPerPixel();
+      if ((double) this.start < (double) this.end)
+        return new Rect(this.position.x + (float) this.slider.padding.left, (this.ClampedCurrentValue() - this.start) * num + this.position.y + (float) this.slider.padding.top, this.position.width - (float) this.slider.padding.horizontal, this.size * num + this.ThumbSize());
+      return new Rect(this.position.x + (float) this.slider.padding.left, (this.ClampedCurrentValue() + this.size - this.start) * num + this.position.y + (float) this.slider.padding.top, this.position.width - (float) this.slider.padding.horizontal, this.size * -num + this.ThumbSize());
+    }
 
-		private Event CurrentEvent()
-		{
-			return Event.current;
-		}
+    private Rect HorizontalThumbRect()
+    {
+      float num = this.ValuesPerPixel();
+      if ((double) this.start < (double) this.end)
+        return new Rect((this.ClampedCurrentValue() - this.start) * num + this.position.x + (float) this.slider.padding.left, this.position.y + (float) this.slider.padding.top, this.size * num + this.ThumbSize(), this.position.height - (float) this.slider.padding.vertical);
+      return new Rect((this.ClampedCurrentValue() + this.size - this.start) * num + this.position.x + (float) this.slider.padding.left, this.position.y, this.size * -num + this.ThumbSize(), this.position.height);
+    }
 
-		private float ValueForCurrentMousePosition()
-		{
-			float result;
-			if (this.horiz)
-			{
-				result = (this.MousePosition() - this.ThumbRect().width * 0.5f) / this.ValuesPerPixel() + this.start - this.size * 0.5f;
-			}
-			else
-			{
-				result = (this.MousePosition() - this.ThumbRect().height * 0.5f) / this.ValuesPerPixel() + this.start - this.size * 0.5f;
-			}
-			return result;
-		}
+    private float ClampedCurrentValue()
+    {
+      return this.Clamp(this.currentValue);
+    }
 
-		private float Clamp(float value)
-		{
-			return Mathf.Clamp(value, this.MinValue(), this.MaxValue());
-		}
+    private float MousePosition()
+    {
+      if (this.horiz)
+        return this.CurrentEvent().mousePosition.x - this.position.x;
+      return this.CurrentEvent().mousePosition.y - this.position.y;
+    }
 
-		private Rect ThumbSelectionRect()
-		{
-			return this.ThumbRect();
-		}
+    private float ValuesPerPixel()
+    {
+      if (this.horiz)
+        return (float) (((double) this.position.width - (double) this.slider.padding.horizontal - (double) this.ThumbSize()) / ((double) this.end - (double) this.start));
+      return (float) (((double) this.position.height - (double) this.slider.padding.vertical - (double) this.ThumbSize()) / ((double) this.end - (double) this.start));
+    }
 
-		private void StartDraggingWithValue(float dragStartValue)
-		{
-			SliderState sliderState = this.SliderState();
-			sliderState.dragStartPos = this.MousePosition();
-			sliderState.dragStartValue = dragStartValue;
-			sliderState.isDragging = true;
-		}
+    private float ThumbSize()
+    {
+      if (this.horiz)
+        return (double) this.thumb.fixedWidth == 0.0 ? (float) this.thumb.padding.horizontal : this.thumb.fixedWidth;
+      return (double) this.thumb.fixedHeight == 0.0 ? (float) this.thumb.padding.vertical : this.thumb.fixedHeight;
+    }
 
-		private SliderState SliderState()
-		{
-			return (SliderState)GUIUtility.GetStateObject(typeof(SliderState), this.id);
-		}
+    private float MaxValue()
+    {
+      return Mathf.Max(this.start, this.end) - this.size;
+    }
 
-		private Rect ThumbRect()
-		{
-			return (!this.horiz) ? this.VerticalThumbRect() : this.HorizontalThumbRect();
-		}
-
-		private Rect VerticalThumbRect()
-		{
-			float num = this.ValuesPerPixel();
-			Rect result;
-			if (this.start < this.end)
-			{
-				result = new Rect(this.position.x + (float)this.slider.padding.left, (this.ClampedCurrentValue() - this.start) * num + this.position.y + (float)this.slider.padding.top, this.position.width - (float)this.slider.padding.horizontal, this.size * num + this.ThumbSize());
-			}
-			else
-			{
-				result = new Rect(this.position.x + (float)this.slider.padding.left, (this.ClampedCurrentValue() + this.size - this.start) * num + this.position.y + (float)this.slider.padding.top, this.position.width - (float)this.slider.padding.horizontal, this.size * -num + this.ThumbSize());
-			}
-			return result;
-		}
-
-		private Rect HorizontalThumbRect()
-		{
-			float num = this.ValuesPerPixel();
-			Rect result;
-			if (this.start < this.end)
-			{
-				result = new Rect((this.ClampedCurrentValue() - this.start) * num + this.position.x + (float)this.slider.padding.left, this.position.y + (float)this.slider.padding.top, this.size * num + this.ThumbSize(), this.position.height - (float)this.slider.padding.vertical);
-			}
-			else
-			{
-				result = new Rect((this.ClampedCurrentValue() + this.size - this.start) * num + this.position.x + (float)this.slider.padding.left, this.position.y, this.size * -num + this.ThumbSize(), this.position.height);
-			}
-			return result;
-		}
-
-		private float ClampedCurrentValue()
-		{
-			return this.Clamp(this.currentValue);
-		}
-
-		private float MousePosition()
-		{
-			float result;
-			if (this.horiz)
-			{
-				result = this.CurrentEvent().mousePosition.x - this.position.x;
-			}
-			else
-			{
-				result = this.CurrentEvent().mousePosition.y - this.position.y;
-			}
-			return result;
-		}
-
-		private float ValuesPerPixel()
-		{
-			float result;
-			if (this.horiz)
-			{
-				result = (this.position.width - (float)this.slider.padding.horizontal - this.ThumbSize()) / (this.end - this.start);
-			}
-			else
-			{
-				result = (this.position.height - (float)this.slider.padding.vertical - this.ThumbSize()) / (this.end - this.start);
-			}
-			return result;
-		}
-
-		private float ThumbSize()
-		{
-			float result;
-			if (this.horiz)
-			{
-				result = ((this.thumb.fixedWidth == 0f) ? ((float)this.thumb.padding.horizontal) : this.thumb.fixedWidth);
-			}
-			else
-			{
-				result = ((this.thumb.fixedHeight == 0f) ? ((float)this.thumb.padding.vertical) : this.thumb.fixedHeight);
-			}
-			return result;
-		}
-
-		private float MaxValue()
-		{
-			return Mathf.Max(this.start, this.end) - this.size;
-		}
-
-		private float MinValue()
-		{
-			return Mathf.Min(this.start, this.end);
-		}
-	}
+    private float MinValue()
+    {
+      return Mathf.Min(this.start, this.end);
+    }
+  }
 }

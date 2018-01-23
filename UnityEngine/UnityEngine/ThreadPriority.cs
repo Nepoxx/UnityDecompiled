@@ -1,12 +1,16 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.ThreadPriority
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	public enum ThreadPriority
-	{
-		Low,
-		BelowNormal,
-		Normal,
-		High = 4
-	}
+  public enum ThreadPriority
+  {
+    Low = 0,
+    BelowNormal = 1,
+    Normal = 2,
+    High = 4,
+  }
 }

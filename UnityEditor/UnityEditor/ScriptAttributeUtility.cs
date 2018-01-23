@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.ScriptAttributeUtility
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,322 +12,224 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class ScriptAttributeUtility
-	{
-		private struct DrawerKeySet
-		{
-			public Type drawer;
+  internal class ScriptAttributeUtility
+  {
+    internal static Stack<PropertyDrawer> s_DrawerStack = new Stack<PropertyDrawer>();
+    private static Dictionary<System.Type, ScriptAttributeUtility.DrawerKeySet> s_DrawerTypeForType = (Dictionary<System.Type, ScriptAttributeUtility.DrawerKeySet>) null;
+    private static Dictionary<string, List<PropertyAttribute>> s_BuiltinAttributes = (Dictionary<string, List<PropertyAttribute>>) null;
+    private static PropertyHandler s_SharedNullHandler = new PropertyHandler();
+    private static PropertyHandler s_NextHandler = new PropertyHandler();
+    private static PropertyHandlerCache s_GlobalCache = new PropertyHandlerCache();
+    private static PropertyHandlerCache s_CurrentCache = (PropertyHandlerCache) null;
 
-			public Type type;
-		}
+    internal static PropertyHandlerCache propertyHandlerCache
+    {
+      get
+      {
+        return ScriptAttributeUtility.s_CurrentCache ?? ScriptAttributeUtility.s_GlobalCache;
+      }
+      set
+      {
+        ScriptAttributeUtility.s_CurrentCache = value;
+      }
+    }
 
-		internal static Stack<PropertyDrawer> s_DrawerStack = new Stack<PropertyDrawer>();
+    internal static void ClearGlobalCache()
+    {
+      ScriptAttributeUtility.s_GlobalCache.Clear();
+    }
 
-		private static Dictionary<Type, ScriptAttributeUtility.DrawerKeySet> s_DrawerTypeForType = null;
+    private static void PopulateBuiltinAttributes()
+    {
+      ScriptAttributeUtility.s_BuiltinAttributes = new Dictionary<string, List<PropertyAttribute>>();
+      ScriptAttributeUtility.AddBuiltinAttribute("GUIText", "m_Text", (PropertyAttribute) new MultilineAttribute());
+      ScriptAttributeUtility.AddBuiltinAttribute("TextMesh", "m_Text", (PropertyAttribute) new MultilineAttribute());
+    }
 
-		private static Dictionary<string, List<PropertyAttribute>> s_BuiltinAttributes = null;
+    private static void AddBuiltinAttribute(string componentTypeName, string propertyPath, PropertyAttribute attr)
+    {
+      string key = componentTypeName + "_" + propertyPath;
+      if (!ScriptAttributeUtility.s_BuiltinAttributes.ContainsKey(key))
+        ScriptAttributeUtility.s_BuiltinAttributes.Add(key, new List<PropertyAttribute>());
+      ScriptAttributeUtility.s_BuiltinAttributes[key].Add(attr);
+    }
 
-		private static PropertyHandler s_SharedNullHandler = new PropertyHandler();
+    private static List<PropertyAttribute> GetBuiltinAttributes(SerializedProperty property)
+    {
+      if (property.serializedObject.targetObject == (UnityEngine.Object) null)
+        return (List<PropertyAttribute>) null;
+      System.Type type = property.serializedObject.targetObject.GetType();
+      if (type == null)
+        return (List<PropertyAttribute>) null;
+      string key = type.Name + "_" + property.propertyPath;
+      List<PropertyAttribute> propertyAttributeList = (List<PropertyAttribute>) null;
+      ScriptAttributeUtility.s_BuiltinAttributes.TryGetValue(key, out propertyAttributeList);
+      return propertyAttributeList;
+    }
 
-		private static PropertyHandler s_NextHandler = new PropertyHandler();
+    private static void BuildDrawerTypeForTypeDictionary()
+    {
+      ScriptAttributeUtility.s_DrawerTypeForType = new Dictionary<System.Type, ScriptAttributeUtility.DrawerKeySet>();
+      System.Type[] array = ((IEnumerable<Assembly>) AppDomain.CurrentDomain.GetAssemblies()).SelectMany<Assembly, System.Type>((Func<Assembly, IEnumerable<System.Type>>) (x => (IEnumerable<System.Type>) AssemblyHelper.GetTypesFromAssembly(x))).ToArray<System.Type>();
+      foreach (System.Type type in EditorAssemblies.SubclassesOf(typeof (GUIDrawer)))
+      {
+        foreach (CustomPropertyDrawer customAttribute in type.GetCustomAttributes(typeof (CustomPropertyDrawer), true))
+        {
+          // ISSUE: object of a compiler-generated type is created
+          // ISSUE: variable of a compiler-generated type
+          ScriptAttributeUtility.\u003CBuildDrawerTypeForTypeDictionary\u003Ec__AnonStorey0 dictionaryCAnonStorey0 = new ScriptAttributeUtility.\u003CBuildDrawerTypeForTypeDictionary\u003Ec__AnonStorey0();
+          // ISSUE: reference to a compiler-generated field
+          dictionaryCAnonStorey0.editor = customAttribute;
+          // ISSUE: reference to a compiler-generated field
+          // ISSUE: reference to a compiler-generated field
+          ScriptAttributeUtility.s_DrawerTypeForType[dictionaryCAnonStorey0.editor.m_Type] = new ScriptAttributeUtility.DrawerKeySet()
+          {
+            drawer = type,
+            type = dictionaryCAnonStorey0.editor.m_Type
+          };
+          // ISSUE: reference to a compiler-generated field
+          if (dictionaryCAnonStorey0.editor.m_UseForChildren)
+          {
+            // ISSUE: reference to a compiler-generated method
+            foreach (System.Type key in ((IEnumerable<System.Type>) array).Where<System.Type>(new Func<System.Type, bool>(dictionaryCAnonStorey0.\u003C\u003Em__0)))
+            {
+              // ISSUE: reference to a compiler-generated field
+              if (!ScriptAttributeUtility.s_DrawerTypeForType.ContainsKey(key) || !dictionaryCAnonStorey0.editor.m_Type.IsAssignableFrom(ScriptAttributeUtility.s_DrawerTypeForType[key].type))
+              {
+                // ISSUE: reference to a compiler-generated field
+                ScriptAttributeUtility.s_DrawerTypeForType[key] = new ScriptAttributeUtility.DrawerKeySet()
+                {
+                  drawer = type,
+                  type = dictionaryCAnonStorey0.editor.m_Type
+                };
+              }
+            }
+          }
+        }
+      }
+    }
 
-		private static PropertyHandlerCache s_GlobalCache = new PropertyHandlerCache();
+    internal static System.Type GetDrawerTypeForType(System.Type type)
+    {
+      if (ScriptAttributeUtility.s_DrawerTypeForType == null)
+        ScriptAttributeUtility.BuildDrawerTypeForTypeDictionary();
+      ScriptAttributeUtility.DrawerKeySet drawerKeySet;
+      ScriptAttributeUtility.s_DrawerTypeForType.TryGetValue(type, out drawerKeySet);
+      if (drawerKeySet.drawer != null || !type.IsGenericType)
+        return drawerKeySet.drawer;
+      ScriptAttributeUtility.s_DrawerTypeForType.TryGetValue(type.GetGenericTypeDefinition(), out drawerKeySet);
+      return drawerKeySet.drawer;
+    }
 
-		private static PropertyHandlerCache s_CurrentCache = null;
+    private static List<PropertyAttribute> GetFieldAttributes(System.Reflection.FieldInfo field)
+    {
+      if (field == null)
+        return (List<PropertyAttribute>) null;
+      object[] customAttributes = field.GetCustomAttributes(typeof (PropertyAttribute), true);
+      if (customAttributes != null && customAttributes.Length > 0)
+        return new List<PropertyAttribute>((IEnumerable<PropertyAttribute>) ((IEnumerable<object>) customAttributes).Select<object, PropertyAttribute>((Func<object, PropertyAttribute>) (e => e as PropertyAttribute)).OrderBy<PropertyAttribute, int>((Func<PropertyAttribute, int>) (e => -e.order)));
+      return (List<PropertyAttribute>) null;
+    }
 
-		internal static PropertyHandlerCache propertyHandlerCache
-		{
-			get
-			{
-				return ScriptAttributeUtility.s_CurrentCache ?? ScriptAttributeUtility.s_GlobalCache;
-			}
-			set
-			{
-				ScriptAttributeUtility.s_CurrentCache = value;
-			}
-		}
+    internal static System.Reflection.FieldInfo GetFieldInfoFromProperty(SerializedProperty property, out System.Type type)
+    {
+      System.Type typeFromProperty = ScriptAttributeUtility.GetScriptTypeFromProperty(property);
+      if (typeFromProperty != null)
+        return ScriptAttributeUtility.GetFieldInfoFromPropertyPath(typeFromProperty, property.propertyPath, out type);
+      type = (System.Type) null;
+      return (System.Reflection.FieldInfo) null;
+    }
 
-		internal static void ClearGlobalCache()
-		{
-			ScriptAttributeUtility.s_GlobalCache.Clear();
-		}
+    private static System.Type GetScriptTypeFromProperty(SerializedProperty property)
+    {
+      SerializedProperty property1 = property.serializedObject.FindProperty("m_Script");
+      if (property1 == null)
+        return (System.Type) null;
+      MonoScript objectReferenceValue = property1.objectReferenceValue as MonoScript;
+      if ((UnityEngine.Object) objectReferenceValue == (UnityEngine.Object) null)
+        return (System.Type) null;
+      return objectReferenceValue.GetClass();
+    }
 
-		private static void PopulateBuiltinAttributes()
-		{
-			ScriptAttributeUtility.s_BuiltinAttributes = new Dictionary<string, List<PropertyAttribute>>();
-			ScriptAttributeUtility.AddBuiltinAttribute("GUIText", "m_Text", new MultilineAttribute());
-			ScriptAttributeUtility.AddBuiltinAttribute("TextMesh", "m_Text", new MultilineAttribute());
-		}
+    private static System.Reflection.FieldInfo GetFieldInfoFromPropertyPath(System.Type host, string path, out System.Type type)
+    {
+      System.Reflection.FieldInfo fieldInfo1 = (System.Reflection.FieldInfo) null;
+      type = host;
+      string[] strArray = path.Split('.');
+      for (int index = 0; index < strArray.Length; ++index)
+      {
+        string name = strArray[index];
+        if (index < strArray.Length - 1 && name == "Array" && strArray[index + 1].StartsWith("data["))
+        {
+          if (type.IsArrayOrList())
+            type = type.GetArrayOrListElementType();
+          ++index;
+        }
+        else
+        {
+          System.Reflection.FieldInfo fieldInfo2 = (System.Reflection.FieldInfo) null;
+          for (System.Type type1 = type; fieldInfo2 == null && type1 != null; type1 = type1.BaseType)
+            fieldInfo2 = type1.GetField(name, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+          if (fieldInfo2 == null)
+          {
+            type = (System.Type) null;
+            return (System.Reflection.FieldInfo) null;
+          }
+          fieldInfo1 = fieldInfo2;
+          type = fieldInfo1.FieldType;
+        }
+      }
+      return fieldInfo1;
+    }
 
-		private static void AddBuiltinAttribute(string componentTypeName, string propertyPath, PropertyAttribute attr)
-		{
-			string key = componentTypeName + "_" + propertyPath;
-			if (!ScriptAttributeUtility.s_BuiltinAttributes.ContainsKey(key))
-			{
-				ScriptAttributeUtility.s_BuiltinAttributes.Add(key, new List<PropertyAttribute>());
-			}
-			ScriptAttributeUtility.s_BuiltinAttributes[key].Add(attr);
-		}
+    internal static PropertyHandler GetHandler(SerializedProperty property)
+    {
+      if (property == null || property.serializedObject.inspectorMode != InspectorMode.Normal)
+        return ScriptAttributeUtility.s_SharedNullHandler;
+      PropertyHandler handler1 = ScriptAttributeUtility.propertyHandlerCache.GetHandler(property);
+      if (handler1 != null)
+        return handler1;
+      System.Type type = (System.Type) null;
+      List<PropertyAttribute> propertyAttributeList = (List<PropertyAttribute>) null;
+      System.Reflection.FieldInfo field = (System.Reflection.FieldInfo) null;
+      UnityEngine.Object targetObject = property.serializedObject.targetObject;
+      if (targetObject is MonoBehaviour || targetObject is ScriptableObject)
+      {
+        field = ScriptAttributeUtility.GetFieldInfoFromProperty(property, out type);
+        propertyAttributeList = ScriptAttributeUtility.GetFieldAttributes(field);
+      }
+      else
+      {
+        if (ScriptAttributeUtility.s_BuiltinAttributes == null)
+          ScriptAttributeUtility.PopulateBuiltinAttributes();
+        if (propertyAttributeList == null)
+          propertyAttributeList = ScriptAttributeUtility.GetBuiltinAttributes(property);
+      }
+      PropertyHandler handler2 = ScriptAttributeUtility.s_NextHandler;
+      if (propertyAttributeList != null)
+      {
+        for (int index = propertyAttributeList.Count - 1; index >= 0; --index)
+          handler2.HandleAttribute(propertyAttributeList[index], field, type);
+      }
+      if (!handler2.hasPropertyDrawer && type != null)
+        handler2.HandleDrawnType(type, type, field, (PropertyAttribute) null);
+      if (handler2.empty)
+      {
+        ScriptAttributeUtility.propertyHandlerCache.SetHandler(property, ScriptAttributeUtility.s_SharedNullHandler);
+        handler2 = ScriptAttributeUtility.s_SharedNullHandler;
+      }
+      else
+      {
+        ScriptAttributeUtility.propertyHandlerCache.SetHandler(property, handler2);
+        ScriptAttributeUtility.s_NextHandler = new PropertyHandler();
+      }
+      return handler2;
+    }
 
-		private static List<PropertyAttribute> GetBuiltinAttributes(SerializedProperty property)
-		{
-			List<PropertyAttribute> result;
-			if (property.serializedObject.targetObject == null)
-			{
-				result = null;
-			}
-			else
-			{
-				Type type = property.serializedObject.targetObject.GetType();
-				if (type == null)
-				{
-					result = null;
-				}
-				else
-				{
-					string key = type.Name + "_" + property.propertyPath;
-					List<PropertyAttribute> list = null;
-					ScriptAttributeUtility.s_BuiltinAttributes.TryGetValue(key, out list);
-					result = list;
-				}
-			}
-			return result;
-		}
-
-		private static void BuildDrawerTypeForTypeDictionary()
-		{
-			ScriptAttributeUtility.s_DrawerTypeForType = new Dictionary<Type, ScriptAttributeUtility.DrawerKeySet>();
-			Type[] source = AppDomain.CurrentDomain.GetAssemblies().SelectMany((Assembly x) => AssemblyHelper.GetTypesFromAssembly(x)).ToArray<Type>();
-			foreach (Type current in EditorAssemblies.SubclassesOf(typeof(GUIDrawer)))
-			{
-				object[] customAttributes = current.GetCustomAttributes(typeof(CustomPropertyDrawer), true);
-				object[] array = customAttributes;
-				for (int i = 0; i < array.Length; i++)
-				{
-					CustomPropertyDrawer editor = (CustomPropertyDrawer)array[i];
-					ScriptAttributeUtility.s_DrawerTypeForType[editor.m_Type] = new ScriptAttributeUtility.DrawerKeySet
-					{
-						drawer = current,
-						type = editor.m_Type
-					};
-					if (editor.m_UseForChildren)
-					{
-						IEnumerable<Type> enumerable = from x in source
-						where x.IsSubclassOf(editor.m_Type)
-						select x;
-						foreach (Type current2 in enumerable)
-						{
-							if (!ScriptAttributeUtility.s_DrawerTypeForType.ContainsKey(current2) || !editor.m_Type.IsAssignableFrom(ScriptAttributeUtility.s_DrawerTypeForType[current2].type))
-							{
-								ScriptAttributeUtility.s_DrawerTypeForType[current2] = new ScriptAttributeUtility.DrawerKeySet
-								{
-									drawer = current,
-									type = editor.m_Type
-								};
-							}
-						}
-					}
-				}
-			}
-		}
-
-		internal static Type GetDrawerTypeForType(Type type)
-		{
-			if (ScriptAttributeUtility.s_DrawerTypeForType == null)
-			{
-				ScriptAttributeUtility.BuildDrawerTypeForTypeDictionary();
-			}
-			ScriptAttributeUtility.DrawerKeySet drawerKeySet;
-			ScriptAttributeUtility.s_DrawerTypeForType.TryGetValue(type, out drawerKeySet);
-			Type drawer;
-			if (drawerKeySet.drawer != null)
-			{
-				drawer = drawerKeySet.drawer;
-			}
-			else
-			{
-				if (type.IsGenericType)
-				{
-					ScriptAttributeUtility.s_DrawerTypeForType.TryGetValue(type.GetGenericTypeDefinition(), out drawerKeySet);
-				}
-				drawer = drawerKeySet.drawer;
-			}
-			return drawer;
-		}
-
-		private static List<PropertyAttribute> GetFieldAttributes(FieldInfo field)
-		{
-			List<PropertyAttribute> result;
-			if (field == null)
-			{
-				result = null;
-			}
-			else
-			{
-				object[] customAttributes = field.GetCustomAttributes(typeof(PropertyAttribute), true);
-				if (customAttributes != null && customAttributes.Length > 0)
-				{
-					result = new List<PropertyAttribute>(from e in customAttributes
-					select e as PropertyAttribute into e
-					orderby -e.order
-					select e);
-				}
-				else
-				{
-					result = null;
-				}
-			}
-			return result;
-		}
-
-		private static FieldInfo GetFieldInfoFromProperty(SerializedProperty property, out Type type)
-		{
-			Type scriptTypeFromProperty = ScriptAttributeUtility.GetScriptTypeFromProperty(property);
-			FieldInfo result;
-			if (scriptTypeFromProperty == null)
-			{
-				type = null;
-				result = null;
-			}
-			else
-			{
-				result = ScriptAttributeUtility.GetFieldInfoFromPropertyPath(scriptTypeFromProperty, property.propertyPath, out type);
-			}
-			return result;
-		}
-
-		private static Type GetScriptTypeFromProperty(SerializedProperty property)
-		{
-			SerializedProperty serializedProperty = property.serializedObject.FindProperty("m_Script");
-			Type result;
-			if (serializedProperty == null)
-			{
-				result = null;
-			}
-			else
-			{
-				MonoScript monoScript = serializedProperty.objectReferenceValue as MonoScript;
-				if (monoScript == null)
-				{
-					result = null;
-				}
-				else
-				{
-					result = monoScript.GetClass();
-				}
-			}
-			return result;
-		}
-
-		private static FieldInfo GetFieldInfoFromPropertyPath(Type host, string path, out Type type)
-		{
-			FieldInfo fieldInfo = null;
-			type = host;
-			string[] array = path.Split(new char[]
-			{
-				'.'
-			});
-			FieldInfo result;
-			for (int i = 0; i < array.Length; i++)
-			{
-				string text = array[i];
-				if (i < array.Length - 1 && text == "Array" && array[i + 1].StartsWith("data["))
-				{
-					if (type.IsArrayOrList())
-					{
-						type = type.GetArrayOrListElementType();
-					}
-					i++;
-				}
-				else
-				{
-					FieldInfo fieldInfo2 = null;
-					Type type2 = type;
-					while (fieldInfo2 == null && type2 != null)
-					{
-						fieldInfo2 = type2.GetField(text, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-						type2 = type2.BaseType;
-					}
-					if (fieldInfo2 == null)
-					{
-						type = null;
-						result = null;
-						return result;
-					}
-					fieldInfo = fieldInfo2;
-					type = fieldInfo.FieldType;
-				}
-			}
-			result = fieldInfo;
-			return result;
-		}
-
-		internal static PropertyHandler GetHandler(SerializedProperty property)
-		{
-			PropertyHandler result;
-			if (property == null)
-			{
-				result = ScriptAttributeUtility.s_SharedNullHandler;
-			}
-			else if (property.serializedObject.inspectorMode != InspectorMode.Normal)
-			{
-				result = ScriptAttributeUtility.s_SharedNullHandler;
-			}
-			else
-			{
-				PropertyHandler handler = ScriptAttributeUtility.propertyHandlerCache.GetHandler(property);
-				if (handler != null)
-				{
-					result = handler;
-				}
-				else
-				{
-					Type type = null;
-					List<PropertyAttribute> list = null;
-					FieldInfo field = null;
-					UnityEngine.Object targetObject = property.serializedObject.targetObject;
-					if (targetObject is MonoBehaviour || targetObject is ScriptableObject)
-					{
-						field = ScriptAttributeUtility.GetFieldInfoFromProperty(property, out type);
-						list = ScriptAttributeUtility.GetFieldAttributes(field);
-					}
-					else
-					{
-						if (ScriptAttributeUtility.s_BuiltinAttributes == null)
-						{
-							ScriptAttributeUtility.PopulateBuiltinAttributes();
-						}
-						if (list == null)
-						{
-							list = ScriptAttributeUtility.GetBuiltinAttributes(property);
-						}
-					}
-					handler = ScriptAttributeUtility.s_NextHandler;
-					if (list != null)
-					{
-						for (int i = list.Count - 1; i >= 0; i--)
-						{
-							handler.HandleAttribute(list[i], field, type);
-						}
-					}
-					if (!handler.hasPropertyDrawer && type != null)
-					{
-						handler.HandleDrawnType(type, type, field, null);
-					}
-					if (handler.empty)
-					{
-						ScriptAttributeUtility.propertyHandlerCache.SetHandler(property, ScriptAttributeUtility.s_SharedNullHandler);
-						handler = ScriptAttributeUtility.s_SharedNullHandler;
-					}
-					else
-					{
-						ScriptAttributeUtility.propertyHandlerCache.SetHandler(property, handler);
-						ScriptAttributeUtility.s_NextHandler = new PropertyHandler();
-					}
-					result = handler;
-				}
-			}
-			return result;
-		}
-	}
+    private struct DrawerKeySet
+    {
+      public System.Type drawer;
+      public System.Type type;
+    }
+  }
 }

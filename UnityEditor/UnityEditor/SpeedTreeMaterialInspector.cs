@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.SpeedTreeMaterialInspector
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,176 +12,145 @@ using UnityEngine.Rendering;
 
 namespace UnityEditor
 {
-	[CanEditMultipleObjects]
-	internal class SpeedTreeMaterialInspector : MaterialEditor
-	{
-		private enum SpeedTreeGeometryType
-		{
-			Branch,
-			BranchDetail,
-			Frond,
-			Leaf,
-			Mesh
-		}
+  [CanEditMultipleObjects]
+  internal class SpeedTreeMaterialInspector : MaterialEditor
+  {
+    private string[] speedTreeGeometryTypeString = new string[5]{ "GEOM_TYPE_BRANCH", "GEOM_TYPE_BRANCH_DETAIL", "GEOM_TYPE_FROND", "GEOM_TYPE_LEAF", "GEOM_TYPE_MESH" };
 
-		private string[] speedTreeGeometryTypeString = new string[]
-		{
-			"GEOM_TYPE_BRANCH",
-			"GEOM_TYPE_BRANCH_DETAIL",
-			"GEOM_TYPE_FROND",
-			"GEOM_TYPE_LEAF",
-			"GEOM_TYPE_MESH"
-		};
+    private bool ShouldEnableAlphaTest(SpeedTreeMaterialInspector.SpeedTreeGeometryType geomType)
+    {
+      return geomType == SpeedTreeMaterialInspector.SpeedTreeGeometryType.Frond || geomType == SpeedTreeMaterialInspector.SpeedTreeGeometryType.Leaf;
+    }
 
-		private bool ShouldEnableAlphaTest(SpeedTreeMaterialInspector.SpeedTreeGeometryType geomType)
-		{
-			return geomType == SpeedTreeMaterialInspector.SpeedTreeGeometryType.Frond || geomType == SpeedTreeMaterialInspector.SpeedTreeGeometryType.Leaf;
-		}
+    public override void OnInspectorGUI()
+    {
+      this.serializedObject.Update();
+      SerializedProperty property = this.serializedObject.FindProperty("m_Shader");
+      if (!this.isVisible || property.hasMultipleDifferentValues || property.objectReferenceValue == (UnityEngine.Object) null)
+        return;
+      List<MaterialProperty> materialPropertyList = new List<MaterialProperty>((IEnumerable<MaterialProperty>) MaterialEditor.GetMaterialProperties(this.targets));
+      this.SetDefaultGUIWidths();
+      SpeedTreeMaterialInspector.SpeedTreeGeometryType[] treeGeometryTypeArray = new SpeedTreeMaterialInspector.SpeedTreeGeometryType[this.targets.Length];
+      for (int index1 = 0; index1 < this.targets.Length; ++index1)
+      {
+        treeGeometryTypeArray[index1] = SpeedTreeMaterialInspector.SpeedTreeGeometryType.Branch;
+        for (int index2 = 0; index2 < this.speedTreeGeometryTypeString.Length; ++index2)
+        {
+          if (((IEnumerable<string>) ((Material) this.targets[index1]).shaderKeywords).Contains<string>(this.speedTreeGeometryTypeString[index2]))
+          {
+            treeGeometryTypeArray[index1] = (SpeedTreeMaterialInspector.SpeedTreeGeometryType) index2;
+            break;
+          }
+        }
+      }
+      EditorGUI.showMixedValue = ((IEnumerable<SpeedTreeMaterialInspector.SpeedTreeGeometryType>) treeGeometryTypeArray).Distinct<SpeedTreeMaterialInspector.SpeedTreeGeometryType>().Count<SpeedTreeMaterialInspector.SpeedTreeGeometryType>() > 1;
+      EditorGUI.BeginChangeCheck();
+      SpeedTreeMaterialInspector.SpeedTreeGeometryType geomType = (SpeedTreeMaterialInspector.SpeedTreeGeometryType) EditorGUILayout.EnumPopup("Geometry Type", (Enum) treeGeometryTypeArray[0], new GUILayoutOption[0]);
+      if (EditorGUI.EndChangeCheck())
+      {
+        bool flag = this.ShouldEnableAlphaTest(geomType);
+        CullMode cullMode = !flag ? CullMode.Back : CullMode.Off;
+        foreach (Material material in this.targets.Cast<Material>())
+        {
+          if (flag)
+            material.SetOverrideTag("RenderType", "treeTransparentCutout");
+          for (int index = 0; index < this.speedTreeGeometryTypeString.Length; ++index)
+            material.DisableKeyword(this.speedTreeGeometryTypeString[index]);
+          material.EnableKeyword(this.speedTreeGeometryTypeString[(int) geomType]);
+          material.renderQueue = !flag ? 2000 : 2450;
+          material.SetInt("_Cull", (int) cullMode);
+        }
+      }
+      EditorGUI.showMixedValue = false;
+      MaterialProperty prop1 = materialPropertyList.Find((Predicate<MaterialProperty>) (prop => prop.name == "_MainTex"));
+      if (prop1 != null)
+      {
+        materialPropertyList.Remove(prop1);
+        this.ShaderProperty(prop1, prop1.displayName);
+      }
+      MaterialProperty prop2 = materialPropertyList.Find((Predicate<MaterialProperty>) (prop => prop.name == "_BumpMap"));
+      if (prop2 != null)
+      {
+        materialPropertyList.Remove(prop2);
+        IEnumerable<bool> source = ((IEnumerable<UnityEngine.Object>) this.targets).Select<UnityEngine.Object, bool>((Func<UnityEngine.Object, bool>) (t => ((IEnumerable<string>) ((Material) t).shaderKeywords).Contains<string>("EFFECT_BUMP")));
+        bool? nullable = this.ToggleShaderProperty(prop2, source.First<bool>(), source.Distinct<bool>().Count<bool>() > 1);
+        if (nullable.HasValue)
+        {
+          foreach (Material material in this.targets.Cast<Material>())
+          {
+            if (nullable.Value)
+              material.EnableKeyword("EFFECT_BUMP");
+            else
+              material.DisableKeyword("EFFECT_BUMP");
+          }
+        }
+      }
+      MaterialProperty prop3 = materialPropertyList.Find((Predicate<MaterialProperty>) (prop => prop.name == "_DetailTex"));
+      if (prop3 != null)
+      {
+        materialPropertyList.Remove(prop3);
+        if (((IEnumerable<SpeedTreeMaterialInspector.SpeedTreeGeometryType>) treeGeometryTypeArray).Contains<SpeedTreeMaterialInspector.SpeedTreeGeometryType>(SpeedTreeMaterialInspector.SpeedTreeGeometryType.BranchDetail))
+          this.ShaderProperty(prop3, prop3.displayName);
+      }
+      IEnumerable<bool> source1 = ((IEnumerable<UnityEngine.Object>) this.targets).Select<UnityEngine.Object, bool>((Func<UnityEngine.Object, bool>) (t => ((IEnumerable<string>) ((Material) t).shaderKeywords).Contains<string>("EFFECT_HUE_VARIATION")));
+      MaterialProperty prop4 = materialPropertyList.Find((Predicate<MaterialProperty>) (prop => prop.name == "_HueVariation"));
+      if (source1 != null && prop4 != null)
+      {
+        materialPropertyList.Remove(prop4);
+        bool? nullable = this.ToggleShaderProperty(prop4, source1.First<bool>(), source1.Distinct<bool>().Count<bool>() > 1);
+        if (nullable.HasValue)
+        {
+          foreach (Material material in this.targets.Cast<Material>())
+          {
+            if (nullable.Value)
+              material.EnableKeyword("EFFECT_HUE_VARIATION");
+            else
+              material.DisableKeyword("EFFECT_HUE_VARIATION");
+          }
+        }
+      }
+      MaterialProperty prop5 = materialPropertyList.Find((Predicate<MaterialProperty>) (prop => prop.name == "_Cutoff"));
+      if (prop5 != null)
+      {
+        materialPropertyList.Remove(prop5);
+        if (((IEnumerable<SpeedTreeMaterialInspector.SpeedTreeGeometryType>) treeGeometryTypeArray).Any<SpeedTreeMaterialInspector.SpeedTreeGeometryType>((Func<SpeedTreeMaterialInspector.SpeedTreeGeometryType, bool>) (t => this.ShouldEnableAlphaTest(t))))
+          this.ShaderProperty(prop5, prop5.displayName);
+      }
+      foreach (MaterialProperty prop6 in materialPropertyList)
+      {
+        if ((prop6.flags & (MaterialProperty.PropFlags.HideInInspector | MaterialProperty.PropFlags.PerRendererData)) == MaterialProperty.PropFlags.None)
+          this.ShaderProperty(prop6, prop6.displayName);
+      }
+      EditorGUILayout.Space();
+      EditorGUILayout.Space();
+      this.RenderQueueField();
+      this.EnableInstancingField();
+    }
 
-		public override void OnInspectorGUI()
-		{
-			base.serializedObject.Update();
-			SerializedProperty serializedProperty = base.serializedObject.FindProperty("m_Shader");
-			if (base.isVisible && !serializedProperty.hasMultipleDifferentValues && !(serializedProperty.objectReferenceValue == null))
-			{
-				List<MaterialProperty> list = new List<MaterialProperty>(MaterialEditor.GetMaterialProperties(base.targets));
-				base.SetDefaultGUIWidths();
-				SpeedTreeMaterialInspector.SpeedTreeGeometryType[] array = new SpeedTreeMaterialInspector.SpeedTreeGeometryType[base.targets.Length];
-				for (int i = 0; i < base.targets.Length; i++)
-				{
-					array[i] = SpeedTreeMaterialInspector.SpeedTreeGeometryType.Branch;
-					for (int j = 0; j < this.speedTreeGeometryTypeString.Length; j++)
-					{
-						if (((Material)base.targets[i]).shaderKeywords.Contains(this.speedTreeGeometryTypeString[j]))
-						{
-							array[i] = (SpeedTreeMaterialInspector.SpeedTreeGeometryType)j;
-							break;
-						}
-					}
-				}
-				EditorGUI.showMixedValue = (array.Distinct<SpeedTreeMaterialInspector.SpeedTreeGeometryType>().Count<SpeedTreeMaterialInspector.SpeedTreeGeometryType>() > 1);
-				EditorGUI.BeginChangeCheck();
-				SpeedTreeMaterialInspector.SpeedTreeGeometryType speedTreeGeometryType = (SpeedTreeMaterialInspector.SpeedTreeGeometryType)EditorGUILayout.EnumPopup("Geometry Type", array[0], new GUILayoutOption[0]);
-				if (EditorGUI.EndChangeCheck())
-				{
-					bool flag = this.ShouldEnableAlphaTest(speedTreeGeometryType);
-					CullMode value = (!flag) ? CullMode.Back : CullMode.Off;
-					foreach (Material current in base.targets.Cast<Material>())
-					{
-						if (flag)
-						{
-							current.SetOverrideTag("RenderType", "treeTransparentCutout");
-						}
-						for (int k = 0; k < this.speedTreeGeometryTypeString.Length; k++)
-						{
-							current.DisableKeyword(this.speedTreeGeometryTypeString[k]);
-						}
-						current.EnableKeyword(this.speedTreeGeometryTypeString[(int)speedTreeGeometryType]);
-						current.renderQueue = ((!flag) ? 2000 : 2450);
-						current.SetInt("_Cull", (int)value);
-					}
-				}
-				EditorGUI.showMixedValue = false;
-				MaterialProperty materialProperty = list.Find((MaterialProperty prop) => prop.name == "_MainTex");
-				if (materialProperty != null)
-				{
-					list.Remove(materialProperty);
-					base.ShaderProperty(materialProperty, materialProperty.displayName);
-				}
-				MaterialProperty materialProperty2 = list.Find((MaterialProperty prop) => prop.name == "_BumpMap");
-				if (materialProperty2 != null)
-				{
-					list.Remove(materialProperty2);
-					IEnumerable<bool> source = from t in base.targets
-					select ((Material)t).shaderKeywords.Contains("EFFECT_BUMP");
-					bool? flag2 = this.ToggleShaderProperty(materialProperty2, source.First<bool>(), source.Distinct<bool>().Count<bool>() > 1);
-					if (flag2.HasValue)
-					{
-						foreach (Material current2 in base.targets.Cast<Material>())
-						{
-							if (flag2.Value)
-							{
-								current2.EnableKeyword("EFFECT_BUMP");
-							}
-							else
-							{
-								current2.DisableKeyword("EFFECT_BUMP");
-							}
-						}
-					}
-				}
-				MaterialProperty materialProperty3 = list.Find((MaterialProperty prop) => prop.name == "_DetailTex");
-				if (materialProperty3 != null)
-				{
-					list.Remove(materialProperty3);
-					if (array.Contains(SpeedTreeMaterialInspector.SpeedTreeGeometryType.BranchDetail))
-					{
-						base.ShaderProperty(materialProperty3, materialProperty3.displayName);
-					}
-				}
-				IEnumerable<bool> enumerable = from t in base.targets
-				select ((Material)t).shaderKeywords.Contains("EFFECT_HUE_VARIATION");
-				MaterialProperty materialProperty4 = list.Find((MaterialProperty prop) => prop.name == "_HueVariation");
-				if (enumerable != null && materialProperty4 != null)
-				{
-					list.Remove(materialProperty4);
-					bool? flag3 = this.ToggleShaderProperty(materialProperty4, enumerable.First<bool>(), enumerable.Distinct<bool>().Count<bool>() > 1);
-					if (flag3.HasValue)
-					{
-						foreach (Material current3 in base.targets.Cast<Material>())
-						{
-							if (flag3.Value)
-							{
-								current3.EnableKeyword("EFFECT_HUE_VARIATION");
-							}
-							else
-							{
-								current3.DisableKeyword("EFFECT_HUE_VARIATION");
-							}
-						}
-					}
-				}
-				MaterialProperty materialProperty5 = list.Find((MaterialProperty prop) => prop.name == "_Cutoff");
-				if (materialProperty5 != null)
-				{
-					list.Remove(materialProperty5);
-					if (array.Any((SpeedTreeMaterialInspector.SpeedTreeGeometryType t) => this.ShouldEnableAlphaTest(t)))
-					{
-						base.ShaderProperty(materialProperty5, materialProperty5.displayName);
-					}
-				}
-				foreach (MaterialProperty current4 in list)
-				{
-					if ((current4.flags & (MaterialProperty.PropFlags.HideInInspector | MaterialProperty.PropFlags.PerRendererData)) == MaterialProperty.PropFlags.None)
-					{
-						base.ShaderProperty(current4, current4.displayName);
-					}
-				}
-				EditorGUILayout.Space();
-				EditorGUILayout.Space();
-				base.RenderQueueField();
-				base.EnableInstancingField();
-			}
-		}
+    private bool? ToggleShaderProperty(MaterialProperty prop, bool enable, bool hasMixedEnable)
+    {
+      EditorGUI.BeginChangeCheck();
+      EditorGUI.showMixedValue = hasMixedEnable;
+      enable = EditorGUI.ToggleLeft(EditorGUILayout.GetControlRect(false, GUILayout.ExpandWidth(false)), prop.displayName, enable);
+      EditorGUI.showMixedValue = false;
+      bool? nullable = !EditorGUI.EndChangeCheck() ? new bool?() : new bool?(enable);
+      GUILayout.Space(-EditorGUIUtility.singleLineHeight);
+      using (new EditorGUI.DisabledScope(!enable && !hasMixedEnable))
+      {
+        EditorGUI.showMixedValue = prop.hasMixedValue;
+        this.ShaderProperty(prop, " ");
+        EditorGUI.showMixedValue = false;
+      }
+      return nullable;
+    }
 
-		private bool? ToggleShaderProperty(MaterialProperty prop, bool enable, bool hasMixedEnable)
-		{
-			EditorGUI.BeginChangeCheck();
-			EditorGUI.showMixedValue = hasMixedEnable;
-			enable = EditorGUI.ToggleLeft(EditorGUILayout.GetControlRect(false, new GUILayoutOption[]
-			{
-				GUILayout.ExpandWidth(false)
-			}), prop.displayName, enable);
-			EditorGUI.showMixedValue = false;
-			bool? result = (!EditorGUI.EndChangeCheck()) ? null : new bool?(enable);
-			GUILayout.Space(-EditorGUIUtility.singleLineHeight);
-			using (new EditorGUI.DisabledScope(!enable && !hasMixedEnable))
-			{
-				EditorGUI.showMixedValue = prop.hasMixedValue;
-				base.ShaderProperty(prop, " ");
-				EditorGUI.showMixedValue = false;
-			}
-			return result;
-		}
-	}
+    private enum SpeedTreeGeometryType
+    {
+      Branch,
+      BranchDetail,
+      Frond,
+      Leaf,
+      Mesh,
+    }
+  }
 }

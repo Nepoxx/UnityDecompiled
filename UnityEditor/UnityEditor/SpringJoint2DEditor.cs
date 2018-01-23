@@ -1,25 +1,28 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.SpringJoint2DEditor
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[CanEditMultipleObjects, CustomEditor(typeof(SpringJoint2D))]
-	internal class SpringJoint2DEditor : AnchoredJoint2DEditor
-	{
-		public new void OnSceneGUI()
-		{
-			SpringJoint2D springJoint2D = (SpringJoint2D)base.target;
-			if (springJoint2D.enabled)
-			{
-				Vector3 anchor = Joint2DEditor.TransformPoint(springJoint2D.transform, springJoint2D.anchor);
-				Vector3 vector = springJoint2D.connectedAnchor;
-				if (springJoint2D.connectedBody)
-				{
-					vector = Joint2DEditor.TransformPoint(springJoint2D.connectedBody.transform, vector);
-				}
-				Joint2DEditor.DrawDistanceGizmo(anchor, vector, springJoint2D.distance);
-				base.OnSceneGUI();
-			}
-		}
-	}
+  [CustomEditor(typeof (SpringJoint2D))]
+  [CanEditMultipleObjects]
+  internal class SpringJoint2DEditor : AnchoredJoint2DEditor
+  {
+    public new void OnSceneGUI()
+    {
+      SpringJoint2D target = (SpringJoint2D) this.target;
+      if (!target.enabled)
+        return;
+      Vector3 anchor = Joint2DEditor.TransformPoint(target.transform, (Vector3) target.anchor);
+      Vector3 vector3 = (Vector3) target.connectedAnchor;
+      if ((bool) ((Object) target.connectedBody))
+        vector3 = Joint2DEditor.TransformPoint(target.connectedBody.transform, vector3);
+      Joint2DEditor.DrawDistanceGizmo(anchor, vector3, target.distance);
+      base.OnSceneGUI();
+    }
+  }
 }

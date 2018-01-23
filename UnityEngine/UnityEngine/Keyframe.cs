@@ -1,97 +1,128 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.Keyframe
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[RequiredByNativeCode]
-	public struct Keyframe
-	{
-		private float m_Time;
+  /// <summary>
+  ///   <para>A single keyframe that can be injected into an animation curve.</para>
+  /// </summary>
+  [RequiredByNativeCode]
+  public struct Keyframe
+  {
+    private float m_Time;
+    private float m_Value;
+    private float m_InTangent;
+    private float m_OutTangent;
+    private int m_TangentMode;
 
-		private float m_Value;
+    /// <summary>
+    ///   <para>Create a keyframe.</para>
+    /// </summary>
+    /// <param name="time"></param>
+    /// <param name="value"></param>
+    public Keyframe(float time, float value)
+    {
+      this.m_Time = time;
+      this.m_Value = value;
+      this.m_InTangent = 0.0f;
+      this.m_OutTangent = 0.0f;
+      this.m_TangentMode = 0;
+    }
 
-		private float m_InTangent;
+    /// <summary>
+    ///   <para>Create a keyframe.</para>
+    /// </summary>
+    /// <param name="time"></param>
+    /// <param name="value"></param>
+    /// <param name="inTangent"></param>
+    /// <param name="outTangent"></param>
+    public Keyframe(float time, float value, float inTangent, float outTangent)
+    {
+      this.m_Time = time;
+      this.m_Value = value;
+      this.m_InTangent = inTangent;
+      this.m_OutTangent = outTangent;
+      this.m_TangentMode = 0;
+    }
 
-		private float m_OutTangent;
+    /// <summary>
+    ///   <para>The time of the keyframe.</para>
+    /// </summary>
+    public float time
+    {
+      get
+      {
+        return this.m_Time;
+      }
+      set
+      {
+        this.m_Time = value;
+      }
+    }
 
-		private int m_TangentMode;
+    /// <summary>
+    ///   <para>The value of the curve at keyframe.</para>
+    /// </summary>
+    public float value
+    {
+      get
+      {
+        return this.m_Value;
+      }
+      set
+      {
+        this.m_Value = value;
+      }
+    }
 
-		public float time
-		{
-			get
-			{
-				return this.m_Time;
-			}
-			set
-			{
-				this.m_Time = value;
-			}
-		}
+    /// <summary>
+    ///   <para>Describes the tangent when approaching this point from the previous point in the curve.</para>
+    /// </summary>
+    public float inTangent
+    {
+      get
+      {
+        return this.m_InTangent;
+      }
+      set
+      {
+        this.m_InTangent = value;
+      }
+    }
 
-		public float value
-		{
-			get
-			{
-				return this.m_Value;
-			}
-			set
-			{
-				this.m_Value = value;
-			}
-		}
+    /// <summary>
+    ///   <para>Describes the tangent when leaving this point towards the next point in the curve.</para>
+    /// </summary>
+    public float outTangent
+    {
+      get
+      {
+        return this.m_OutTangent;
+      }
+      set
+      {
+        this.m_OutTangent = value;
+      }
+    }
 
-		public float inTangent
-		{
-			get
-			{
-				return this.m_InTangent;
-			}
-			set
-			{
-				this.m_InTangent = value;
-			}
-		}
-
-		public float outTangent
-		{
-			get
-			{
-				return this.m_OutTangent;
-			}
-			set
-			{
-				this.m_OutTangent = value;
-			}
-		}
-
-		public int tangentMode
-		{
-			get
-			{
-				return this.m_TangentMode;
-			}
-			set
-			{
-				this.m_TangentMode = value;
-			}
-		}
-
-		public Keyframe(float time, float value)
-		{
-			this.m_Time = time;
-			this.m_Value = value;
-			this.m_InTangent = 0f;
-			this.m_OutTangent = 0f;
-			this.m_TangentMode = 0;
-		}
-
-		public Keyframe(float time, float value, float inTangent, float outTangent)
-		{
-			this.m_Time = time;
-			this.m_Value = value;
-			this.m_InTangent = inTangent;
-			this.m_OutTangent = outTangent;
-			this.m_TangentMode = 0;
-		}
-	}
+    /// <summary>
+    ///   <para>TangentMode is deprecated.  Use AnimationUtility.SetKeyLeftTangentMode or AnimationUtility.SetKeyRightTangentMode instead.</para>
+    /// </summary>
+    public int tangentMode
+    {
+      get
+      {
+        return this.m_TangentMode;
+      }
+      set
+      {
+        this.m_TangentMode = value;
+      }
+    }
+  }
 }

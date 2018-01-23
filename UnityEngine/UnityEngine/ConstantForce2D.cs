@@ -1,64 +1,60 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.ConstantForce2D
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System.Runtime.CompilerServices;
-using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[RequireComponent(typeof(Rigidbody2D))]
-	public sealed class ConstantForce2D : PhysicsUpdateBehaviour2D
-	{
-		public Vector2 force
-		{
-			get
-			{
-				Vector2 result;
-				this.INTERNAL_get_force(out result);
-				return result;
-			}
-			set
-			{
-				this.INTERNAL_set_force(ref value);
-			}
-		}
+  [RequireComponent(typeof (Rigidbody2D))]
+  public sealed class ConstantForce2D : PhysicsUpdateBehaviour2D
+  {
+    public Vector2 force
+    {
+      get
+      {
+        Vector2 ret;
+        this.get_force_Injected(out ret);
+        return ret;
+      }
+      set
+      {
+        this.set_force_Injected(ref value);
+      }
+    }
 
-		public Vector2 relativeForce
-		{
-			get
-			{
-				Vector2 result;
-				this.INTERNAL_get_relativeForce(out result);
-				return result;
-			}
-			set
-			{
-				this.INTERNAL_set_relativeForce(ref value);
-			}
-		}
+    public Vector2 relativeForce
+    {
+      get
+      {
+        Vector2 ret;
+        this.get_relativeForce_Injected(out ret);
+        return ret;
+      }
+      set
+      {
+        this.set_relativeForce_Injected(ref value);
+      }
+    }
 
-		public extern float torque
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    public extern float torque { [MethodImpl(MethodImplOptions.InternalCall)] get; [MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern void INTERNAL_get_force(out Vector2 value);
+    [SpecialName]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void get_force_Injected(out Vector2 ret);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern void INTERNAL_set_force(ref Vector2 value);
+    [SpecialName]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void set_force_Injected(ref Vector2 value);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern void INTERNAL_get_relativeForce(out Vector2 value);
+    [SpecialName]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void get_relativeForce_Injected(out Vector2 ret);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern void INTERNAL_set_relativeForce(ref Vector2 value);
-	}
+    [SpecialName]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void set_relativeForce_Injected(ref Vector2 value);
+  }
 }

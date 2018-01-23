@@ -1,13 +1,17 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.IPrefType
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
 
 namespace UnityEditor
 {
-	internal interface IPrefType
-	{
-		string ToUniqueString();
+  internal interface IPrefType
+  {
+    string ToUniqueString();
 
-		void FromUniqueString(string sstr);
+    void FromUniqueString(string sstr);
 
-		void Load();
-	}
+    void Load();
+  }
 }

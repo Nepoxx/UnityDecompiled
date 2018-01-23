@@ -1,57 +1,55 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.WheelColliderEditor
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[CanEditMultipleObjects, CustomEditor(typeof(WheelCollider))]
-	internal class WheelColliderEditor : Editor
-	{
-		private SerializedProperty m_Center;
+  [CustomEditor(typeof (WheelCollider))]
+  [CanEditMultipleObjects]
+  internal class WheelColliderEditor : Editor
+  {
+    private SerializedProperty m_Center;
+    private SerializedProperty m_Radius;
+    private SerializedProperty m_SuspensionDistance;
+    private SerializedProperty m_SuspensionSpring;
+    private SerializedProperty m_ForceAppPointDistance;
+    private SerializedProperty m_Mass;
+    private SerializedProperty m_WheelDampingRate;
+    private SerializedProperty m_ForwardFriction;
+    private SerializedProperty m_SidewaysFriction;
 
-		private SerializedProperty m_Radius;
+    public void OnEnable()
+    {
+      this.m_Center = this.serializedObject.FindProperty("m_Center");
+      this.m_Radius = this.serializedObject.FindProperty("m_Radius");
+      this.m_SuspensionDistance = this.serializedObject.FindProperty("m_SuspensionDistance");
+      this.m_SuspensionSpring = this.serializedObject.FindProperty("m_SuspensionSpring");
+      this.m_Mass = this.serializedObject.FindProperty("m_Mass");
+      this.m_ForceAppPointDistance = this.serializedObject.FindProperty("m_ForceAppPointDistance");
+      this.m_WheelDampingRate = this.serializedObject.FindProperty("m_WheelDampingRate");
+      this.m_ForwardFriction = this.serializedObject.FindProperty("m_ForwardFriction");
+      this.m_SidewaysFriction = this.serializedObject.FindProperty("m_SidewaysFriction");
+    }
 
-		private SerializedProperty m_SuspensionDistance;
-
-		private SerializedProperty m_SuspensionSpring;
-
-		private SerializedProperty m_ForceAppPointDistance;
-
-		private SerializedProperty m_Mass;
-
-		private SerializedProperty m_WheelDampingRate;
-
-		private SerializedProperty m_ForwardFriction;
-
-		private SerializedProperty m_SidewaysFriction;
-
-		public void OnEnable()
-		{
-			this.m_Center = base.serializedObject.FindProperty("m_Center");
-			this.m_Radius = base.serializedObject.FindProperty("m_Radius");
-			this.m_SuspensionDistance = base.serializedObject.FindProperty("m_SuspensionDistance");
-			this.m_SuspensionSpring = base.serializedObject.FindProperty("m_SuspensionSpring");
-			this.m_Mass = base.serializedObject.FindProperty("m_Mass");
-			this.m_ForceAppPointDistance = base.serializedObject.FindProperty("m_ForceAppPointDistance");
-			this.m_WheelDampingRate = base.serializedObject.FindProperty("m_WheelDampingRate");
-			this.m_ForwardFriction = base.serializedObject.FindProperty("m_ForwardFriction");
-			this.m_SidewaysFriction = base.serializedObject.FindProperty("m_SidewaysFriction");
-		}
-
-		public override void OnInspectorGUI()
-		{
-			base.serializedObject.Update();
-			EditorGUILayout.PropertyField(this.m_Mass, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_Radius, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_WheelDampingRate, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_SuspensionDistance, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_ForceAppPointDistance, new GUILayoutOption[0]);
-			EditorGUILayout.Space();
-			EditorGUILayout.PropertyField(this.m_Center, new GUILayoutOption[0]);
-			EditorGUILayout.Space();
-			StructPropertyGUILayout.GenericStruct(this.m_SuspensionSpring, new GUILayoutOption[0]);
-			StructPropertyGUILayout.GenericStruct(this.m_ForwardFriction, new GUILayoutOption[0]);
-			StructPropertyGUILayout.GenericStruct(this.m_SidewaysFriction, new GUILayoutOption[0]);
-			base.serializedObject.ApplyModifiedProperties();
-		}
-	}
+    public override void OnInspectorGUI()
+    {
+      this.serializedObject.Update();
+      EditorGUILayout.PropertyField(this.m_Mass);
+      EditorGUILayout.PropertyField(this.m_Radius);
+      EditorGUILayout.PropertyField(this.m_WheelDampingRate);
+      EditorGUILayout.PropertyField(this.m_SuspensionDistance);
+      EditorGUILayout.PropertyField(this.m_ForceAppPointDistance);
+      EditorGUILayout.Space();
+      EditorGUILayout.PropertyField(this.m_Center);
+      EditorGUILayout.Space();
+      StructPropertyGUILayout.GenericStruct(this.m_SuspensionSpring);
+      StructPropertyGUILayout.GenericStruct(this.m_ForwardFriction);
+      StructPropertyGUILayout.GenericStruct(this.m_SidewaysFriction);
+      this.serializedObject.ApplyModifiedProperties();
+    }
+  }
 }

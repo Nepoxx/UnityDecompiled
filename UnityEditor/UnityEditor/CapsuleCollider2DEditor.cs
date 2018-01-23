@@ -1,108 +1,112 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.CapsuleCollider2DEditor
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEditor.IMGUI.Controls;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[CanEditMultipleObjects, CustomEditor(typeof(CapsuleCollider2D))]
-	internal class CapsuleCollider2DEditor : PrimitiveCollider2DEditor
-	{
-		private SerializedProperty m_Size;
+  [CanEditMultipleObjects]
+  [CustomEditor(typeof (CapsuleCollider2D))]
+  internal class CapsuleCollider2DEditor : PrimitiveCollider2DEditor
+  {
+    private readonly CapsuleBoundsHandle m_BoundsHandle = new CapsuleBoundsHandle();
+    private SerializedProperty m_Size;
+    private SerializedProperty m_Direction;
 
-		private SerializedProperty m_Direction;
+    public override void OnEnable()
+    {
+      base.OnEnable();
+      this.m_Size = this.serializedObject.FindProperty("m_Size");
+      this.m_Direction = this.serializedObject.FindProperty("m_Direction");
+    }
 
-		private readonly CapsuleBoundsHandle m_BoundsHandle = new CapsuleBoundsHandle();
+    public override void OnInspectorGUI()
+    {
+      this.serializedObject.Update();
+      this.InspectorEditButtonGUI();
+      base.OnInspectorGUI();
+      EditorGUILayout.PropertyField(this.m_Size);
+      EditorGUILayout.PropertyField(this.m_Direction);
+      this.serializedObject.ApplyModifiedProperties();
+      this.FinalizeInspectorGUI();
+    }
 
-		protected override PrimitiveBoundsHandle boundsHandle
-		{
-			get
-			{
-				return this.m_BoundsHandle;
-			}
-		}
+    protected override PrimitiveBoundsHandle boundsHandle
+    {
+      get
+      {
+        return (PrimitiveBoundsHandle) this.m_BoundsHandle;
+      }
+    }
 
-		public override void OnEnable()
-		{
-			base.OnEnable();
-			this.m_Size = base.serializedObject.FindProperty("m_Size");
-			this.m_Direction = base.serializedObject.FindProperty("m_Direction");
-		}
+    protected override void CopyColliderSizeToHandle()
+    {
+      Vector3 handleHeightVector;
+      Vector3 handleDiameterVector;
+      this.GetHandleVectorsInWorldSpace((CapsuleCollider2D) this.target, out handleHeightVector, out handleDiameterVector);
+      CapsuleBoundsHandle boundsHandle = this.m_BoundsHandle;
+      float num1 = 0.0f;
+      this.m_BoundsHandle.radius = num1;
+      double num2 = (double) num1;
+      boundsHandle.height = (float) num2;
+      this.m_BoundsHandle.height = handleHeightVector.magnitude;
+      this.m_BoundsHandle.radius = handleDiameterVector.magnitude * 0.5f;
+    }
 
-		public override void OnInspectorGUI()
-		{
-			base.serializedObject.Update();
-			base.InspectorEditButtonGUI();
-			base.OnInspectorGUI();
-			EditorGUILayout.PropertyField(this.m_Size, new GUILayoutOption[0]);
-			EditorGUILayout.PropertyField(this.m_Direction, new GUILayoutOption[0]);
-			base.serializedObject.ApplyModifiedProperties();
-			base.FinalizeInspectorGUI();
-		}
+    protected override bool CopyHandleSizeToCollider()
+    {
+      CapsuleCollider2D target = (CapsuleCollider2D) this.target;
+      Vector3 vector3_1;
+      Vector3 vector3_2;
+      if (target.direction == CapsuleDirection2D.Horizontal)
+      {
+        vector3_1 = Vector3.up;
+        vector3_2 = Vector3.right;
+      }
+      else
+      {
+        vector3_1 = Vector3.right;
+        vector3_2 = Vector3.up;
+      }
+      Vector3 vector3_3 = (Vector3) (Handles.matrix * (Vector4) (vector3_2 * this.m_BoundsHandle.height));
+      Vector3 vector3_4 = (Vector3) (Handles.matrix * (Vector4) (vector3_1 * this.m_BoundsHandle.radius * 2f));
+      Matrix4x4 localToWorldMatrix = target.transform.localToWorldMatrix;
+      Vector3 worldVector1 = this.ProjectOntoWorldPlane((Vector3) (localToWorldMatrix * (Vector4) vector3_1)).normalized * vector3_4.magnitude;
+      Vector3 worldVector2 = this.ProjectOntoWorldPlane((Vector3) (localToWorldMatrix * (Vector4) vector3_2)).normalized * vector3_3.magnitude;
+      Vector3 vector3_5 = this.ProjectOntoColliderPlane(worldVector1, localToWorldMatrix);
+      Vector3 vector3_6 = this.ProjectOntoColliderPlane(worldVector2, localToWorldMatrix);
+      Vector2 size = target.size;
+      target.size = (Vector2) (localToWorldMatrix.inverse * (Vector4) (vector3_5 + vector3_6));
+      return target.size != size;
+    }
 
-		protected override void CopyColliderSizeToHandle()
-		{
-			CapsuleCollider2D collider = (CapsuleCollider2D)base.target;
-			Vector3 vector;
-			Vector3 vector2;
-			this.GetHandleVectorsInWorldSpace(collider, out vector, out vector2);
-			CapsuleBoundsHandle arg_31_0 = this.m_BoundsHandle;
-			float num = 0f;
-			this.m_BoundsHandle.radius = num;
-			arg_31_0.height = num;
-			this.m_BoundsHandle.height = vector.magnitude;
-			this.m_BoundsHandle.radius = vector2.magnitude * 0.5f;
-		}
+    protected override Quaternion GetHandleRotation()
+    {
+      Vector3 handleHeightVector;
+      Vector3 handleDiameterVector;
+      this.GetHandleVectorsInWorldSpace(this.target as CapsuleCollider2D, out handleHeightVector, out handleDiameterVector);
+      return Quaternion.LookRotation(Vector3.forward, handleHeightVector);
+    }
 
-		protected override bool CopyHandleSizeToCollider()
-		{
-			CapsuleCollider2D capsuleCollider2D = (CapsuleCollider2D)base.target;
-			Vector3 vector;
-			Vector3 vector2;
-			if (capsuleCollider2D.direction == CapsuleDirection2D.Horizontal)
-			{
-				vector = Vector3.up;
-				vector2 = Vector3.right;
-			}
-			else
-			{
-				vector = Vector3.right;
-				vector2 = Vector3.up;
-			}
-			Vector3 vector3 = Handles.matrix * (vector2 * this.m_BoundsHandle.height);
-			Vector3 vector4 = Handles.matrix * (vector * this.m_BoundsHandle.radius * 2f);
-			Matrix4x4 localToWorldMatrix = capsuleCollider2D.transform.localToWorldMatrix;
-			Vector3 vector5 = base.ProjectOntoWorldPlane(localToWorldMatrix * vector).normalized * vector4.magnitude;
-			Vector3 vector6 = base.ProjectOntoWorldPlane(localToWorldMatrix * vector2).normalized * vector3.magnitude;
-			vector5 = base.ProjectOntoColliderPlane(vector5, localToWorldMatrix);
-			vector6 = base.ProjectOntoColliderPlane(vector6, localToWorldMatrix);
-			Vector2 size = capsuleCollider2D.size;
-			capsuleCollider2D.size = localToWorldMatrix.inverse * (vector5 + vector6);
-			return capsuleCollider2D.size != size;
-		}
-
-		protected override Quaternion GetHandleRotation()
-		{
-			Vector3 upwards;
-			Vector3 vector;
-			this.GetHandleVectorsInWorldSpace(base.target as CapsuleCollider2D, out upwards, out vector);
-			return Quaternion.LookRotation(Vector3.forward, upwards);
-		}
-
-		private void GetHandleVectorsInWorldSpace(CapsuleCollider2D collider, out Vector3 handleHeightVector, out Vector3 handleDiameterVector)
-		{
-			Matrix4x4 localToWorldMatrix = collider.transform.localToWorldMatrix;
-			Vector3 vector = base.ProjectOntoWorldPlane(localToWorldMatrix * (Vector3.right * collider.size.x));
-			Vector3 vector2 = base.ProjectOntoWorldPlane(localToWorldMatrix * (Vector3.up * collider.size.y));
-			if (collider.direction == CapsuleDirection2D.Horizontal)
-			{
-				handleDiameterVector = vector2;
-				handleHeightVector = vector;
-			}
-			else
-			{
-				handleDiameterVector = vector;
-				handleHeightVector = vector2;
-			}
-		}
-	}
+    private void GetHandleVectorsInWorldSpace(CapsuleCollider2D collider, out Vector3 handleHeightVector, out Vector3 handleDiameterVector)
+    {
+      Matrix4x4 localToWorldMatrix = collider.transform.localToWorldMatrix;
+      Vector3 vector3_1 = this.ProjectOntoWorldPlane((Vector3) (localToWorldMatrix * (Vector4) (Vector3.right * collider.size.x)));
+      Vector3 vector3_2 = this.ProjectOntoWorldPlane((Vector3) (localToWorldMatrix * (Vector4) (Vector3.up * collider.size.y)));
+      if (collider.direction == CapsuleDirection2D.Horizontal)
+      {
+        handleDiameterVector = vector3_2;
+        handleHeightVector = vector3_1;
+      }
+      else
+      {
+        handleDiameterVector = vector3_1;
+        handleHeightVector = vector3_2;
+      }
+    }
+  }
 }

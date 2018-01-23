@@ -1,117 +1,90 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.AndroidJavaProxy
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 using System.Reflection;
 
 namespace UnityEngine
 {
-	public class AndroidJavaProxy
-	{
-		public readonly AndroidJavaClass javaInterface;
+  public class AndroidJavaProxy
+  {
+    private static readonly GlobalJavaObjectRef s_JavaLangSystemClass = new GlobalJavaObjectRef(AndroidJNISafe.FindClass("java/lang/System"));
+    private static readonly IntPtr s_HashCodeMethodID = AndroidJNIHelper.GetMethodID((IntPtr) AndroidJavaProxy.s_JavaLangSystemClass, "identityHashCode", "(Ljava/lang/Object;)I", true);
+    public readonly AndroidJavaClass javaInterface;
+    internal AndroidJavaObject proxyObject;
 
-		internal AndroidJavaObject proxyObject;
+    public AndroidJavaProxy(string javaInterface)
+      : this(new AndroidJavaClass(javaInterface))
+    {
+    }
 
-		private static readonly GlobalJavaObjectRef s_JavaLangSystemClass = new GlobalJavaObjectRef(AndroidJNISafe.FindClass("java/lang/System"));
+    public AndroidJavaProxy(AndroidJavaClass javaInterface)
+    {
+      this.javaInterface = javaInterface;
+    }
 
-		private static readonly IntPtr s_HashCodeMethodID = AndroidJNIHelper.GetMethodID(AndroidJavaProxy.s_JavaLangSystemClass, "identityHashCode", "(Ljava/lang/Object;)I", true);
+    public virtual AndroidJavaObject Invoke(string methodName, object[] args)
+    {
+      Exception inner = (Exception) null;
+      BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+      System.Type[] types = new System.Type[args.Length];
+      for (int index = 0; index < args.Length; ++index)
+        types[index] = args[index] != null ? args[index].GetType() : typeof (AndroidJavaObject);
+      try
+      {
+        MethodInfo method = this.GetType().GetMethod(methodName, bindingAttr, (Binder) null, types, (ParameterModifier[]) null);
+        if (method != null)
+          return _AndroidJNIHelper.Box(method.Invoke((object) this, args));
+      }
+      catch (TargetInvocationException ex)
+      {
+        inner = ex.InnerException;
+      }
+      catch (Exception ex)
+      {
+        inner = ex;
+      }
+      string[] strArray = new string[args.Length];
+      for (int index = 0; index < types.Length; ++index)
+        strArray[index] = types[index].ToString();
+      if (inner != null)
+        throw new TargetInvocationException(this.GetType().ToString() + "." + methodName + "(" + string.Join(",", strArray) + ")", inner);
+      throw new Exception("No such proxy method: " + (object) this.GetType() + "." + methodName + "(" + string.Join(",", strArray) + ")");
+    }
 
-		public AndroidJavaProxy(string javaInterface) : this(new AndroidJavaClass(javaInterface))
-		{
-		}
+    public virtual AndroidJavaObject Invoke(string methodName, AndroidJavaObject[] javaArgs)
+    {
+      object[] args = new object[javaArgs.Length];
+      for (int index = 0; index < javaArgs.Length; ++index)
+        args[index] = _AndroidJNIHelper.Unbox(javaArgs[index]);
+      return this.Invoke(methodName, args);
+    }
 
-		public AndroidJavaProxy(AndroidJavaClass javaInterface)
-		{
-			this.javaInterface = javaInterface;
-		}
+    public virtual bool equals(AndroidJavaObject obj)
+    {
+      return AndroidJNI.IsSameObject(this.GetProxy().GetRawObject(), obj != null ? obj.GetRawObject() : IntPtr.Zero);
+    }
 
-		public virtual AndroidJavaObject Invoke(string methodName, object[] args)
-		{
-			Exception ex = null;
-			BindingFlags bindingAttr = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
-			Type[] array = new Type[args.Length];
-			for (int i = 0; i < args.Length; i++)
-			{
-				array[i] = ((args[i] != null) ? args[i].GetType() : typeof(AndroidJavaObject));
-			}
-			try
-			{
-				MethodInfo method = base.GetType().GetMethod(methodName, bindingAttr, null, array, null);
-				if (method != null)
-				{
-					AndroidJavaObject result = _AndroidJNIHelper.Box(method.Invoke(this, args));
-					return result;
-				}
-			}
-			catch (TargetInvocationException ex2)
-			{
-				ex = ex2.InnerException;
-			}
-			catch (Exception ex3)
-			{
-				ex = ex3;
-			}
-			string[] array2 = new string[args.Length];
-			for (int j = 0; j < array.Length; j++)
-			{
-				array2[j] = array[j].ToString();
-			}
-			if (ex != null)
-			{
-				throw new TargetInvocationException(string.Concat(new object[]
-				{
-					base.GetType(),
-					".",
-					methodName,
-					"(",
-					string.Join(",", array2),
-					")"
-				}), ex);
-			}
-			throw new Exception(string.Concat(new object[]
-			{
-				"No such proxy method: ",
-				base.GetType(),
-				".",
-				methodName,
-				"(",
-				string.Join(",", array2),
-				")"
-			}));
-		}
+    public virtual int hashCode()
+    {
+      jvalue[] args = new jvalue[1];
+      args[0].l = this.GetProxy().GetRawObject();
+      return AndroidJNISafe.CallStaticIntMethod((IntPtr) AndroidJavaProxy.s_JavaLangSystemClass, AndroidJavaProxy.s_HashCodeMethodID, args);
+    }
 
-		public virtual AndroidJavaObject Invoke(string methodName, AndroidJavaObject[] javaArgs)
-		{
-			object[] array = new object[javaArgs.Length];
-			for (int i = 0; i < javaArgs.Length; i++)
-			{
-				array[i] = _AndroidJNIHelper.Unbox(javaArgs[i]);
-			}
-			return this.Invoke(methodName, array);
-		}
+    public virtual string toString()
+    {
+      return this.ToString() + " <c# proxy java object>";
+    }
 
-		public virtual bool equals(AndroidJavaObject obj)
-		{
-			IntPtr obj2 = (obj != null) ? obj.GetRawObject() : IntPtr.Zero;
-			return AndroidJNI.IsSameObject(this.GetProxy().GetRawObject(), obj2);
-		}
-
-		public virtual int hashCode()
-		{
-			jvalue[] array = new jvalue[1];
-			array[0].l = this.GetProxy().GetRawObject();
-			return AndroidJNISafe.CallStaticIntMethod(AndroidJavaProxy.s_JavaLangSystemClass, AndroidJavaProxy.s_HashCodeMethodID, array);
-		}
-
-		public virtual string toString()
-		{
-			return this.ToString() + " <c# proxy java object>";
-		}
-
-		internal AndroidJavaObject GetProxy()
-		{
-			if (this.proxyObject == null)
-			{
-				this.proxyObject = AndroidJavaObject.AndroidJavaObjectDeleteLocalRef(AndroidJNIHelper.CreateJavaProxy(this));
-			}
-			return this.proxyObject;
-		}
-	}
+    internal AndroidJavaObject GetProxy()
+    {
+      if (this.proxyObject == null)
+        this.proxyObject = AndroidJavaObject.AndroidJavaObjectDeleteLocalRef(AndroidJNIHelper.CreateJavaProxy(this));
+      return this.proxyObject;
+    }
+  }
 }

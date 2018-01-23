@@ -1,255 +1,271 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.ScriptableWizard
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System.Reflection;
 using UnityEngine;
 using UnityEngine.Internal;
 
 namespace UnityEditor
 {
-	public class ScriptableWizard : EditorWindow
-	{
-		private class Styles
-		{
-			public static string errorText = "Wizard Error";
+  /// <summary>
+  ///   <para>Derive from this class to create an editor wizard.</para>
+  /// </summary>
+  public class ScriptableWizard : EditorWindow
+  {
+    private string m_HelpString = "";
+    private string m_ErrorString = "";
+    private bool m_IsValid = true;
+    private string m_CreateButton = "Create";
+    private string m_OtherButton = "";
+    private GenericInspector m_Inspector;
+    private Vector2 m_ScrollPosition;
 
-			public static string box = "Wizard Box";
-		}
+    private void OnDestroy()
+    {
+      UnityEngine.Object.DestroyImmediate((UnityEngine.Object) this.m_Inspector);
+    }
 
-		private GenericInspector m_Inspector;
+    private void InvokeWizardUpdate()
+    {
+      MethodInfo method = this.GetType().GetMethod("OnWizardUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+      if (method == null)
+        return;
+      method.Invoke((object) this, (object[]) null);
+    }
 
-		private string m_HelpString = "";
+    private void OnGUI()
+    {
+      EditorGUIUtility.labelWidth = 150f;
+      GUILayout.Label(this.m_HelpString, EditorStyles.wordWrappedLabel, new GUILayoutOption[1]
+      {
+        GUILayout.ExpandHeight(true)
+      });
+      this.m_ScrollPosition = EditorGUILayout.BeginVerticalScrollView(this.m_ScrollPosition, false, GUI.skin.verticalScrollbar, (GUIStyle) "OL Box");
+      GUIUtility.GetControlID(645789, FocusType.Passive);
+      bool flag = this.DrawWizardGUI();
+      EditorGUILayout.EndScrollView();
+      GUILayout.BeginVertical();
+      if (this.m_ErrorString != string.Empty)
+        GUILayout.Label(this.m_ErrorString, (GUIStyle) ScriptableWizard.Styles.errorText, new GUILayoutOption[1]
+        {
+          GUILayout.MinHeight(32f)
+        });
+      else
+        GUILayout.Label(string.Empty, new GUILayoutOption[1]
+        {
+          GUILayout.MinHeight(32f)
+        });
+      GUILayout.FlexibleSpace();
+      GUILayout.BeginHorizontal();
+      GUILayout.FlexibleSpace();
+      GUI.enabled = this.m_IsValid;
+      if (this.m_OtherButton != "")
+      {
+        if (GUILayout.Button(this.m_OtherButton, new GUILayoutOption[1]{ GUILayout.MinWidth(100f) }))
+        {
+          MethodInfo method = this.GetType().GetMethod("OnWizardOtherButton", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+          if (method != null)
+          {
+            method.Invoke((object) this, (object[]) null);
+            GUIUtility.ExitGUI();
+          }
+          else
+            Debug.LogError((object) "OnWizardOtherButton has not been implemented in script");
+        }
+      }
+      if (this.m_CreateButton != "")
+      {
+        if (GUILayout.Button(this.m_CreateButton, new GUILayoutOption[1]{ GUILayout.MinWidth(100f) }))
+        {
+          MethodInfo method = this.GetType().GetMethod("OnWizardCreate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
+          if (method != null)
+            method.Invoke((object) this, (object[]) null);
+          else
+            Debug.LogError((object) "OnWizardCreate has not been implemented in script");
+          this.Close();
+          GUIUtility.ExitGUI();
+        }
+      }
+      GUI.enabled = true;
+      GUILayout.EndHorizontal();
+      GUILayout.EndVertical();
+      if (!flag)
+        return;
+      this.InvokeWizardUpdate();
+    }
 
-		private string m_ErrorString = "";
+    /// <summary>
+    ///   <para>Will be called for drawing contents when the ScriptableWizard needs to update its GUI.</para>
+    /// </summary>
+    /// <returns>
+    ///   <para>Returns true if any property has been modified.</para>
+    /// </returns>
+    protected virtual bool DrawWizardGUI()
+    {
+      if ((UnityEngine.Object) this.m_Inspector == (UnityEngine.Object) null)
+      {
+        this.m_Inspector = ScriptableObject.CreateInstance<GenericInspector>();
+        this.m_Inspector.hideFlags = HideFlags.HideAndDontSave;
+        this.m_Inspector.InternalSetTargets(new UnityEngine.Object[1]
+        {
+          (UnityEngine.Object) this
+        });
+      }
+      return this.m_Inspector.DrawDefaultInspector();
+    }
 
-		private bool m_IsValid = true;
+    public static T DisplayWizard<T>(string title) where T : ScriptableWizard
+    {
+      return ScriptableWizard.DisplayWizard<T>(title, "Create", "");
+    }
 
-		private Vector2 m_ScrollPosition;
+    public static T DisplayWizard<T>(string title, string createButtonName) where T : ScriptableWizard
+    {
+      return ScriptableWizard.DisplayWizard<T>(title, createButtonName, "");
+    }
 
-		private string m_CreateButton = "Create";
+    public static T DisplayWizard<T>(string title, string createButtonName, string otherButtonName) where T : ScriptableWizard
+    {
+      return (T) ScriptableWizard.DisplayWizard(title, typeof (T), createButtonName, otherButtonName);
+    }
 
-		private string m_OtherButton = "";
+    [ExcludeFromDocs]
+    public static ScriptableWizard DisplayWizard(string title, System.Type klass, string createButtonName)
+    {
+      string otherButtonName = "";
+      return ScriptableWizard.DisplayWizard(title, klass, createButtonName, otherButtonName);
+    }
 
-		public string helpString
-		{
-			get
-			{
-				return this.m_HelpString;
-			}
-			set
-			{
-				string text = value ?? string.Empty;
-				if (this.m_HelpString != text)
-				{
-					this.m_HelpString = text;
-					base.Repaint();
-				}
-			}
-		}
+    [ExcludeFromDocs]
+    public static ScriptableWizard DisplayWizard(string title, System.Type klass)
+    {
+      string otherButtonName = "";
+      string createButtonName = "Create";
+      return ScriptableWizard.DisplayWizard(title, klass, createButtonName, otherButtonName);
+    }
 
-		public string errorString
-		{
-			get
-			{
-				return this.m_ErrorString;
-			}
-			set
-			{
-				string text = value ?? string.Empty;
-				if (this.m_ErrorString != text)
-				{
-					this.m_ErrorString = text;
-					base.Repaint();
-				}
-			}
-		}
+    /// <summary>
+    ///   <para>Creates a wizard.</para>
+    /// </summary>
+    /// <param name="title">The title shown at the top of the wizard window.</param>
+    /// <param name="klass">The class implementing the wizard. It has to derive from ScriptableWizard.</param>
+    /// <param name="createButtonName">The text shown on the create button.</param>
+    /// <param name="otherButtonName">The text shown on the optional other button. Leave this parameter out to leave the button out.</param>
+    /// <returns>
+    ///   <para>The wizard.</para>
+    /// </returns>
+    public static ScriptableWizard DisplayWizard(string title, System.Type klass, [DefaultValue("\"Create\"")] string createButtonName, [DefaultValue("\"\"")] string otherButtonName)
+    {
+      ScriptableWizard instance = ScriptableObject.CreateInstance(klass) as ScriptableWizard;
+      instance.m_CreateButton = createButtonName;
+      instance.m_OtherButton = otherButtonName;
+      instance.titleContent = new GUIContent(title);
+      if ((UnityEngine.Object) instance != (UnityEngine.Object) null)
+      {
+        instance.InvokeWizardUpdate();
+        instance.ShowUtility();
+      }
+      return instance;
+    }
 
-		public string createButtonName
-		{
-			get
-			{
-				return this.m_CreateButton;
-			}
-			set
-			{
-				string text = value ?? string.Empty;
-				if (this.m_CreateButton != text)
-				{
-					this.m_CreateButton = text;
-					base.Repaint();
-				}
-			}
-		}
+    /// <summary>
+    ///   <para>Allows you to set the help text of the wizard.</para>
+    /// </summary>
+    public string helpString
+    {
+      get
+      {
+        return this.m_HelpString;
+      }
+      set
+      {
+        string str = value ?? string.Empty;
+        if (!(this.m_HelpString != str))
+          return;
+        this.m_HelpString = str;
+        this.Repaint();
+      }
+    }
 
-		public string otherButtonName
-		{
-			get
-			{
-				return this.m_OtherButton;
-			}
-			set
-			{
-				string text = value ?? string.Empty;
-				if (this.m_OtherButton != text)
-				{
-					this.m_OtherButton = text;
-					base.Repaint();
-				}
-			}
-		}
+    /// <summary>
+    ///   <para>Allows you to set the error text of the wizard.</para>
+    /// </summary>
+    public string errorString
+    {
+      get
+      {
+        return this.m_ErrorString;
+      }
+      set
+      {
+        string str = value ?? string.Empty;
+        if (!(this.m_ErrorString != str))
+          return;
+        this.m_ErrorString = str;
+        this.Repaint();
+      }
+    }
 
-		public bool isValid
-		{
-			get
-			{
-				return this.m_IsValid;
-			}
-			set
-			{
-				this.m_IsValid = value;
-			}
-		}
+    /// <summary>
+    ///   <para>Allows you to set the text shown on the create button of the wizard.</para>
+    /// </summary>
+    public string createButtonName
+    {
+      get
+      {
+        return this.m_CreateButton;
+      }
+      set
+      {
+        string str = value ?? string.Empty;
+        if (!(this.m_CreateButton != str))
+          return;
+        this.m_CreateButton = str;
+        this.Repaint();
+      }
+    }
 
-		private void OnDestroy()
-		{
-			UnityEngine.Object.DestroyImmediate(this.m_Inspector);
-		}
+    /// <summary>
+    ///   <para>Allows you to set the text shown on the optional other button of the wizard. Leave this parameter out to leave the button out.</para>
+    /// </summary>
+    public string otherButtonName
+    {
+      get
+      {
+        return this.m_OtherButton;
+      }
+      set
+      {
+        string str = value ?? string.Empty;
+        if (!(this.m_OtherButton != str))
+          return;
+        this.m_OtherButton = str;
+        this.Repaint();
+      }
+    }
 
-		private void InvokeWizardUpdate()
-		{
-			MethodInfo method = base.GetType().GetMethod("OnWizardUpdate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-			if (method != null)
-			{
-				method.Invoke(this, null);
-			}
-		}
+    /// <summary>
+    ///   <para>Allows you to enable and disable the wizard create button, so that the user can not click it.</para>
+    /// </summary>
+    public bool isValid
+    {
+      get
+      {
+        return this.m_IsValid;
+      }
+      set
+      {
+        this.m_IsValid = value;
+      }
+    }
 
-		private void OnGUI()
-		{
-			EditorGUIUtility.labelWidth = 150f;
-			GUILayout.Label(this.m_HelpString, EditorStyles.wordWrappedLabel, new GUILayoutOption[]
-			{
-				GUILayout.ExpandHeight(true)
-			});
-			this.m_ScrollPosition = EditorGUILayout.BeginVerticalScrollView(this.m_ScrollPosition, false, GUI.skin.verticalScrollbar, "OL Box", new GUILayoutOption[0]);
-			GUIUtility.GetControlID(645789, FocusType.Passive);
-			bool flag = this.DrawWizardGUI();
-			EditorGUILayout.EndScrollView();
-			GUILayout.BeginVertical(new GUILayoutOption[0]);
-			if (this.m_ErrorString != string.Empty)
-			{
-				GUILayout.Label(this.m_ErrorString, ScriptableWizard.Styles.errorText, new GUILayoutOption[]
-				{
-					GUILayout.MinHeight(32f)
-				});
-			}
-			else
-			{
-				GUILayout.Label(string.Empty, new GUILayoutOption[]
-				{
-					GUILayout.MinHeight(32f)
-				});
-			}
-			GUILayout.FlexibleSpace();
-			GUILayout.BeginHorizontal(new GUILayoutOption[0]);
-			GUILayout.FlexibleSpace();
-			GUI.enabled = this.m_IsValid;
-			if (this.m_OtherButton != "" && GUILayout.Button(this.m_OtherButton, new GUILayoutOption[]
-			{
-				GUILayout.MinWidth(100f)
-			}))
-			{
-				MethodInfo method = base.GetType().GetMethod("OnWizardOtherButton", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-				if (method != null)
-				{
-					method.Invoke(this, null);
-					GUIUtility.ExitGUI();
-				}
-				else
-				{
-					Debug.LogError("OnWizardOtherButton has not been implemented in script");
-				}
-			}
-			if (this.m_CreateButton != "" && GUILayout.Button(this.m_CreateButton, new GUILayoutOption[]
-			{
-				GUILayout.MinWidth(100f)
-			}))
-			{
-				MethodInfo method2 = base.GetType().GetMethod("OnWizardCreate", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy);
-				if (method2 != null)
-				{
-					method2.Invoke(this, null);
-				}
-				else
-				{
-					Debug.LogError("OnWizardCreate has not been implemented in script");
-				}
-				base.Close();
-				GUIUtility.ExitGUI();
-			}
-			GUI.enabled = true;
-			GUILayout.EndHorizontal();
-			GUILayout.EndVertical();
-			if (flag)
-			{
-				this.InvokeWizardUpdate();
-			}
-		}
-
-		protected virtual bool DrawWizardGUI()
-		{
-			if (this.m_Inspector == null)
-			{
-				this.m_Inspector = ScriptableObject.CreateInstance<GenericInspector>();
-				this.m_Inspector.hideFlags = HideFlags.HideAndDontSave;
-				this.m_Inspector.InternalSetTargets(new UnityEngine.Object[]
-				{
-					this
-				});
-			}
-			return this.m_Inspector.DrawDefaultInspector();
-		}
-
-		public static T DisplayWizard<T>(string title) where T : ScriptableWizard
-		{
-			return ScriptableWizard.DisplayWizard<T>(title, "Create", "");
-		}
-
-		public static T DisplayWizard<T>(string title, string createButtonName) where T : ScriptableWizard
-		{
-			return ScriptableWizard.DisplayWizard<T>(title, createButtonName, "");
-		}
-
-		public static T DisplayWizard<T>(string title, string createButtonName, string otherButtonName) where T : ScriptableWizard
-		{
-			return (T)((object)ScriptableWizard.DisplayWizard(title, typeof(T), createButtonName, otherButtonName));
-		}
-
-		[ExcludeFromDocs]
-		public static ScriptableWizard DisplayWizard(string title, Type klass, string createButtonName)
-		{
-			string otherButtonName = "";
-			return ScriptableWizard.DisplayWizard(title, klass, createButtonName, otherButtonName);
-		}
-
-		[ExcludeFromDocs]
-		public static ScriptableWizard DisplayWizard(string title, Type klass)
-		{
-			string otherButtonName = "";
-			string createButtonName = "Create";
-			return ScriptableWizard.DisplayWizard(title, klass, createButtonName, otherButtonName);
-		}
-
-		public static ScriptableWizard DisplayWizard(string title, Type klass, [DefaultValue("\"Create\"")] string createButtonName, [DefaultValue("\"\"")] string otherButtonName)
-		{
-			ScriptableWizard scriptableWizard = ScriptableObject.CreateInstance(klass) as ScriptableWizard;
-			scriptableWizard.m_CreateButton = createButtonName;
-			scriptableWizard.m_OtherButton = otherButtonName;
-			scriptableWizard.titleContent = new GUIContent(title);
-			if (scriptableWizard != null)
-			{
-				scriptableWizard.InvokeWizardUpdate();
-				scriptableWizard.ShowUtility();
-			}
-			return scriptableWizard;
-		}
-	}
+    private class Styles
+    {
+      public static string errorText = "Wizard Error";
+      public static string box = "Wizard Box";
+    }
+  }
 }

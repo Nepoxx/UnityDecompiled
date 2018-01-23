@@ -1,77 +1,95 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.HumanLimit
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	public struct HumanLimit
-	{
-		private Vector3 m_Min;
+  /// <summary>
+  ///   <para>This class stores the rotation limits that define the muscle for a single human bone.</para>
+  /// </summary>
+  public struct HumanLimit
+  {
+    private Vector3 m_Min;
+    private Vector3 m_Max;
+    private Vector3 m_Center;
+    private float m_AxisLength;
+    private int m_UseDefaultValues;
 
-		private Vector3 m_Max;
+    /// <summary>
+    ///   <para>Should this limit use the default values?</para>
+    /// </summary>
+    public bool useDefaultValues
+    {
+      get
+      {
+        return this.m_UseDefaultValues != 0;
+      }
+      set
+      {
+        this.m_UseDefaultValues = !value ? 0 : 1;
+      }
+    }
 
-		private Vector3 m_Center;
+    /// <summary>
+    ///   <para>The maximum negative rotation away from the initial value that this muscle can apply.</para>
+    /// </summary>
+    public Vector3 min
+    {
+      get
+      {
+        return this.m_Min;
+      }
+      set
+      {
+        this.m_Min = value;
+      }
+    }
 
-		private float m_AxisLength;
+    /// <summary>
+    ///   <para>The maximum rotation away from the initial value that this muscle can apply.</para>
+    /// </summary>
+    public Vector3 max
+    {
+      get
+      {
+        return this.m_Max;
+      }
+      set
+      {
+        this.m_Max = value;
+      }
+    }
 
-		private int m_UseDefaultValues;
+    /// <summary>
+    ///   <para>The default orientation of a bone when no muscle action is applied.</para>
+    /// </summary>
+    public Vector3 center
+    {
+      get
+      {
+        return this.m_Center;
+      }
+      set
+      {
+        this.m_Center = value;
+      }
+    }
 
-		public bool useDefaultValues
-		{
-			get
-			{
-				return this.m_UseDefaultValues != 0;
-			}
-			set
-			{
-				this.m_UseDefaultValues = ((!value) ? 0 : 1);
-			}
-		}
-
-		public Vector3 min
-		{
-			get
-			{
-				return this.m_Min;
-			}
-			set
-			{
-				this.m_Min = value;
-			}
-		}
-
-		public Vector3 max
-		{
-			get
-			{
-				return this.m_Max;
-			}
-			set
-			{
-				this.m_Max = value;
-			}
-		}
-
-		public Vector3 center
-		{
-			get
-			{
-				return this.m_Center;
-			}
-			set
-			{
-				this.m_Center = value;
-			}
-		}
-
-		public float axisLength
-		{
-			get
-			{
-				return this.m_AxisLength;
-			}
-			set
-			{
-				this.m_AxisLength = value;
-			}
-		}
-	}
+    /// <summary>
+    ///   <para>Length of the bone to which the limit is applied.</para>
+    /// </summary>
+    public float axisLength
+    {
+      get
+      {
+        return this.m_AxisLength;
+      }
+      set
+      {
+        this.m_AxisLength = value;
+      }
+    }
+  }
 }

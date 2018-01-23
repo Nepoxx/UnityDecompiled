@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.ProfilerFrameDataIterator
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -5,136 +11,87 @@ using UnityEngine.Scripting;
 
 namespace UnityEditorInternal
 {
-	public sealed class ProfilerFrameDataIterator
-	{
-		private IntPtr m_Ptr;
+  public sealed class ProfilerFrameDataIterator
+  {
+    private IntPtr m_Ptr;
 
-		public extern int group
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern ProfilerFrameDataIterator();
 
-		public extern int depth
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [ThreadAndSerializationSafe]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern void Dispose();
 
-		public extern string path
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    ~ProfilerFrameDataIterator()
+    {
+      this.Dispose();
+    }
 
-		public extern string name
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern bool Next(bool enterChildren);
 
-		public extern int sampleId
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern int GetThreadCount(int frame);
 
-		public extern int instanceId
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern double GetFrameStartS(int frame);
 
-		public extern float frameTimeMS
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern int GetGroupCount(int frame);
 
-		public extern float startTimeMS
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern string GetGroupName();
 
-		public extern float durationMS
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern string GetThreadName();
 
-		public extern string extraTooltipInfo
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern void SetRoot(int frame, int threadIdx);
 
-		[Obsolete("Use instanceId instead (UnityUpgradable) -> instanceId")]
-		public int id
-		{
-			get
-			{
-				return this.instanceId;
-			}
-		}
+    public extern int group { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern ProfilerFrameDataIterator();
+    public extern int depth { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator, ThreadAndSerializationSafe]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern void Dispose();
+    public extern string path { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		~ProfilerFrameDataIterator()
-		{
-			this.Dispose();
-		}
+    public extern string name { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern bool Next(bool enterChildren);
+    public extern int sampleId { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern int GetThreadCount(int frame);
+    public extern int instanceId { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern double GetFrameStartS(int frame);
+    public extern float frameTimeMS { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern int GetGroupCount(int frame);
+    public extern float startTimeMS { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern string GetGroupName();
+    public extern float durationMS { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern string GetThreadName();
+    public extern string extraTooltipInfo { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern void SetRoot(int frame, int threadIdx);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal extern bool GetIsSampleAllocation();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal extern bool GetIsSampleAllocation();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal extern bool GetSampleCallstack(ref string resolvedStack);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal extern bool GetSampleCallstack(ref string resolvedStack);
-	}
+    [Obsolete("Use instanceId instead (UnityUpgradable) -> instanceId")]
+    public int id
+    {
+      get
+      {
+        return this.instanceId;
+      }
+    }
+  }
 }

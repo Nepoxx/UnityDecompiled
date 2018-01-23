@@ -1,120 +1,114 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.MetroCertificatePasswordWindow
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class MetroCertificatePasswordWindow : EditorWindow
-	{
-		private static readonly GUILayoutOption kLabelWidth = GUILayout.Width(110f);
+  internal class MetroCertificatePasswordWindow : EditorWindow
+  {
+    private static readonly GUILayoutOption kLabelWidth = GUILayout.Width(110f);
+    private static readonly GUILayoutOption kButtonWidth = GUILayout.Width(110f);
+    private const float kSpace = 5f;
+    private const char kPasswordChar = '●';
+    private const string kPasswordId = "password";
+    private string path;
+    private string password;
+    private GUIContent message;
+    private GUIStyle messageStyle;
+    private string focus;
 
-		private static readonly GUILayoutOption kButtonWidth = GUILayout.Width(110f);
+    public static void Show(string path)
+    {
+      MetroCertificatePasswordWindow[] objectsOfTypeAll = (MetroCertificatePasswordWindow[]) UnityEngine.Resources.FindObjectsOfTypeAll(typeof (MetroCertificatePasswordWindow));
+      MetroCertificatePasswordWindow certificatePasswordWindow = objectsOfTypeAll.Length <= 0 ? ScriptableObject.CreateInstance<MetroCertificatePasswordWindow>() : objectsOfTypeAll[0];
+      certificatePasswordWindow.path = path;
+      certificatePasswordWindow.password = string.Empty;
+      certificatePasswordWindow.message = GUIContent.none;
+      certificatePasswordWindow.messageStyle = new GUIStyle(GUI.skin.label);
+      certificatePasswordWindow.messageStyle.fontStyle = FontStyle.Italic;
+      certificatePasswordWindow.focus = "password";
+      if (objectsOfTypeAll.Length > 0)
+      {
+        certificatePasswordWindow.Focus();
+      }
+      else
+      {
+        certificatePasswordWindow.titleContent = EditorGUIUtility.TextContent("Enter Windows Store Certificate Password");
+        certificatePasswordWindow.position = new Rect(100f, 100f, 350f, 90f);
+        certificatePasswordWindow.minSize = new Vector2(certificatePasswordWindow.position.width, certificatePasswordWindow.position.height);
+        certificatePasswordWindow.maxSize = certificatePasswordWindow.minSize;
+        certificatePasswordWindow.ShowUtility();
+      }
+    }
 
-		private const float kSpace = 5f;
-
-		private const char kPasswordChar = '●';
-
-		private const string kPasswordId = "password";
-
-		private string path;
-
-		private string password;
-
-		private GUIContent message;
-
-		private GUIStyle messageStyle;
-
-		private string focus;
-
-		public static void Show(string path)
-		{
-			MetroCertificatePasswordWindow[] array = (MetroCertificatePasswordWindow[])Resources.FindObjectsOfTypeAll(typeof(MetroCertificatePasswordWindow));
-			MetroCertificatePasswordWindow metroCertificatePasswordWindow = (array.Length <= 0) ? ScriptableObject.CreateInstance<MetroCertificatePasswordWindow>() : array[0];
-			metroCertificatePasswordWindow.path = path;
-			metroCertificatePasswordWindow.password = string.Empty;
-			metroCertificatePasswordWindow.message = GUIContent.none;
-			metroCertificatePasswordWindow.messageStyle = new GUIStyle(GUI.skin.label);
-			metroCertificatePasswordWindow.messageStyle.fontStyle = FontStyle.Italic;
-			metroCertificatePasswordWindow.focus = "password";
-			if (array.Length > 0)
-			{
-				metroCertificatePasswordWindow.Focus();
-			}
-			else
-			{
-				metroCertificatePasswordWindow.titleContent = EditorGUIUtility.TextContent("Enter Windows Store Certificate Password");
-				metroCertificatePasswordWindow.position = new Rect(100f, 100f, 350f, 90f);
-				metroCertificatePasswordWindow.minSize = new Vector2(metroCertificatePasswordWindow.position.width, metroCertificatePasswordWindow.position.height);
-				metroCertificatePasswordWindow.maxSize = metroCertificatePasswordWindow.minSize;
-				metroCertificatePasswordWindow.ShowUtility();
-			}
-		}
-
-		public void OnGUI()
-		{
-			Event current = Event.current;
-			bool flag = false;
-			bool flag2 = false;
-			if (current.type == EventType.KeyDown)
-			{
-				flag = (current.keyCode == KeyCode.Escape);
-				flag2 = (current.keyCode == KeyCode.Return || current.keyCode == KeyCode.KeypadEnter);
-			}
-			using (HorizontalLayout.DoLayout())
-			{
-				GUILayout.Space(10f);
-				using (VerticalLayout.DoLayout())
-				{
-					GUILayout.FlexibleSpace();
-					using (HorizontalLayout.DoLayout())
-					{
-						GUILayout.Label(EditorGUIUtility.TextContent("Password|Certificate password."), new GUILayoutOption[]
-						{
-							MetroCertificatePasswordWindow.kLabelWidth
-						});
-						GUI.SetNextControlName("password");
-						this.password = GUILayout.PasswordField(this.password, '●', new GUILayoutOption[0]);
-					}
-					GUILayout.Space(10f);
-					using (HorizontalLayout.DoLayout())
-					{
-						GUILayout.Label(this.message, this.messageStyle, new GUILayoutOption[0]);
-						GUILayout.FlexibleSpace();
-						if (GUILayout.Button(EditorGUIUtility.TextContent("Ok"), new GUILayoutOption[]
-						{
-							MetroCertificatePasswordWindow.kButtonWidth
-						}) || flag2)
-						{
-							this.message = GUIContent.none;
-							try
-							{
-								if (PlayerSettings.WSA.SetCertificate(this.path, this.password))
-								{
-									flag = true;
-								}
-								else
-								{
-									this.message = EditorGUIUtility.TextContent("Invalid password.");
-								}
-							}
-							catch (UnityException ex)
-							{
-								Debug.LogError(ex.Message);
-							}
-						}
-					}
-					GUILayout.FlexibleSpace();
-				}
-				GUILayout.Space(10f);
-			}
-			if (flag)
-			{
-				base.Close();
-			}
-			else if (this.focus != null)
-			{
-				EditorGUI.FocusTextInControl(this.focus);
-				this.focus = null;
-			}
-		}
-	}
+    public void OnGUI()
+    {
+      Event current = Event.current;
+      bool flag1 = false;
+      bool flag2 = false;
+      if (current.type == EventType.KeyDown)
+      {
+        flag1 = current.keyCode == KeyCode.Escape;
+        flag2 = current.keyCode == KeyCode.Return || current.keyCode == KeyCode.KeypadEnter;
+      }
+      using (HorizontalLayout.DoLayout())
+      {
+        GUILayout.Space(10f);
+        using (VerticalLayout.DoLayout())
+        {
+          GUILayout.FlexibleSpace();
+          using (HorizontalLayout.DoLayout())
+          {
+            GUILayout.Label(EditorGUIUtility.TextContent("Password|Certificate password."), new GUILayoutOption[1]
+            {
+              MetroCertificatePasswordWindow.kLabelWidth
+            });
+            GUI.SetNextControlName("password");
+            this.password = GUILayout.PasswordField(this.password, '●');
+          }
+          GUILayout.Space(10f);
+          using (HorizontalLayout.DoLayout())
+          {
+            GUILayout.Label(this.message, this.messageStyle, new GUILayoutOption[0]);
+            GUILayout.FlexibleSpace();
+            if (!GUILayout.Button(EditorGUIUtility.TextContent("Ok"), new GUILayoutOption[1]{ MetroCertificatePasswordWindow.kButtonWidth }))
+            {
+              if (!flag2)
+                goto label_22;
+            }
+            this.message = GUIContent.none;
+            try
+            {
+              if (PlayerSettings.WSA.SetCertificate(this.path, this.password))
+                flag1 = true;
+              else
+                this.message = EditorGUIUtility.TextContent("Invalid password.");
+            }
+            catch (UnityException ex)
+            {
+              Debug.LogError((object) ex.Message);
+            }
+          }
+label_22:
+          GUILayout.FlexibleSpace();
+        }
+        GUILayout.Space(10f);
+      }
+      if (flag1)
+      {
+        this.Close();
+      }
+      else
+      {
+        if (this.focus == null)
+          return;
+        EditorGUI.FocusTextInControl(this.focus);
+        this.focus = (string) null;
+      }
+    }
+  }
 }

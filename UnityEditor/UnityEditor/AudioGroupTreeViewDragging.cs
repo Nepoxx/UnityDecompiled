@@ -1,69 +1,59 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AudioGroupTreeViewDragging
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEditor.Audio;
 using UnityEditor.IMGUI.Controls;
-using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class AudioGroupTreeViewDragging : AssetsTreeViewDragging
-	{
-		private AudioMixerGroupTreeView m_owner;
+  internal class AudioGroupTreeViewDragging : AssetsTreeViewDragging
+  {
+    private AudioMixerGroupTreeView m_owner;
 
-		public AudioGroupTreeViewDragging(TreeViewController treeView, AudioMixerGroupTreeView owner) : base(treeView)
-		{
-			this.m_owner = owner;
-		}
+    public AudioGroupTreeViewDragging(TreeViewController treeView, AudioMixerGroupTreeView owner)
+      : base(treeView)
+    {
+      this.m_owner = owner;
+    }
 
-		public override void StartDrag(TreeViewItem draggedItem, List<int> draggedItemIDs)
-		{
-			if (!EditorApplication.isPlaying)
-			{
-				base.StartDrag(draggedItem, draggedItemIDs);
-			}
-		}
+    public override void StartDrag(TreeViewItem draggedItem, List<int> draggedItemIDs)
+    {
+      if (EditorApplication.isPlaying)
+        return;
+      base.StartDrag(draggedItem, draggedItemIDs);
+    }
 
-		public override DragAndDropVisualMode DoDrag(TreeViewItem parentNode, TreeViewItem targetNode, bool perform, TreeViewDragging.DropPosition dragPos)
-		{
-			AudioMixerTreeViewNode audioMixerTreeViewNode = parentNode as AudioMixerTreeViewNode;
-			List<AudioMixerGroupController> list = new List<UnityEngine.Object>(DragAndDrop.objectReferences).OfType<AudioMixerGroupController>().ToList<AudioMixerGroupController>();
-			DragAndDropVisualMode result;
-			if (audioMixerTreeViewNode != null && list.Count > 0)
-			{
-				List<int> list2 = (from i in list
-				select i.GetInstanceID()).ToList<int>();
-				bool flag = this.ValidDrag(parentNode, list2) && !AudioMixerController.WillModificationOfTopologyCauseFeedback(this.m_owner.Controller.GetAllAudioGroupsSlow(), list, audioMixerTreeViewNode.group, null);
-				if (perform && flag)
-				{
-					AudioMixerGroupController group = audioMixerTreeViewNode.group;
-					int insertionIndex = TreeViewDragging.GetInsertionIndex(parentNode, targetNode, dragPos);
-					this.m_owner.Controller.ReparentSelection(group, insertionIndex, list);
-					this.m_owner.ReloadTree();
-					this.m_TreeView.SetSelection(list2.ToArray(), true);
-				}
-				result = ((!flag) ? DragAndDropVisualMode.Rejected : DragAndDropVisualMode.Move);
-			}
-			else
-			{
-				result = DragAndDropVisualMode.None;
-			}
-			return result;
-		}
+    public override DragAndDropVisualMode DoDrag(TreeViewItem parentNode, TreeViewItem targetNode, bool perform, TreeViewDragging.DropPosition dragPos)
+    {
+      AudioMixerTreeViewNode mixerTreeViewNode = parentNode as AudioMixerTreeViewNode;
+      List<AudioMixerGroupController> list1 = new List<UnityEngine.Object>((IEnumerable<UnityEngine.Object>) DragAndDrop.objectReferences).OfType<AudioMixerGroupController>().ToList<AudioMixerGroupController>();
+      if (mixerTreeViewNode == null || list1.Count <= 0)
+        return DragAndDropVisualMode.None;
+      List<int> list2 = list1.Select<AudioMixerGroupController, int>((Func<AudioMixerGroupController, int>) (i => i.GetInstanceID())).ToList<int>();
+      bool flag = this.ValidDrag(parentNode, list2) && !AudioMixerController.WillModificationOfTopologyCauseFeedback(this.m_owner.Controller.GetAllAudioGroupsSlow(), list1, mixerTreeViewNode.group, (List<AudioMixerController.ConnectionNode>) null);
+      if (perform && flag)
+      {
+        this.m_owner.Controller.ReparentSelection(mixerTreeViewNode.group, TreeViewDragging.GetInsertionIndex(parentNode, targetNode, dragPos), list1);
+        this.m_owner.ReloadTree();
+        this.m_TreeView.SetSelection(list2.ToArray(), true);
+      }
+      return !flag ? DragAndDropVisualMode.Rejected : DragAndDropVisualMode.Move;
+    }
 
-		private bool ValidDrag(TreeViewItem parent, List<int> draggedInstanceIDs)
-		{
-			bool result;
-			for (TreeViewItem treeViewItem = parent; treeViewItem != null; treeViewItem = treeViewItem.parent)
-			{
-				if (draggedInstanceIDs.Contains(treeViewItem.id))
-				{
-					result = false;
-					return result;
-				}
-			}
-			result = true;
-			return result;
-		}
-	}
+    private bool ValidDrag(TreeViewItem parent, List<int> draggedInstanceIDs)
+    {
+      for (TreeViewItem treeViewItem = parent; treeViewItem != null; treeViewItem = treeViewItem.parent)
+      {
+        if (draggedInstanceIDs.Contains(treeViewItem.id))
+          return false;
+      }
+      return true;
+    }
+  }
 }

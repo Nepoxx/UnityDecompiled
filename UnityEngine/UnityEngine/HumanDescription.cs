@@ -1,123 +1,151 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.HumanDescription
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	public struct HumanDescription
-	{
-		public HumanBone[] human;
+  /// <summary>
+  ///   <para>Class that holds humanoid avatar parameters to pass to the AvatarBuilder.BuildHumanAvatar function.</para>
+  /// </summary>
+  public struct HumanDescription
+  {
+    /// <summary>
+    ///   <para>Mapping between Mecanim bone names and bone names in the rig.</para>
+    /// </summary>
+    public HumanBone[] human;
+    /// <summary>
+    ///   <para>List of bone Transforms to include in the model.</para>
+    /// </summary>
+    public SkeletonBone[] skeleton;
+    internal float m_ArmTwist;
+    internal float m_ForeArmTwist;
+    internal float m_UpperLegTwist;
+    internal float m_LegTwist;
+    internal float m_ArmStretch;
+    internal float m_LegStretch;
+    internal float m_FeetSpacing;
+    internal bool m_HasTranslationDoF;
 
-		public SkeletonBone[] skeleton;
+    /// <summary>
+    ///   <para>Defines how the lower arm's roll/twisting is distributed between the shoulder and elbow joints.</para>
+    /// </summary>
+    public float upperArmTwist
+    {
+      get
+      {
+        return this.m_ArmTwist;
+      }
+      set
+      {
+        this.m_ArmTwist = value;
+      }
+    }
 
-		internal float m_ArmTwist;
+    /// <summary>
+    ///   <para>Defines how the lower arm's roll/twisting is distributed between the elbow and wrist joints.</para>
+    /// </summary>
+    public float lowerArmTwist
+    {
+      get
+      {
+        return this.m_ForeArmTwist;
+      }
+      set
+      {
+        this.m_ForeArmTwist = value;
+      }
+    }
 
-		internal float m_ForeArmTwist;
+    /// <summary>
+    ///   <para>Defines how the upper leg's roll/twisting is distributed between the thigh and knee joints.</para>
+    /// </summary>
+    public float upperLegTwist
+    {
+      get
+      {
+        return this.m_UpperLegTwist;
+      }
+      set
+      {
+        this.m_UpperLegTwist = value;
+      }
+    }
 
-		internal float m_UpperLegTwist;
+    /// <summary>
+    ///   <para>Defines how the lower leg's roll/twisting is distributed between the knee and ankle.</para>
+    /// </summary>
+    public float lowerLegTwist
+    {
+      get
+      {
+        return this.m_LegTwist;
+      }
+      set
+      {
+        this.m_LegTwist = value;
+      }
+    }
 
-		internal float m_LegTwist;
+    /// <summary>
+    ///   <para>Amount by which the arm's length is allowed to stretch when using IK.</para>
+    /// </summary>
+    public float armStretch
+    {
+      get
+      {
+        return this.m_ArmStretch;
+      }
+      set
+      {
+        this.m_ArmStretch = value;
+      }
+    }
 
-		internal float m_ArmStretch;
+    /// <summary>
+    ///   <para>Amount by which the leg's length is allowed to stretch when using IK.</para>
+    /// </summary>
+    public float legStretch
+    {
+      get
+      {
+        return this.m_LegStretch;
+      }
+      set
+      {
+        this.m_LegStretch = value;
+      }
+    }
 
-		internal float m_LegStretch;
+    /// <summary>
+    ///   <para>Modification to the minimum distance between the feet of a humanoid model.</para>
+    /// </summary>
+    public float feetSpacing
+    {
+      get
+      {
+        return this.m_FeetSpacing;
+      }
+      set
+      {
+        this.m_FeetSpacing = value;
+      }
+    }
 
-		internal float m_FeetSpacing;
-
-		internal bool m_HasTranslationDoF;
-
-		public float upperArmTwist
-		{
-			get
-			{
-				return this.m_ArmTwist;
-			}
-			set
-			{
-				this.m_ArmTwist = value;
-			}
-		}
-
-		public float lowerArmTwist
-		{
-			get
-			{
-				return this.m_ForeArmTwist;
-			}
-			set
-			{
-				this.m_ForeArmTwist = value;
-			}
-		}
-
-		public float upperLegTwist
-		{
-			get
-			{
-				return this.m_UpperLegTwist;
-			}
-			set
-			{
-				this.m_UpperLegTwist = value;
-			}
-		}
-
-		public float lowerLegTwist
-		{
-			get
-			{
-				return this.m_LegTwist;
-			}
-			set
-			{
-				this.m_LegTwist = value;
-			}
-		}
-
-		public float armStretch
-		{
-			get
-			{
-				return this.m_ArmStretch;
-			}
-			set
-			{
-				this.m_ArmStretch = value;
-			}
-		}
-
-		public float legStretch
-		{
-			get
-			{
-				return this.m_LegStretch;
-			}
-			set
-			{
-				this.m_LegStretch = value;
-			}
-		}
-
-		public float feetSpacing
-		{
-			get
-			{
-				return this.m_FeetSpacing;
-			}
-			set
-			{
-				this.m_FeetSpacing = value;
-			}
-		}
-
-		public bool hasTranslationDoF
-		{
-			get
-			{
-				return this.m_HasTranslationDoF;
-			}
-			set
-			{
-				this.m_HasTranslationDoF = value;
-			}
-		}
-	}
+    /// <summary>
+    ///   <para>True for any human that has a translation Degree of Freedom (DoF). It is set to false by default.</para>
+    /// </summary>
+    public bool hasTranslationDoF
+    {
+      get
+      {
+        return this.m_HasTranslationDoF;
+      }
+      set
+      {
+        this.m_HasTranslationDoF = value;
+      }
+    }
+  }
 }

@@ -1,56 +1,62 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.ADInterstitialAd
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 
 namespace UnityEngine
 {
-	[Obsolete("ADInterstitialAd class is obsolete, Apple iAD service discontinued", true)]
-	public sealed class ADInterstitialAd
-	{
-		public delegate void InterstitialWasLoadedDelegate();
+  [Obsolete("ADInterstitialAd class is obsolete, Apple iAD service discontinued", true)]
+  public sealed class ADInterstitialAd
+  {
+    public ADInterstitialAd(bool autoReload)
+    {
+    }
 
-		public static event ADInterstitialAd.InterstitialWasLoadedDelegate onInterstitialWasLoaded
-		{
-			add
-			{
-			}
-			remove
-			{
-			}
-		}
+    public ADInterstitialAd()
+    {
+    }
 
-		public static bool isAvailable
-		{
-			get
-			{
-				return false;
-			}
-		}
+    public static event ADInterstitialAd.InterstitialWasLoadedDelegate onInterstitialWasLoaded
+    {
+      add
+      {
+      }
+      remove
+      {
+      }
+    }
 
-		public bool loaded
-		{
-			get
-			{
-				return false;
-			}
-		}
+    public static bool isAvailable
+    {
+      get
+      {
+        return false;
+      }
+    }
 
-		public ADInterstitialAd(bool autoReload)
-		{
-		}
+    public bool loaded
+    {
+      get
+      {
+        return false;
+      }
+    }
 
-		public ADInterstitialAd()
-		{
-		}
+    ~ADInterstitialAd()
+    {
+    }
 
-		~ADInterstitialAd()
-		{
-		}
+    public void Show()
+    {
+    }
 
-		public void Show()
-		{
-		}
+    public void ReloadAd()
+    {
+    }
 
-		public void ReloadAd()
-		{
-		}
-	}
+    public delegate void InterstitialWasLoadedDelegate();
+  }
 }

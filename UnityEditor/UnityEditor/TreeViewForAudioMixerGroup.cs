@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.TreeViewForAudioMixerGroup
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using UnityEditor.Audio;
@@ -7,305 +13,250 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal static class TreeViewForAudioMixerGroup
-	{
-		private class GroupTreeViewGUI : TreeViewGUI
-		{
-			private readonly Texture2D k_AudioGroupIcon = EditorGUIUtility.FindTexture("AudioMixerGroup Icon");
+  internal static class TreeViewForAudioMixerGroup
+  {
+    private static readonly int kNoneItemID = 0;
+    private static string s_NoneText = "None";
 
-			private readonly Texture2D k_AudioListenerIcon = EditorGUIUtility.FindTexture("AudioListener Icon");
+    public static void CreateAndSetTreeView(ObjectTreeForSelector.TreeSelectorData data)
+    {
+      AudioMixerController objectFromInstanceId = InternalEditorUtility.GetObjectFromInstanceID(data.userData) as AudioMixerController;
+      TreeViewController treeView = new TreeViewController(data.editorWindow, data.state);
+      TreeViewForAudioMixerGroup.GroupTreeViewGUI groupTreeViewGui = new TreeViewForAudioMixerGroup.GroupTreeViewGUI(treeView);
+      TreeViewForAudioMixerGroup.TreeViewDataSourceForMixers dataSourceForMixers1 = new TreeViewForAudioMixerGroup.TreeViewDataSourceForMixers(treeView, objectFromInstanceId);
+      TreeViewForAudioMixerGroup.TreeViewDataSourceForMixers dataSourceForMixers2 = dataSourceForMixers1;
+      dataSourceForMixers2.onVisibleRowsChanged = dataSourceForMixers2.onVisibleRowsChanged + new Action(groupTreeViewGui.CalculateRowRects);
+      treeView.deselectOnUnhandledMouseDown = false;
+      treeView.Init(data.treeViewRect, (ITreeViewDataSource) dataSourceForMixers1, (ITreeViewGUI) groupTreeViewGui, (ITreeViewDragging) null);
+      data.objectTreeForSelector.SetTreeView(treeView);
+    }
 
-			private const float k_SpaceBetween = 25f;
+    private class GroupTreeViewGUI : TreeViewGUI
+    {
+      private readonly Texture2D k_AudioGroupIcon = EditorGUIUtility.FindTexture("AudioMixerGroup Icon");
+      private readonly Texture2D k_AudioListenerIcon = EditorGUIUtility.FindTexture("AudioListener Icon");
+      private List<Rect> m_RowRects = new List<Rect>();
+      private const float k_SpaceBetween = 25f;
+      private const float k_HeaderHeight = 20f;
 
-			private const float k_HeaderHeight = 20f;
+      public GroupTreeViewGUI(TreeViewController treeView)
+        : base(treeView)
+      {
+      }
 
-			private List<Rect> m_RowRects = new List<Rect>();
+      public override Rect GetRowRect(int row, float rowWidth)
+      {
+        if (this.m_TreeView.isSearching)
+          return base.GetRowRect(row, rowWidth);
+        if (this.m_TreeView.data.rowCount != this.m_RowRects.Count)
+          this.CalculateRowRects();
+        return this.m_RowRects[row];
+      }
 
-			public GroupTreeViewGUI(TreeViewController treeView) : base(treeView)
-			{
-			}
+      public override void OnRowGUI(Rect rowRect, TreeViewItem item, int row, bool selected, bool focused)
+      {
+        if (this.m_TreeView.isSearching)
+        {
+          base.OnRowGUI(rowRect, item, row, selected, focused);
+        }
+        else
+        {
+          this.DoItemGUI(rowRect, row, item, selected, focused, false);
+          if (item.parent != this.m_TreeView.data.root || item.id == TreeViewForAudioMixerGroup.kNoneItemID)
+            return;
+          AudioMixerController controller = ((TreeViewForAudioMixerGroup.MixerTreeViewItem) item).group.controller;
+          GUI.Label(new Rect(rowRect.x + 2f, rowRect.y - 18f, rowRect.width, 18f), GUIContent.Temp(controller.name), EditorStyles.boldLabel);
+        }
+      }
 
-			public override Rect GetRowRect(int row, float rowWidth)
-			{
-				Rect result;
-				if (this.m_TreeView.isSearching)
-				{
-					result = base.GetRowRect(row, rowWidth);
-				}
-				else
-				{
-					if (this.m_TreeView.data.rowCount != this.m_RowRects.Count)
-					{
-						this.CalculateRowRects();
-					}
-					result = this.m_RowRects[row];
-				}
-				return result;
-			}
+      protected override Texture GetIconForItem(TreeViewItem item)
+      {
+        if (item != null && (UnityEngine.Object) item.icon != (UnityEngine.Object) null)
+          return (Texture) item.icon;
+        if (item.id == TreeViewForAudioMixerGroup.kNoneItemID)
+          return (Texture) this.k_AudioListenerIcon;
+        return (Texture) this.k_AudioGroupIcon;
+      }
 
-			public override void OnRowGUI(Rect rowRect, TreeViewItem item, int row, bool selected, bool focused)
-			{
-				if (this.m_TreeView.isSearching)
-				{
-					base.OnRowGUI(rowRect, item, row, selected, focused);
-				}
-				else
-				{
-					this.DoItemGUI(rowRect, row, item, selected, focused, false);
-					bool flag = item.parent == this.m_TreeView.data.root;
-					bool flag2 = item.id == TreeViewForAudioMixerGroup.kNoneItemID;
-					if (flag && !flag2)
-					{
-						AudioMixerController controller = ((TreeViewForAudioMixerGroup.MixerTreeViewItem)item).group.controller;
-						GUI.Label(new Rect(rowRect.x + 2f, rowRect.y - 18f, rowRect.width, 18f), GUIContent.Temp(controller.name), EditorStyles.boldLabel);
-					}
-				}
-			}
+      protected override void SyncFakeItem()
+      {
+      }
 
-			protected override Texture GetIconForItem(TreeViewItem item)
-			{
-				Texture icon;
-				if (item != null && item.icon != null)
-				{
-					icon = item.icon;
-				}
-				else if (item.id == TreeViewForAudioMixerGroup.kNoneItemID)
-				{
-					icon = this.k_AudioListenerIcon;
-				}
-				else
-				{
-					icon = this.k_AudioGroupIcon;
-				}
-				return icon;
-			}
+      protected override void RenameEnded()
+      {
+      }
 
-			protected override void SyncFakeItem()
-			{
-			}
+      private bool IsController(TreeViewItem item)
+      {
+        return item.parent == this.m_TreeView.data.root && item.id != TreeViewForAudioMixerGroup.kNoneItemID;
+      }
 
-			protected override void RenameEnded()
-			{
-			}
+      public void CalculateRowRects()
+      {
+        if (this.m_TreeView.isSearching)
+          return;
+        float width = GUIClip.visibleRect.width;
+        IList<TreeViewItem> rows = this.m_TreeView.data.GetRows();
+        this.m_RowRects = new List<Rect>(rows.Count);
+        float num1 = 2f;
+        for (int index = 0; index < rows.Count; ++index)
+        {
+          float num2 = !this.IsController(rows[index]) ? 0.0f : 25f;
+          float y = num1 + num2;
+          float kLineHeight = this.k_LineHeight;
+          this.m_RowRects.Add(new Rect(0.0f, y, width, kLineHeight));
+          num1 = y + kLineHeight;
+        }
+      }
 
-			private bool IsController(TreeViewItem item)
-			{
-				return item.parent == this.m_TreeView.data.root && item.id != TreeViewForAudioMixerGroup.kNoneItemID;
-			}
+      public override Vector2 GetTotalSize()
+      {
+        if (this.m_TreeView.isSearching)
+        {
+          Vector2 totalSize = base.GetTotalSize();
+          totalSize.x = 1f;
+          return totalSize;
+        }
+        if (this.m_RowRects.Count == 0)
+          return new Vector2(1f, 1f);
+        return new Vector2(1f, this.m_RowRects[this.m_RowRects.Count - 1].yMax);
+      }
 
-			public void CalculateRowRects()
-			{
-				if (!this.m_TreeView.isSearching)
-				{
-					float width = GUIClip.visibleRect.width;
-					IList<TreeViewItem> rows = this.m_TreeView.data.GetRows();
-					this.m_RowRects = new List<Rect>(rows.Count);
-					float num = 2f;
-					for (int i = 0; i < rows.Count; i++)
-					{
-						bool flag = this.IsController(rows[i]);
-						float num2 = (!flag) ? 0f : 25f;
-						num += num2;
-						float k_LineHeight = this.k_LineHeight;
-						this.m_RowRects.Add(new Rect(0f, num, width, k_LineHeight));
-						num += k_LineHeight;
-					}
-				}
-			}
+      public override int GetNumRowsOnPageUpDown(TreeViewItem fromItem, bool pageUp, float heightOfTreeView)
+      {
+        if (this.m_TreeView.isSearching)
+          return base.GetNumRowsOnPageUpDown(fromItem, pageUp, heightOfTreeView);
+        return (int) Mathf.Floor(heightOfTreeView / this.k_LineHeight);
+      }
 
-			public override Vector2 GetTotalSize()
-			{
-				Vector2 result;
-				if (this.m_TreeView.isSearching)
-				{
-					Vector2 totalSize = base.GetTotalSize();
-					totalSize.x = 1f;
-					result = totalSize;
-				}
-				else if (this.m_RowRects.Count == 0)
-				{
-					result = new Vector2(1f, 1f);
-				}
-				else
-				{
-					result = new Vector2(1f, this.m_RowRects[this.m_RowRects.Count - 1].yMax);
-				}
-				return result;
-			}
+      public override void GetFirstAndLastRowVisible(out int firstRowVisible, out int lastRowVisible)
+      {
+        if (this.m_TreeView.isSearching)
+        {
+          base.GetFirstAndLastRowVisible(out firstRowVisible, out lastRowVisible);
+        }
+        else
+        {
+          int rowCount = this.m_TreeView.data.rowCount;
+          if (rowCount != this.m_RowRects.Count)
+            Debug.LogError((object) "Mismatch in state: rows vs cached rects");
+          int num1 = -1;
+          int num2 = -1;
+          float y = this.m_TreeView.state.scrollPos.y;
+          float height = this.m_TreeView.GetTotalRect().height;
+          for (int index = 0; index < this.m_RowRects.Count; ++index)
+          {
+            if ((double) this.m_RowRects[index].y > (double) y && (double) this.m_RowRects[index].y < (double) y + (double) height || (double) this.m_RowRects[index].yMax > (double) y && (double) this.m_RowRects[index].yMax < (double) y + (double) height)
+            {
+              if (num1 == -1)
+                num1 = index;
+              num2 = index;
+            }
+          }
+          if (num1 != -1 && num2 != -1)
+          {
+            firstRowVisible = num1;
+            lastRowVisible = num2;
+          }
+          else
+          {
+            firstRowVisible = 0;
+            lastRowVisible = rowCount - 1;
+          }
+        }
+      }
+    }
 
-			public override int GetNumRowsOnPageUpDown(TreeViewItem fromItem, bool pageUp, float heightOfTreeView)
-			{
-				int result;
-				if (this.m_TreeView.isSearching)
-				{
-					result = base.GetNumRowsOnPageUpDown(fromItem, pageUp, heightOfTreeView);
-				}
-				else
-				{
-					result = (int)Mathf.Floor(heightOfTreeView / this.k_LineHeight);
-				}
-				return result;
-			}
+    private class MixerTreeViewItem : TreeViewItem
+    {
+      public MixerTreeViewItem(int id, int depth, TreeViewItem parent, string displayName, AudioMixerGroupController groupController)
+        : base(id, depth, parent, displayName)
+      {
+        this.group = groupController;
+      }
 
-			public override void GetFirstAndLastRowVisible(out int firstRowVisible, out int lastRowVisible)
-			{
-				if (this.m_TreeView.isSearching)
-				{
-					base.GetFirstAndLastRowVisible(out firstRowVisible, out lastRowVisible);
-				}
-				else
-				{
-					int rowCount = this.m_TreeView.data.rowCount;
-					if (rowCount != this.m_RowRects.Count)
-					{
-						Debug.LogError("Mismatch in state: rows vs cached rects");
-					}
-					int num = -1;
-					int num2 = -1;
-					float y = this.m_TreeView.state.scrollPos.y;
-					float height = this.m_TreeView.GetTotalRect().height;
-					for (int i = 0; i < this.m_RowRects.Count; i++)
-					{
-						bool flag = (this.m_RowRects[i].y > y && this.m_RowRects[i].y < y + height) || (this.m_RowRects[i].yMax > y && this.m_RowRects[i].yMax < y + height);
-						if (flag)
-						{
-							if (num == -1)
-							{
-								num = i;
-							}
-							num2 = i;
-						}
-					}
-					if (num != -1 && num2 != -1)
-					{
-						firstRowVisible = num;
-						lastRowVisible = num2;
-					}
-					else
-					{
-						firstRowVisible = 0;
-						lastRowVisible = rowCount - 1;
-					}
-				}
-			}
-		}
+      public AudioMixerGroupController group { get; set; }
+    }
 
-		private class MixerTreeViewItem : TreeViewItem
-		{
-			public AudioMixerGroupController group
-			{
-				get;
-				set;
-			}
+    private class TreeViewDataSourceForMixers : TreeViewDataSource
+    {
+      public TreeViewDataSourceForMixers(TreeViewController treeView, AudioMixerController ignoreController)
+        : base(treeView)
+      {
+        this.showRootItem = false;
+        this.rootIsCollapsable = false;
+        this.ignoreThisController = ignoreController;
+        this.alwaysAddFirstItemToSearchResult = true;
+      }
 
-			public MixerTreeViewItem(int id, int depth, TreeViewItem parent, string displayName, AudioMixerGroupController groupController) : base(id, depth, parent, displayName)
-			{
-				this.group = groupController;
-			}
-		}
+      public AudioMixerController ignoreThisController { get; private set; }
 
-		private class TreeViewDataSourceForMixers : TreeViewDataSource
-		{
-			public AudioMixerController ignoreThisController
-			{
-				get;
-				private set;
-			}
+      private bool ShouldShowController(AudioMixerController controller, List<int> allowedInstanceIDs)
+      {
+        if (!(bool) ((UnityEngine.Object) controller))
+          return false;
+        if (allowedInstanceIDs != null && allowedInstanceIDs.Count > 0)
+          return allowedInstanceIDs.Contains(controller.GetInstanceID());
+        return true;
+      }
 
-			public TreeViewDataSourceForMixers(TreeViewController treeView, AudioMixerController ignoreController) : base(treeView)
-			{
-				base.showRootItem = false;
-				base.rootIsCollapsable = false;
-				this.ignoreThisController = ignoreController;
-				base.alwaysAddFirstItemToSearchResult = true;
-			}
+      public override void FetchData()
+      {
+        this.m_RootItem = new TreeViewItem(1010101010, -1, (TreeViewItem) null, "InvisibleRoot");
+        this.SetExpanded(this.m_RootItem.id, true);
+        List<int> allowedInstanceIds = ObjectSelector.get.allowedInstanceIDs;
+        HierarchyProperty hierarchyProperty = new HierarchyProperty(HierarchyType.Assets);
+        hierarchyProperty.SetSearchFilter(new SearchFilter()
+        {
+          classNames = new string[1]
+          {
+            "AudioMixerController"
+          }
+        });
+        List<AudioMixerController> audioMixerControllerList = new List<AudioMixerController>();
+        while (hierarchyProperty.Next((int[]) null))
+        {
+          AudioMixerController pptrValue = hierarchyProperty.pptrValue as AudioMixerController;
+          if (this.ShouldShowController(pptrValue, allowedInstanceIds))
+            audioMixerControllerList.Add(pptrValue);
+        }
+        List<TreeViewItem> treeViewItemList = new List<TreeViewItem>();
+        treeViewItemList.Add(new TreeViewItem(TreeViewForAudioMixerGroup.kNoneItemID, 0, this.m_RootItem, TreeViewForAudioMixerGroup.s_NoneText));
+        foreach (AudioMixerController controller in audioMixerControllerList)
+          treeViewItemList.Add(this.BuildSubTree(controller));
+        this.m_RootItem.children = treeViewItemList;
+        if (audioMixerControllerList.Count == 1)
+          this.m_TreeView.data.SetExpandedWithChildren(this.m_RootItem, true);
+        this.m_NeedRefreshRows = true;
+      }
 
-			private bool ShouldShowController(AudioMixerController controller, List<int> allowedInstanceIDs)
-			{
-				return controller && (allowedInstanceIDs == null || allowedInstanceIDs.Count <= 0 || allowedInstanceIDs.Contains(controller.GetInstanceID()));
-			}
+      private TreeViewItem BuildSubTree(AudioMixerController controller)
+      {
+        AudioMixerGroupController masterGroup = controller.masterGroup;
+        TreeViewForAudioMixerGroup.MixerTreeViewItem mixerTreeViewItem = new TreeViewForAudioMixerGroup.MixerTreeViewItem(masterGroup.GetInstanceID(), 0, this.m_RootItem, masterGroup.name, masterGroup);
+        this.AddChildrenRecursive(masterGroup, (TreeViewItem) mixerTreeViewItem);
+        return (TreeViewItem) mixerTreeViewItem;
+      }
 
-			public override void FetchData()
-			{
-				int depth = -1;
-				this.m_RootItem = new TreeViewItem(1010101010, depth, null, "InvisibleRoot");
-				this.SetExpanded(this.m_RootItem.id, true);
-				List<int> allowedInstanceIDs = ObjectSelector.get.allowedInstanceIDs;
-				HierarchyProperty hierarchyProperty = new HierarchyProperty(HierarchyType.Assets);
-				hierarchyProperty.SetSearchFilter(new SearchFilter
-				{
-					classNames = new string[]
-					{
-						"AudioMixerController"
-					}
-				});
-				List<AudioMixerController> list = new List<AudioMixerController>();
-				while (hierarchyProperty.Next(null))
-				{
-					AudioMixerController audioMixerController = hierarchyProperty.pptrValue as AudioMixerController;
-					if (this.ShouldShowController(audioMixerController, allowedInstanceIDs))
-					{
-						list.Add(audioMixerController);
-					}
-				}
-				List<TreeViewItem> list2 = new List<TreeViewItem>();
-				list2.Add(new TreeViewItem(TreeViewForAudioMixerGroup.kNoneItemID, 0, this.m_RootItem, TreeViewForAudioMixerGroup.s_NoneText));
-				foreach (AudioMixerController current in list)
-				{
-					list2.Add(this.BuildSubTree(current));
-				}
-				this.m_RootItem.children = list2;
-				if (list.Count == 1)
-				{
-					this.m_TreeView.data.SetExpandedWithChildren(this.m_RootItem, true);
-				}
-				this.m_NeedRefreshRows = true;
-			}
+      private void AddChildrenRecursive(AudioMixerGroupController group, TreeViewItem item)
+      {
+        item.children = new List<TreeViewItem>(group.children.Length);
+        for (int index = 0; index < group.children.Length; ++index)
+        {
+          item.children.Add((TreeViewItem) new TreeViewForAudioMixerGroup.MixerTreeViewItem(group.children[index].GetInstanceID(), item.depth + 1, item, group.children[index].name, group.children[index]));
+          this.AddChildrenRecursive(group.children[index], item.children[index]);
+        }
+      }
 
-			private TreeViewItem BuildSubTree(AudioMixerController controller)
-			{
-				AudioMixerGroupController masterGroup = controller.masterGroup;
-				TreeViewForAudioMixerGroup.MixerTreeViewItem mixerTreeViewItem = new TreeViewForAudioMixerGroup.MixerTreeViewItem(masterGroup.GetInstanceID(), 0, this.m_RootItem, masterGroup.name, masterGroup);
-				this.AddChildrenRecursive(masterGroup, mixerTreeViewItem);
-				return mixerTreeViewItem;
-			}
+      public override bool CanBeMultiSelected(TreeViewItem item)
+      {
+        return false;
+      }
 
-			private void AddChildrenRecursive(AudioMixerGroupController group, TreeViewItem item)
-			{
-				item.children = new List<TreeViewItem>(group.children.Length);
-				for (int i = 0; i < group.children.Length; i++)
-				{
-					item.children.Add(new TreeViewForAudioMixerGroup.MixerTreeViewItem(group.children[i].GetInstanceID(), item.depth + 1, item, group.children[i].name, group.children[i]));
-					this.AddChildrenRecursive(group.children[i], item.children[i]);
-				}
-			}
-
-			public override bool CanBeMultiSelected(TreeViewItem item)
-			{
-				return false;
-			}
-
-			public override bool IsRenamingItemAllowed(TreeViewItem item)
-			{
-				return false;
-			}
-		}
-
-		private static readonly int kNoneItemID = 0;
-
-		private static string s_NoneText = "None";
-
-		public static void CreateAndSetTreeView(ObjectTreeForSelector.TreeSelectorData data)
-		{
-			AudioMixerController ignoreController = InternalEditorUtility.GetObjectFromInstanceID(data.userData) as AudioMixerController;
-			TreeViewController treeViewController = new TreeViewController(data.editorWindow, data.state);
-			TreeViewForAudioMixerGroup.GroupTreeViewGUI groupTreeViewGUI = new TreeViewForAudioMixerGroup.GroupTreeViewGUI(treeViewController);
-			TreeViewForAudioMixerGroup.TreeViewDataSourceForMixers treeViewDataSourceForMixers = new TreeViewForAudioMixerGroup.TreeViewDataSourceForMixers(treeViewController, ignoreController);
-			TreeViewForAudioMixerGroup.TreeViewDataSourceForMixers expr_34 = treeViewDataSourceForMixers;
-			expr_34.onVisibleRowsChanged = (Action)Delegate.Combine(expr_34.onVisibleRowsChanged, new Action(groupTreeViewGUI.CalculateRowRects));
-			treeViewController.deselectOnUnhandledMouseDown = false;
-			treeViewController.Init(data.treeViewRect, treeViewDataSourceForMixers, groupTreeViewGUI, null);
-			data.objectTreeForSelector.SetTreeView(treeViewController);
-		}
-	}
+      public override bool IsRenamingItemAllowed(TreeViewItem item)
+      {
+        return false;
+      }
+    }
+  }
 }

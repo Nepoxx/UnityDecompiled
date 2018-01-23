@@ -1,13 +1,17 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.WrapModeFixed
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
 
 namespace UnityEditor
 {
-	internal enum WrapModeFixed
-	{
-		Default,
-		Once,
-		Loop,
-		ClampForever = 8,
-		PingPong = 4
-	}
+  internal enum WrapModeFixed
+  {
+    Default = 0,
+    Once = 1,
+    Loop = 2,
+    PingPong = 4,
+    ClampForever = 8,
+  }
 }

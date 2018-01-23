@@ -1,106 +1,67 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.Joint2D
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 using System.Runtime.CompilerServices;
-using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[RequireComponent(typeof(Transform), typeof(Rigidbody2D))]
-	public class Joint2D : Behaviour
-	{
-		[Obsolete("Joint2D.collideConnected has been deprecated. Use Joint2D.enableCollision instead (UnityUpgradable) -> enableCollision", true)]
-		public bool collideConnected
-		{
-			get
-			{
-				return this.enableCollision;
-			}
-			set
-			{
-				this.enableCollision = value;
-			}
-		}
+  [RequireComponent(typeof (Transform), typeof (Rigidbody2D))]
+  public class Joint2D : Behaviour
+  {
+    public extern Rigidbody2D attachedRigidbody { [MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		public extern Rigidbody2D attachedRigidbody
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    public extern Rigidbody2D connectedBody { [MethodImpl(MethodImplOptions.InternalCall)] get; [MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		public extern Rigidbody2D connectedBody
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    public extern bool enableCollision { [MethodImpl(MethodImplOptions.InternalCall)] get; [MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		public extern bool enableCollision
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    public extern float breakForce { [MethodImpl(MethodImplOptions.InternalCall)] get; [MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		public extern float breakForce
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    public extern float breakTorque { [MethodImpl(MethodImplOptions.InternalCall)] get; [MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		public extern float breakTorque
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    public Vector2 reactionForce
+    {
+      get
+      {
+        Vector2 ret;
+        this.get_reactionForce_Injected(out ret);
+        return ret;
+      }
+    }
 
-		public Vector2 reactionForce
-		{
-			get
-			{
-				return this.GetReactionForce(Time.fixedDeltaTime);
-			}
-		}
+    public extern float reactionTorque { [MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		public float reactionTorque
-		{
-			get
-			{
-				return this.GetReactionTorque(Time.fixedDeltaTime);
-			}
-		}
+    public Vector2 GetReactionForce(float timeStep)
+    {
+      Vector2 ret;
+      this.GetReactionForce_Injected(timeStep, out ret);
+      return ret;
+    }
 
-		public Vector2 GetReactionForce(float timeStep)
-		{
-			Vector2 result;
-			Joint2D.Internal_GetReactionForce(this, timeStep, out result);
-			return result;
-		}
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern float GetReactionTorque(float timeStep);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern void Internal_GetReactionForce(Joint2D joint, float timeStep, out Vector2 value);
+    [Obsolete("Joint2D.collideConnected has been deprecated. Use Joint2D.enableCollision instead (UnityUpgradable) -> enableCollision", true)]
+    public bool collideConnected
+    {
+      get
+      {
+        return this.enableCollision;
+      }
+      set
+      {
+        this.enableCollision = value;
+      }
+    }
 
-		public float GetReactionTorque(float timeStep)
-		{
-			return Joint2D.INTERNAL_CALL_GetReactionTorque(this, timeStep);
-		}
+    [SpecialName]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void get_reactionForce_Injected(out Vector2 ret);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern float INTERNAL_CALL_GetReactionTorque(Joint2D self, float timeStep);
-	}
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void GetReactionForce_Injected(float timeStep, out Vector2 ret);
+  }
 }

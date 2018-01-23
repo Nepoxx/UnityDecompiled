@@ -1,15 +1,21 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.IL2CPPStructAlignmentAttribute
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 
 namespace UnityEngine
 {
-	[AttributeUsage(AttributeTargets.Struct)]
-	internal class IL2CPPStructAlignmentAttribute : Attribute
-	{
-		public int Align;
+  [AttributeUsage(AttributeTargets.Struct)]
+  internal class IL2CPPStructAlignmentAttribute : Attribute
+  {
+    public int Align;
 
-		public IL2CPPStructAlignmentAttribute()
-		{
-			this.Align = 1;
-		}
-	}
+    public IL2CPPStructAlignmentAttribute()
+    {
+      this.Align = 1;
+    }
+  }
 }

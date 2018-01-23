@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.SceneViewGrid
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using UnityEditor.AnimatedValues;
 using UnityEngine;
@@ -5,66 +11,55 @@ using UnityEngine.Events;
 
 namespace UnityEditor
 {
-	[Serializable]
-	internal class SceneViewGrid
-	{
-		private static PrefColor kViewGridColor = new PrefColor("Scene/Grid", 0.5f, 0.5f, 0.5f, 0.4f);
+  [Serializable]
+  internal class SceneViewGrid
+  {
+    private static PrefColor kViewGridColor = new PrefColor("Scene/Grid", 0.5f, 0.5f, 0.5f, 0.4f);
+    [SerializeField]
+    private AnimBool xGrid = new AnimBool();
+    [SerializeField]
+    private AnimBool yGrid = new AnimBool();
+    [SerializeField]
+    private AnimBool zGrid = new AnimBool();
 
-		[SerializeField]
-		private AnimBool xGrid = new AnimBool();
+    public void Register(SceneView source)
+    {
+      this.xGrid.valueChanged.AddListener(new UnityAction(((EditorWindow) source).Repaint));
+      this.yGrid.valueChanged.AddListener(new UnityAction(((EditorWindow) source).Repaint));
+      this.zGrid.valueChanged.AddListener(new UnityAction(((EditorWindow) source).Repaint));
+    }
 
-		[SerializeField]
-		private AnimBool yGrid = new AnimBool();
-
-		[SerializeField]
-		private AnimBool zGrid = new AnimBool();
-
-		public void Register(SceneView source)
-		{
-			this.xGrid.valueChanged.AddListener(new UnityAction(source.Repaint));
-			this.yGrid.valueChanged.AddListener(new UnityAction(source.Repaint));
-			this.zGrid.valueChanged.AddListener(new UnityAction(source.Repaint));
-		}
-
-		public DrawGridParameters PrepareGridRender(Camera camera, Vector3 pivot, Quaternion rotation, float size, bool orthoMode, bool gridVisible)
-		{
-			bool target = false;
-			bool target2 = false;
-			bool target3 = false;
-			if (gridVisible)
-			{
-				if (orthoMode)
-				{
-					Vector3 lhs = rotation * Vector3.forward;
-					if (Mathf.Abs(lhs.y) > 0.2f)
-					{
-						target2 = true;
-					}
-					else if (lhs == Vector3.left || lhs == Vector3.right)
-					{
-						target = true;
-					}
-					else if (lhs == Vector3.forward || lhs == Vector3.back)
-					{
-						target3 = true;
-					}
-				}
-				else
-				{
-					target2 = true;
-				}
-			}
-			this.xGrid.target = target;
-			this.yGrid.target = target2;
-			this.zGrid.target = target3;
-			DrawGridParameters result;
-			result.pivot = pivot;
-			result.color = SceneViewGrid.kViewGridColor;
-			result.size = size;
-			result.alphaX = this.xGrid.faded;
-			result.alphaY = this.yGrid.faded;
-			result.alphaZ = this.zGrid.faded;
-			return result;
-		}
-	}
+    public DrawGridParameters PrepareGridRender(Camera camera, Vector3 pivot, Quaternion rotation, float size, bool orthoMode, bool gridVisible)
+    {
+      bool flag1 = false;
+      bool flag2 = false;
+      bool flag3 = false;
+      if (gridVisible)
+      {
+        if (orthoMode)
+        {
+          Vector3 vector3 = rotation * Vector3.forward;
+          if ((double) Mathf.Abs(vector3.y) > 0.200000002980232)
+            flag2 = true;
+          else if (vector3 == Vector3.left || vector3 == Vector3.right)
+            flag1 = true;
+          else if (vector3 == Vector3.forward || vector3 == Vector3.back)
+            flag3 = true;
+        }
+        else
+          flag2 = true;
+      }
+      this.xGrid.target = flag1;
+      this.yGrid.target = flag2;
+      this.zGrid.target = flag3;
+      DrawGridParameters drawGridParameters;
+      drawGridParameters.pivot = pivot;
+      drawGridParameters.color = (Color) SceneViewGrid.kViewGridColor;
+      drawGridParameters.size = size;
+      drawGridParameters.alphaX = this.xGrid.faded;
+      drawGridParameters.alphaY = this.yGrid.faded;
+      drawGridParameters.alphaZ = this.zGrid.faded;
+      return drawGridParameters;
+    }
+  }
 }

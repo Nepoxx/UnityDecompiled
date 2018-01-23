@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.SerializedPropertyTreeView
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,511 +13,442 @@ using UnityEngine.Profiling;
 
 namespace UnityEditor
 {
-	internal class SerializedPropertyTreeView : TreeView
-	{
-		internal static class Styles
-		{
-			public static readonly GUIStyle entryEven = "OL EntryBackEven";
+  internal class SerializedPropertyTreeView : TreeView
+  {
+    private SerializedPropertyDataStore m_DataStore;
+    private SerializedPropertyTreeView.ColumnInternal[] m_ColumnsInternal;
+    private List<TreeViewItem> m_Items;
+    private int m_ChangedId;
+    private bool m_bFilterSelection;
+    private int[] m_SelectionFilter;
 
-			public static readonly GUIStyle entryOdd = "OL EntryBackOdd";
+    public SerializedPropertyTreeView(TreeViewState state, MultiColumnHeader multicolumnHeader, SerializedPropertyDataStore dataStore)
+      : base(state, multicolumnHeader)
+    {
+      this.m_DataStore = dataStore;
+      int length = this.multiColumnHeader.state.columns.Length;
+      this.m_ColumnsInternal = new SerializedPropertyTreeView.ColumnInternal[length];
+      for (int idx = 0; idx < length; ++idx)
+      {
+        SerializedPropertyTreeView.Column column = this.Col(idx);
+        if (column.propertyName != null)
+          this.m_ColumnsInternal[idx].dependencyProps = new SerializedProperty[column.propertyName.Length];
+      }
+      this.multiColumnHeader.sortingChanged += new MultiColumnHeader.HeaderCallback(this.OnSortingChanged);
+      this.multiColumnHeader.visibleColumnsChanged += new MultiColumnHeader.HeaderCallback(this.OnVisibleColumnChanged);
+      this.showAlternatingRowBackgrounds = true;
+      this.showBorder = true;
+      this.rowHeight = EditorGUIUtility.singleLineHeight;
+    }
 
-			public static readonly string focusHelper = "SerializedPropertyTreeViewFocusHelper";
+    public void SerializeState(string uid)
+    {
+      SessionState.SetBool(uid + SerializedPropertyTreeView.Styles.serializeFilterSelection, this.m_bFilterSelection);
+      for (int idx = 0; idx < this.multiColumnHeader.state.columns.Length; ++idx)
+      {
+        SerializedPropertyFilters.IFilter filter = this.Col(idx).filter;
+        if (filter != null)
+        {
+          string str = filter.SerializeState();
+          if (!string.IsNullOrEmpty(str))
+            SessionState.SetString(uid + SerializedPropertyTreeView.Styles.serializeFilter + (object) idx, str);
+        }
+      }
+      SessionState.SetString(uid + SerializedPropertyTreeView.Styles.serializeTreeViewState, JsonUtility.ToJson((object) this.state));
+      SessionState.SetString(uid + SerializedPropertyTreeView.Styles.serializeColumnHeaderState, JsonUtility.ToJson((object) this.multiColumnHeader.state));
+    }
 
-			public static readonly string serializeFilterSelection = "_FilterSelection";
+    public void DeserializeState(string uid)
+    {
+      this.m_bFilterSelection = SessionState.GetBool(uid + SerializedPropertyTreeView.Styles.serializeFilterSelection, false);
+      for (int idx = 0; idx < this.multiColumnHeader.state.columns.Length; ++idx)
+      {
+        SerializedPropertyFilters.IFilter filter = this.Col(idx).filter;
+        if (filter != null)
+        {
+          string state = SessionState.GetString(uid + SerializedPropertyTreeView.Styles.serializeFilter + (object) idx, (string) null);
+          if (!string.IsNullOrEmpty(state))
+            filter.DeserializeState(state);
+        }
+      }
+      string json1 = SessionState.GetString(uid + SerializedPropertyTreeView.Styles.serializeTreeViewState, "");
+      string json2 = SessionState.GetString(uid + SerializedPropertyTreeView.Styles.serializeColumnHeaderState, "");
+      if (!string.IsNullOrEmpty(json1))
+        JsonUtility.FromJsonOverwrite(json1, (object) this.state);
+      if (string.IsNullOrEmpty(json2))
+        return;
+      JsonUtility.FromJsonOverwrite(json2, (object) this.multiColumnHeader.state);
+    }
 
-			public static readonly string serializeFilterDisable = "_FilterDisable";
+    public bool IsFilteredDirty()
+    {
+      return this.m_ChangedId != 0 && (this.m_ChangedId != GUIUtility.keyboardControl || !EditorGUIUtility.editingTextField);
+    }
 
-			public static readonly string serializeFilterInvert = "_FilterInvert";
+    public bool Update()
+    {
+      IList<TreeViewItem> rows = this.GetRows();
+      int firstRowVisible;
+      int lastRowVisible;
+      this.GetFirstAndLastVisibleRows(out firstRowVisible, out lastRowVisible);
+      bool flag = false;
+      if (lastRowVisible != -1)
+      {
+        for (int index = firstRowVisible; index <= lastRowVisible; ++index)
+          flag = flag || ((SerializedPropertyTreeView.SerializedPropertyItem) rows[index]).GetData().Update();
+      }
+      return flag;
+    }
 
-			public static readonly string serializeTreeViewState = "_TreeViewState";
+    public void FullReload()
+    {
+      this.m_Items = (List<TreeViewItem>) null;
+      this.Reload();
+    }
 
-			public static readonly string serializeColumnHeaderState = "_ColumnHeaderState";
+    protected override TreeViewItem BuildRoot()
+    {
+      return (TreeViewItem) new SerializedPropertyTreeView.SerializedPropertyItem(-1, -1, (SerializedPropertyDataStore.Data) null);
+    }
 
-			public static readonly string serializeFilter = "_Filter_";
+    protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
+    {
+      if (this.m_Items == null)
+      {
+        SerializedPropertyDataStore.Data[] elements = this.m_DataStore.GetElements();
+        this.m_Items = new List<TreeViewItem>(elements.Length);
+        for (int index = 0; index < elements.Length; ++index)
+          this.m_Items.Add((TreeViewItem) new SerializedPropertyTreeView.SerializedPropertyItem(elements[index].objectId, 0, elements[index]));
+      }
+      IEnumerable<TreeViewItem> rows = (IEnumerable<TreeViewItem>) this.m_Items;
+      if (this.m_bFilterSelection)
+      {
+        if (this.m_SelectionFilter == null)
+          this.m_SelectionFilter = Selection.instanceIDs;
+        rows = this.m_Items.Where<TreeViewItem>((Func<TreeViewItem, bool>) (item => ((IEnumerable<int>) this.m_SelectionFilter).Contains<int>(item.id)));
+      }
+      else
+        this.m_SelectionFilter = (int[]) null;
+      List<TreeViewItem> list = this.Filter(rows).ToList<TreeViewItem>();
+      if (this.multiColumnHeader.sortedColumnIndex >= 0)
+        this.Sort((IList<TreeViewItem>) list, this.multiColumnHeader.sortedColumnIndex);
+      this.m_ChangedId = 0;
+      TreeViewUtility.SetParentAndChildrenForItems((IList<TreeViewItem>) list, root);
+      return (IList<TreeViewItem>) list;
+    }
 
-			public static readonly GUIContent filterSelection = EditorGUIUtility.TextContent("Lock Selection|Limits the table contents to the active selection.");
+    protected override void RowGUI(TreeView.RowGUIArgs args)
+    {
+      SerializedPropertyTreeView.SerializedPropertyItem serializedPropertyItem = (SerializedPropertyTreeView.SerializedPropertyItem) args.item;
+      for (int visibleColumnIndex = 0; visibleColumnIndex < args.GetNumVisibleColumns(); ++visibleColumnIndex)
+        this.CellGUI(args.GetCellRect(visibleColumnIndex), serializedPropertyItem, args.GetColumn(visibleColumnIndex), ref args);
+    }
 
-			public static readonly GUIContent filterDisable = EditorGUIUtility.TextContent("Disable All|Disables all filters.");
+    private void CellGUI(Rect cellRect, SerializedPropertyTreeView.SerializedPropertyItem item, int columnIndex, ref TreeView.RowGUIArgs args)
+    {
+      Profiler.BeginSample("SerializedPropertyTreeView.CellGUI");
+      this.CenterRectUsingSingleLineHeight(ref cellRect);
+      SerializedPropertyDataStore.Data data1 = item.GetData();
+      SerializedPropertyTreeView.Column column = (SerializedPropertyTreeView.Column) this.multiColumnHeader.GetColumn(columnIndex);
+      if (column.drawDelegate == SerializedPropertyTreeView.DefaultDelegates.s_DrawName)
+      {
+        Profiler.BeginSample("SerializedPropertyTreeView.OnItemGUI.LabelField");
+        TreeView.DefaultGUI.Label(cellRect, data1.name, this.IsSelected(args.item.id), false);
+        Profiler.EndSample();
+      }
+      else
+      {
+        if (column.drawDelegate == null)
+          return;
+        SerializedProperty[] properties = data1.properties;
+        int num = column.dependencyIndices == null ? 0 : column.dependencyIndices.Length;
+        for (int index = 0; index < num; ++index)
+          this.m_ColumnsInternal[columnIndex].dependencyProps[index] = properties[column.dependencyIndices[index]];
+        if (args.item.id == this.state.lastClickedID && this.HasFocus() && columnIndex == this.multiColumnHeader.state.visibleColumns[this.multiColumnHeader.state.visibleColumns[0] != 0 ? 0 : 1])
+          GUI.SetNextControlName(SerializedPropertyTreeView.Styles.focusHelper);
+        SerializedProperty property = data1.properties[columnIndex];
+        EditorGUI.BeginChangeCheck();
+        Profiler.BeginSample("SerializedPropertyTreeView.OnItemGUI.drawDelegate");
+        column.drawDelegate(cellRect, property, this.m_ColumnsInternal[columnIndex].dependencyProps);
+        Profiler.EndSample();
+        if (EditorGUI.EndChangeCheck())
+        {
+          this.m_ChangedId = column.filter == null || !column.filter.Active() ? this.m_ChangedId : GUIUtility.keyboardControl;
+          data1.Store();
+          IList<int> selection = this.GetSelection();
+          if (selection.Contains(data1.objectId))
+          {
+            IList<TreeViewItem> rows = this.FindRows(selection);
+            Undo.RecordObjects(rows.Select<TreeViewItem, UnityEngine.Object>((Func<TreeViewItem, UnityEngine.Object>) (r => ((SerializedPropertyTreeView.SerializedPropertyItem) r).GetData().serializedObject.targetObject)).ToArray<UnityEngine.Object>(), "Modify Multiple Properties");
+            foreach (TreeViewItem treeViewItem in (IEnumerable<TreeViewItem>) rows)
+            {
+              if (treeViewItem.id != args.item.id)
+              {
+                SerializedPropertyDataStore.Data data2 = ((SerializedPropertyTreeView.SerializedPropertyItem) treeViewItem).GetData();
+                if (SerializedPropertyTreeView.IsEditable(data2.serializedObject.targetObject))
+                {
+                  if (column.copyDelegate != null)
+                    column.copyDelegate(data2.properties[columnIndex], property);
+                  else
+                    SerializedPropertyTreeView.DefaultDelegates.s_CopyDefault(data2.properties[columnIndex], property);
+                  data2.Store();
+                }
+              }
+            }
+          }
+        }
+        Profiler.EndSample();
+      }
+    }
 
-			public static readonly GUIContent filterInvert = EditorGUIUtility.TextContent("Invert Result|Inverts the filtered results.");
-		}
+    private static bool IsEditable(UnityEngine.Object target)
+    {
+      return (target.hideFlags & HideFlags.NotEditable) == HideFlags.None;
+    }
 
-		internal class SerializedPropertyItem : TreeViewItem
-		{
-			private SerializedPropertyDataStore.Data m_Data;
+    protected override void BeforeRowsGUI()
+    {
+      IList<TreeViewItem> rows = this.GetRows();
+      int firstRowVisible;
+      int lastRowVisible;
+      this.GetFirstAndLastVisibleRows(out firstRowVisible, out lastRowVisible);
+      if (lastRowVisible != -1)
+      {
+        for (int index = firstRowVisible; index <= lastRowVisible; ++index)
+          ((SerializedPropertyTreeView.SerializedPropertyItem) rows[index]).GetData().Update();
+      }
+      foreach (SerializedPropertyTreeView.SerializedPropertyItem row in (IEnumerable<TreeViewItem>) this.FindRows(this.GetSelection()))
+        row.GetData().Update();
+      base.BeforeRowsGUI();
+    }
 
-			public SerializedPropertyItem(int id, int depth, SerializedPropertyDataStore.Data ltd) : base(id, depth, (ltd == null) ? "root" : ltd.name)
-			{
-				this.m_Data = ltd;
-			}
+    public void OnFilterGUI(Rect r)
+    {
+      EditorGUI.BeginChangeCheck();
+      float width = r.width;
+      float num = 16f;
+      r.width = num;
+      this.m_bFilterSelection = EditorGUI.Toggle(r, this.m_bFilterSelection);
+      r.x += num;
+      r.width = GUI.skin.label.CalcSize(SerializedPropertyTreeView.Styles.filterSelection).x;
+      EditorGUI.LabelField(r, SerializedPropertyTreeView.Styles.filterSelection);
+      r.width = Mathf.Min(width - (r.x + r.width), 300f);
+      r.x = (float) ((double) width - (double) r.width + 10.0);
+      for (int idx = 0; idx < this.multiColumnHeader.state.columns.Length; ++idx)
+      {
+        if (this.IsColumnVisible(idx))
+        {
+          SerializedPropertyTreeView.Column column = this.Col(idx);
+          if (column.filter != null && column.filter.GetType().Equals(typeof (SerializedPropertyFilters.Name)))
+            column.filter.OnGUI(r);
+        }
+      }
+      if (!EditorGUI.EndChangeCheck())
+        return;
+      this.Reload();
+    }
 
-			public SerializedPropertyDataStore.Data GetData()
-			{
-				return this.m_Data;
-			}
-		}
+    protected override void SelectionChanged(IList<int> selectedIds)
+    {
+      Selection.instanceIDs = selectedIds.ToArray<int>();
+    }
 
-		internal class Column : MultiColumnHeaderState.Column
-		{
-			public delegate void DrawEntry(Rect r, SerializedProperty prop, SerializedProperty[] dependencies);
+    protected override void KeyEvent()
+    {
+      if (Event.current.type != EventType.KeyDown || (int) Event.current.character != 9)
+        return;
+      GUI.FocusControl(SerializedPropertyTreeView.Styles.focusHelper);
+      Event.current.Use();
+    }
 
-			public delegate int CompareEntry(SerializedProperty lhs, SerializedProperty rhs);
+    private void OnVisibleColumnChanged(MultiColumnHeader header)
+    {
+      this.Reload();
+    }
 
-			public delegate void CopyDelegate(SerializedProperty target, SerializedProperty source);
+    private void OnSortingChanged(MultiColumnHeader multiColumnHeader)
+    {
+      this.Sort(this.GetRows(), multiColumnHeader.sortedColumnIndex);
+    }
 
-			public string propertyName;
+    private void Sort(IList<TreeViewItem> rows, int sortIdx)
+    {
+      // ISSUE: object of a compiler-generated type is created
+      // ISSUE: variable of a compiler-generated type
+      SerializedPropertyTreeView.\u003CSort\u003Ec__AnonStorey0 sortCAnonStorey0 = new SerializedPropertyTreeView.\u003CSort\u003Ec__AnonStorey0();
+      // ISSUE: reference to a compiler-generated field
+      sortCAnonStorey0.sortIdx = sortIdx;
+      // ISSUE: reference to a compiler-generated field
+      bool flag = this.multiColumnHeader.IsSortedAscending(sortCAnonStorey0.sortIdx);
+      // ISSUE: reference to a compiler-generated field
+      // ISSUE: reference to a compiler-generated field
+      sortCAnonStorey0.comp = this.Col(sortCAnonStorey0.sortIdx).compareDelegate;
+      List<TreeViewItem> treeViewItemList = rows as List<TreeViewItem>;
+      // ISSUE: reference to a compiler-generated field
+      if (sortCAnonStorey0.comp == null)
+        return;
+      Comparison<TreeViewItem> comparison1;
+      Comparison<TreeViewItem> comparison2;
+      // ISSUE: reference to a compiler-generated field
+      if (sortCAnonStorey0.comp == SerializedPropertyTreeView.DefaultDelegates.s_CompareName)
+      {
+        comparison1 = (Comparison<TreeViewItem>) ((lhs, rhs) => EditorUtility.NaturalCompare(((SerializedPropertyTreeView.SerializedPropertyItem) lhs).GetData().name, ((SerializedPropertyTreeView.SerializedPropertyItem) rhs).GetData().name));
+        comparison2 = (Comparison<TreeViewItem>) ((lhs, rhs) => -EditorUtility.NaturalCompare(((SerializedPropertyTreeView.SerializedPropertyItem) lhs).GetData().name, ((SerializedPropertyTreeView.SerializedPropertyItem) rhs).GetData().name));
+      }
+      else
+      {
+        // ISSUE: reference to a compiler-generated method
+        comparison1 = new Comparison<TreeViewItem>(sortCAnonStorey0.\u003C\u003Em__0);
+        // ISSUE: reference to a compiler-generated method
+        comparison2 = new Comparison<TreeViewItem>(sortCAnonStorey0.\u003C\u003Em__1);
+      }
+      treeViewItemList.Sort(!flag ? comparison2 : comparison1);
+    }
 
-			public int[] dependencyIndices;
+    private IEnumerable<TreeViewItem> Filter(IEnumerable<TreeViewItem> rows)
+    {
+      IEnumerable<TreeViewItem> source = rows;
+      int length = this.m_ColumnsInternal.Length;
+      for (int idx = 0; idx < length; ++idx)
+      {
+        // ISSUE: object of a compiler-generated type is created
+        // ISSUE: variable of a compiler-generated type
+        SerializedPropertyTreeView.\u003CFilter\u003Ec__AnonStorey2 filterCAnonStorey2 = new SerializedPropertyTreeView.\u003CFilter\u003Ec__AnonStorey2();
+        if (this.IsColumnVisible(idx))
+        {
+          // ISSUE: reference to a compiler-generated field
+          filterCAnonStorey2.c = this.Col(idx);
+          // ISSUE: reference to a compiler-generated field
+          filterCAnonStorey2.idx = idx;
+          // ISSUE: reference to a compiler-generated field
+          // ISSUE: reference to a compiler-generated field
+          if (filterCAnonStorey2.c.filter != null && filterCAnonStorey2.c.filter.Active())
+          {
+            // ISSUE: reference to a compiler-generated field
+            if (filterCAnonStorey2.c.filter.GetType().Equals(typeof (SerializedPropertyFilters.Name)))
+            {
+              // ISSUE: reference to a compiler-generated field
+              // ISSUE: object of a compiler-generated type is created
+              // ISSUE: reference to a compiler-generated method
+              source = source.Where<TreeViewItem>(new Func<TreeViewItem, bool>(new SerializedPropertyTreeView.\u003CFilter\u003Ec__AnonStorey1()
+              {
+                f = (SerializedPropertyFilters.Name) filterCAnonStorey2.c.filter
+              }.\u003C\u003Em__0));
+            }
+            else
+            {
+              // ISSUE: reference to a compiler-generated method
+              source = source.Where<TreeViewItem>(new Func<TreeViewItem, bool>(filterCAnonStorey2.\u003C\u003Em__0));
+            }
+          }
+        }
+      }
+      return source;
+    }
 
-			public SerializedPropertyTreeView.Column.DrawEntry drawDelegate;
+    private bool IsColumnVisible(int idx)
+    {
+      for (int index = 0; index < this.multiColumnHeader.state.visibleColumns.Length; ++index)
+      {
+        if (this.multiColumnHeader.state.visibleColumns[index] == idx)
+          return true;
+      }
+      return false;
+    }
 
-			public SerializedPropertyTreeView.Column.CompareEntry compareDelegate;
+    private SerializedPropertyTreeView.Column Col(int idx)
+    {
+      return (SerializedPropertyTreeView.Column) this.multiColumnHeader.state.columns[idx];
+    }
 
-			public SerializedPropertyTreeView.Column.CopyDelegate copyDelegate;
+    internal static class Styles
+    {
+      public static readonly GUIStyle entryEven = (GUIStyle) "OL EntryBackEven";
+      public static readonly GUIStyle entryOdd = (GUIStyle) "OL EntryBackOdd";
+      public static readonly string focusHelper = "SerializedPropertyTreeViewFocusHelper";
+      public static readonly string serializeFilterSelection = "_FilterSelection";
+      public static readonly string serializeFilterDisable = "_FilterDisable";
+      public static readonly string serializeFilterInvert = "_FilterInvert";
+      public static readonly string serializeTreeViewState = "_TreeViewState";
+      public static readonly string serializeColumnHeaderState = "_ColumnHeaderState";
+      public static readonly string serializeFilter = "_Filter_";
+      public static readonly GUIContent filterSelection = EditorGUIUtility.TextContent("Lock Selection|Limits the table contents to the active selection.");
+      public static readonly GUIContent filterDisable = EditorGUIUtility.TextContent("Disable All|Disables all filters.");
+      public static readonly GUIContent filterInvert = EditorGUIUtility.TextContent("Invert Result|Inverts the filtered results.");
+    }
 
-			public SerializedPropertyFilters.IFilter filter;
-		}
+    internal class SerializedPropertyItem : TreeViewItem
+    {
+      private SerializedPropertyDataStore.Data m_Data;
 
-		private struct ColumnInternal
-		{
-			public SerializedProperty[] dependencyProps;
-		}
+      public SerializedPropertyItem(int id, int depth, SerializedPropertyDataStore.Data ltd)
+        : base(id, depth, ltd == null ? "root" : ltd.name)
+      {
+        this.m_Data = ltd;
+      }
 
-		internal class DefaultDelegates
-		{
-			public static readonly SerializedPropertyTreeView.Column.DrawEntry s_DrawDefault = delegate(Rect r, SerializedProperty prop, SerializedProperty[] dependencies)
-			{
-				Profiler.BeginSample("PropDrawDefault");
-				EditorGUI.PropertyField(r, prop, GUIContent.none);
-				Profiler.EndSample();
-			};
+      public SerializedPropertyDataStore.Data GetData()
+      {
+        return this.m_Data;
+      }
+    }
 
-			public static readonly SerializedPropertyTreeView.Column.DrawEntry s_DrawCheckbox = delegate(Rect r, SerializedProperty prop, SerializedProperty[] dependencies)
-			{
-				Profiler.BeginSample("PropDrawCheckbox");
-				float num = r.width / 2f - 8f;
-				r.x += ((num < 0f) ? 0f : num);
-				EditorGUI.PropertyField(r, prop, GUIContent.none);
-				Profiler.EndSample();
-			};
+    internal class Column : MultiColumnHeaderState.Column
+    {
+      public string propertyName;
+      public int[] dependencyIndices;
+      public SerializedPropertyTreeView.Column.DrawEntry drawDelegate;
+      public SerializedPropertyTreeView.Column.CompareEntry compareDelegate;
+      public SerializedPropertyTreeView.Column.CopyDelegate copyDelegate;
+      public SerializedPropertyFilters.IFilter filter;
 
-			public static readonly SerializedPropertyTreeView.Column.DrawEntry s_DrawName = delegate(Rect r, SerializedProperty prop, SerializedProperty[] dependencies)
-			{
-			};
+      public delegate void DrawEntry(Rect r, SerializedProperty prop, SerializedProperty[] dependencies);
 
-			public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareFloat = (SerializedProperty lhs, SerializedProperty rhs) => lhs.floatValue.CompareTo(rhs.floatValue);
+      public delegate int CompareEntry(SerializedProperty lhs, SerializedProperty rhs);
 
-			public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareCheckbox = (SerializedProperty lhs, SerializedProperty rhs) => lhs.boolValue.CompareTo(rhs.boolValue);
+      public delegate void CopyDelegate(SerializedProperty target, SerializedProperty source);
+    }
 
-			public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareEnum = (SerializedProperty lhs, SerializedProperty rhs) => lhs.enumValueIndex.CompareTo(rhs.enumValueIndex);
+    private struct ColumnInternal
+    {
+      public SerializedProperty[] dependencyProps;
+    }
 
-			public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareInt = (SerializedProperty lhs, SerializedProperty rhs) => lhs.intValue.CompareTo(rhs.intValue);
-
-			public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareColor = delegate(SerializedProperty lhs, SerializedProperty rhs)
-			{
-				float num;
-				float num2;
-				float num3;
-				Color.RGBToHSV(lhs.colorValue, out num, out num2, out num3);
-				float value;
-				float num4;
-				float num5;
-				Color.RGBToHSV(rhs.colorValue, out value, out num4, out num5);
-				return num.CompareTo(value);
-			};
-
-			public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareName = (SerializedProperty lhs, SerializedProperty rhs) => 0;
-
-			public static readonly SerializedPropertyTreeView.Column.CopyDelegate s_CopyDefault = delegate(SerializedProperty target, SerializedProperty source)
-			{
-				target.serializedObject.CopyFromSerializedProperty(source);
-			};
-		}
-
-		private SerializedPropertyDataStore m_DataStore;
-
-		private SerializedPropertyTreeView.ColumnInternal[] m_ColumnsInternal;
-
-		private List<TreeViewItem> m_Items;
-
-		private int m_ChangedId;
-
-		private bool m_bFilterSelection;
-
-		private int[] m_SelectionFilter;
-
-		public SerializedPropertyTreeView(TreeViewState state, MultiColumnHeader multicolumnHeader, SerializedPropertyDataStore dataStore) : base(state, multicolumnHeader)
-		{
-			this.m_DataStore = dataStore;
-			int num = base.multiColumnHeader.state.columns.Length;
-			this.m_ColumnsInternal = new SerializedPropertyTreeView.ColumnInternal[num];
-			for (int i = 0; i < num; i++)
-			{
-				SerializedPropertyTreeView.Column column = this.Col(i);
-				if (column.propertyName != null)
-				{
-					this.m_ColumnsInternal[i].dependencyProps = new SerializedProperty[column.propertyName.Length];
-				}
-			}
-			base.multiColumnHeader.sortingChanged += new MultiColumnHeader.HeaderCallback(this.OnSortingChanged);
-			base.multiColumnHeader.visibleColumnsChanged += new MultiColumnHeader.HeaderCallback(this.OnVisibleColumnChanged);
-			base.showAlternatingRowBackgrounds = true;
-			base.showBorder = true;
-			base.rowHeight = EditorGUIUtility.singleLineHeight;
-		}
-
-		public void SerializeState(string uid)
-		{
-			SessionState.SetBool(uid + SerializedPropertyTreeView.Styles.serializeFilterSelection, this.m_bFilterSelection);
-			for (int i = 0; i < base.multiColumnHeader.state.columns.Length; i++)
-			{
-				SerializedPropertyFilters.IFilter filter = this.Col(i).filter;
-				if (filter != null)
-				{
-					string value = filter.SerializeState();
-					if (!string.IsNullOrEmpty(value))
-					{
-						SessionState.SetString(uid + SerializedPropertyTreeView.Styles.serializeFilter + i, value);
-					}
-				}
-			}
-			SessionState.SetString(uid + SerializedPropertyTreeView.Styles.serializeTreeViewState, JsonUtility.ToJson(base.state));
-			SessionState.SetString(uid + SerializedPropertyTreeView.Styles.serializeColumnHeaderState, JsonUtility.ToJson(base.multiColumnHeader.state));
-		}
-
-		public void DeserializeState(string uid)
-		{
-			this.m_bFilterSelection = SessionState.GetBool(uid + SerializedPropertyTreeView.Styles.serializeFilterSelection, false);
-			for (int i = 0; i < base.multiColumnHeader.state.columns.Length; i++)
-			{
-				SerializedPropertyFilters.IFilter filter = this.Col(i).filter;
-				if (filter != null)
-				{
-					string @string = SessionState.GetString(uid + SerializedPropertyTreeView.Styles.serializeFilter + i, null);
-					if (!string.IsNullOrEmpty(@string))
-					{
-						filter.DeserializeState(@string);
-					}
-				}
-			}
-			string string2 = SessionState.GetString(uid + SerializedPropertyTreeView.Styles.serializeTreeViewState, "");
-			string string3 = SessionState.GetString(uid + SerializedPropertyTreeView.Styles.serializeColumnHeaderState, "");
-			if (!string.IsNullOrEmpty(string2))
-			{
-				JsonUtility.FromJsonOverwrite(string2, base.state);
-			}
-			if (!string.IsNullOrEmpty(string3))
-			{
-				JsonUtility.FromJsonOverwrite(string3, base.multiColumnHeader.state);
-			}
-		}
-
-		public bool IsFilteredDirty()
-		{
-			return this.m_ChangedId != 0 && (this.m_ChangedId != GUIUtility.keyboardControl || !EditorGUIUtility.editingTextField);
-		}
-
-		public bool Update()
-		{
-			IList<TreeViewItem> rows = this.GetRows();
-			int num;
-			int num2;
-			base.GetFirstAndLastVisibleRows(out num, out num2);
-			bool flag = false;
-			if (num2 != -1)
-			{
-				for (int i = num; i <= num2; i++)
-				{
-					flag = (flag || ((SerializedPropertyTreeView.SerializedPropertyItem)rows[i]).GetData().Update());
-				}
-			}
-			return flag;
-		}
-
-		public void FullReload()
-		{
-			this.m_Items = null;
-			base.Reload();
-		}
-
-		protected override TreeViewItem BuildRoot()
-		{
-			return new SerializedPropertyTreeView.SerializedPropertyItem(-1, -1, null);
-		}
-
-		protected override IList<TreeViewItem> BuildRows(TreeViewItem root)
-		{
-			if (this.m_Items == null)
-			{
-				SerializedPropertyDataStore.Data[] elements = this.m_DataStore.GetElements();
-				this.m_Items = new List<TreeViewItem>(elements.Length);
-				for (int i = 0; i < elements.Length; i++)
-				{
-					SerializedPropertyTreeView.SerializedPropertyItem item2 = new SerializedPropertyTreeView.SerializedPropertyItem(elements[i].objectId, 0, elements[i]);
-					this.m_Items.Add(item2);
-				}
-			}
-			IEnumerable<TreeViewItem> enumerable = this.m_Items;
-			if (this.m_bFilterSelection)
-			{
-				if (this.m_SelectionFilter == null)
-				{
-					this.m_SelectionFilter = Selection.instanceIDs;
-				}
-				enumerable = from item in this.m_Items
-				where this.m_SelectionFilter.Contains(item.id)
-				select item;
-			}
-			else
-			{
-				this.m_SelectionFilter = null;
-			}
-			enumerable = this.Filter(enumerable);
-			List<TreeViewItem> list = enumerable.ToList<TreeViewItem>();
-			if (base.multiColumnHeader.sortedColumnIndex >= 0)
-			{
-				this.Sort(list, base.multiColumnHeader.sortedColumnIndex);
-			}
-			this.m_ChangedId = 0;
-			TreeViewUtility.SetParentAndChildrenForItems(list, root);
-			return list;
-		}
-
-		protected override void RowGUI(TreeView.RowGUIArgs args)
-		{
-			SerializedPropertyTreeView.SerializedPropertyItem item = (SerializedPropertyTreeView.SerializedPropertyItem)args.item;
-			for (int i = 0; i < args.GetNumVisibleColumns(); i++)
-			{
-				this.CellGUI(args.GetCellRect(i), item, args.GetColumn(i), ref args);
-			}
-		}
-
-		private void CellGUI(Rect cellRect, SerializedPropertyTreeView.SerializedPropertyItem item, int columnIndex, ref TreeView.RowGUIArgs args)
-		{
-			Profiler.BeginSample("SerializedPropertyTreeView.CellGUI");
-			base.CenterRectUsingSingleLineHeight(ref cellRect);
-			SerializedPropertyDataStore.Data data = item.GetData();
-			SerializedPropertyTreeView.Column column = (SerializedPropertyTreeView.Column)base.multiColumnHeader.GetColumn(columnIndex);
-			if (column.drawDelegate == SerializedPropertyTreeView.DefaultDelegates.s_DrawName)
-			{
-				Profiler.BeginSample("SerializedPropertyTreeView.OnItemGUI.LabelField");
-				TreeView.DefaultGUI.Label(cellRect, data.name, base.IsSelected(args.item.id), false);
-				Profiler.EndSample();
-			}
-			else if (column.drawDelegate != null)
-			{
-				SerializedProperty[] properties = data.properties;
-				int num = (column.dependencyIndices == null) ? 0 : column.dependencyIndices.Length;
-				for (int i = 0; i < num; i++)
-				{
-					this.m_ColumnsInternal[columnIndex].dependencyProps[i] = properties[column.dependencyIndices[i]];
-				}
-				if (args.item.id == base.state.lastClickedID && base.HasFocus() && columnIndex == base.multiColumnHeader.state.visibleColumns[(base.multiColumnHeader.state.visibleColumns[0] != 0) ? 0 : 1])
-				{
-					GUI.SetNextControlName(SerializedPropertyTreeView.Styles.focusHelper);
-				}
-				SerializedProperty serializedProperty = data.properties[columnIndex];
-				EditorGUI.BeginChangeCheck();
-				Profiler.BeginSample("SerializedPropertyTreeView.OnItemGUI.drawDelegate");
-				column.drawDelegate(cellRect, serializedProperty, this.m_ColumnsInternal[columnIndex].dependencyProps);
-				Profiler.EndSample();
-				if (EditorGUI.EndChangeCheck())
-				{
-					this.m_ChangedId = ((column.filter == null || !column.filter.Active()) ? this.m_ChangedId : GUIUtility.keyboardControl);
-					data.Store();
-					IList<int> selection = base.GetSelection();
-					if (selection.Contains(data.objectId))
-					{
-						IList<TreeViewItem> list = base.FindRows(selection);
-						Undo.RecordObjects((from r in list
-						select ((SerializedPropertyTreeView.SerializedPropertyItem)r).GetData().serializedObject.targetObject).ToArray<UnityEngine.Object>(), "Modify Multiple Properties");
-						foreach (TreeViewItem current in list)
-						{
-							if (current.id != args.item.id)
-							{
-								SerializedPropertyDataStore.Data data2 = ((SerializedPropertyTreeView.SerializedPropertyItem)current).GetData();
-								if (SerializedPropertyTreeView.IsEditable(data2.serializedObject.targetObject))
-								{
-									if (column.copyDelegate != null)
-									{
-										column.copyDelegate(data2.properties[columnIndex], serializedProperty);
-									}
-									else
-									{
-										SerializedPropertyTreeView.DefaultDelegates.s_CopyDefault(data2.properties[columnIndex], serializedProperty);
-									}
-									data2.Store();
-								}
-							}
-						}
-					}
-				}
-				Profiler.EndSample();
-			}
-		}
-
-		private static bool IsEditable(UnityEngine.Object target)
-		{
-			return (target.hideFlags & HideFlags.NotEditable) == HideFlags.None;
-		}
-
-		protected override void BeforeRowsGUI()
-		{
-			IList<TreeViewItem> rows = this.GetRows();
-			int num;
-			int num2;
-			base.GetFirstAndLastVisibleRows(out num, out num2);
-			if (num2 != -1)
-			{
-				for (int i = num; i <= num2; i++)
-				{
-					((SerializedPropertyTreeView.SerializedPropertyItem)rows[i]).GetData().Update();
-				}
-			}
-			IList<TreeViewItem> list = base.FindRows(base.GetSelection());
-			using (IEnumerator<TreeViewItem> enumerator = list.GetEnumerator())
-			{
-				while (enumerator.MoveNext())
-				{
-					SerializedPropertyTreeView.SerializedPropertyItem serializedPropertyItem = (SerializedPropertyTreeView.SerializedPropertyItem)enumerator.Current;
-					serializedPropertyItem.GetData().Update();
-				}
-			}
-			base.BeforeRowsGUI();
-		}
-
-		public void OnFilterGUI(Rect r)
-		{
-			EditorGUI.BeginChangeCheck();
-			float width = r.width;
-			float num = 16f;
-			r.width = num;
-			this.m_bFilterSelection = EditorGUI.Toggle(r, this.m_bFilterSelection);
-			r.x += num;
-			r.width = GUI.skin.label.CalcSize(SerializedPropertyTreeView.Styles.filterSelection).x;
-			EditorGUI.LabelField(r, SerializedPropertyTreeView.Styles.filterSelection);
-			r.width = Mathf.Min(width - (r.x + r.width), 300f);
-			r.x = width - r.width + 10f;
-			for (int i = 0; i < base.multiColumnHeader.state.columns.Length; i++)
-			{
-				if (this.IsColumnVisible(i))
-				{
-					SerializedPropertyTreeView.Column column = this.Col(i);
-					if (column.filter != null && column.filter.GetType().Equals(typeof(SerializedPropertyFilters.Name)))
-					{
-						column.filter.OnGUI(r);
-					}
-				}
-			}
-			if (EditorGUI.EndChangeCheck())
-			{
-				base.Reload();
-			}
-		}
-
-		protected override void SelectionChanged(IList<int> selectedIds)
-		{
-			Selection.instanceIDs = selectedIds.ToArray<int>();
-		}
-
-		protected override void KeyEvent()
-		{
-			if (Event.current.type == EventType.KeyDown)
-			{
-				if (Event.current.character == '\t')
-				{
-					GUI.FocusControl(SerializedPropertyTreeView.Styles.focusHelper);
-					Event.current.Use();
-				}
-			}
-		}
-
-		private void OnVisibleColumnChanged(MultiColumnHeader header)
-		{
-			base.Reload();
-		}
-
-		private void OnSortingChanged(MultiColumnHeader multiColumnHeader)
-		{
-			IList<TreeViewItem> rows = this.GetRows();
-			this.Sort(rows, multiColumnHeader.sortedColumnIndex);
-		}
-
-		private void Sort(IList<TreeViewItem> rows, int sortIdx)
-		{
-			bool flag = base.multiColumnHeader.IsSortedAscending(sortIdx);
-			SerializedPropertyTreeView.Column.CompareEntry comp = this.Col(sortIdx).compareDelegate;
-			List<TreeViewItem> list = rows as List<TreeViewItem>;
-			if (comp != null)
-			{
-				Comparison<TreeViewItem> comparison;
-				Comparison<TreeViewItem> comparison2;
-				if (comp == SerializedPropertyTreeView.DefaultDelegates.s_CompareName)
-				{
-					comparison = ((TreeViewItem lhs, TreeViewItem rhs) => EditorUtility.NaturalCompare(((SerializedPropertyTreeView.SerializedPropertyItem)lhs).GetData().name, ((SerializedPropertyTreeView.SerializedPropertyItem)rhs).GetData().name));
-					comparison2 = ((TreeViewItem lhs, TreeViewItem rhs) => -EditorUtility.NaturalCompare(((SerializedPropertyTreeView.SerializedPropertyItem)lhs).GetData().name, ((SerializedPropertyTreeView.SerializedPropertyItem)rhs).GetData().name));
-				}
-				else
-				{
-					comparison = ((TreeViewItem lhs, TreeViewItem rhs) => comp(((SerializedPropertyTreeView.SerializedPropertyItem)lhs).GetData().properties[sortIdx], ((SerializedPropertyTreeView.SerializedPropertyItem)rhs).GetData().properties[sortIdx]));
-					comparison2 = ((TreeViewItem lhs, TreeViewItem rhs) => -comp(((SerializedPropertyTreeView.SerializedPropertyItem)lhs).GetData().properties[sortIdx], ((SerializedPropertyTreeView.SerializedPropertyItem)rhs).GetData().properties[sortIdx]));
-				}
-				list.Sort((!flag) ? comparison2 : comparison);
-			}
-		}
-
-		private IEnumerable<TreeViewItem> Filter(IEnumerable<TreeViewItem> rows)
-		{
-			IEnumerable<TreeViewItem> enumerable = rows;
-			int num = this.m_ColumnsInternal.Length;
-			for (int i = 0; i < num; i++)
-			{
-				if (this.IsColumnVisible(i))
-				{
-					SerializedPropertyTreeView.Column c = this.Col(i);
-					int idx = i;
-					if (c.filter != null)
-					{
-						if (c.filter.Active())
-						{
-							if (c.filter.GetType().Equals(typeof(SerializedPropertyFilters.Name)))
-							{
-								SerializedPropertyFilters.Name f = (SerializedPropertyFilters.Name)c.filter;
-								enumerable = from item in enumerable
-								where f.Filter(((SerializedPropertyTreeView.SerializedPropertyItem)item).GetData().name)
-								select item;
-							}
-							else
-							{
-								enumerable = from item in enumerable
-								where c.filter.Filter(((SerializedPropertyTreeView.SerializedPropertyItem)item).GetData().properties[idx])
-								select item;
-							}
-						}
-					}
-				}
-			}
-			return enumerable;
-		}
-
-		private bool IsColumnVisible(int idx)
-		{
-			bool result;
-			for (int i = 0; i < base.multiColumnHeader.state.visibleColumns.Length; i++)
-			{
-				if (base.multiColumnHeader.state.visibleColumns[i] == idx)
-				{
-					result = true;
-					return result;
-				}
-			}
-			result = false;
-			return result;
-		}
-
-		private SerializedPropertyTreeView.Column Col(int idx)
-		{
-			return (SerializedPropertyTreeView.Column)base.multiColumnHeader.state.columns[idx];
-		}
-	}
+    internal class DefaultDelegates
+    {
+      public static readonly SerializedPropertyTreeView.Column.DrawEntry s_DrawDefault = (SerializedPropertyTreeView.Column.DrawEntry) ((r, prop, dependencies) =>
+      {
+        Profiler.BeginSample("PropDrawDefault");
+        EditorGUI.PropertyField(r, prop, GUIContent.none);
+        Profiler.EndSample();
+      });
+      public static readonly SerializedPropertyTreeView.Column.DrawEntry s_DrawCheckbox = (SerializedPropertyTreeView.Column.DrawEntry) ((r, prop, dependencies) =>
+      {
+        Profiler.BeginSample("PropDrawCheckbox");
+        float num = (float) ((double) r.width / 2.0 - 8.0);
+        r.x += (double) num < 0.0 ? 0.0f : num;
+        EditorGUI.PropertyField(r, prop, GUIContent.none);
+        Profiler.EndSample();
+      });
+      public static readonly SerializedPropertyTreeView.Column.DrawEntry s_DrawName = (SerializedPropertyTreeView.Column.DrawEntry) ((r, prop, dependencies) => {});
+      public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareFloat = (SerializedPropertyTreeView.Column.CompareEntry) ((lhs, rhs) => lhs.floatValue.CompareTo(rhs.floatValue));
+      public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareCheckbox = (SerializedPropertyTreeView.Column.CompareEntry) ((lhs, rhs) => lhs.boolValue.CompareTo(rhs.boolValue));
+      public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareEnum = (SerializedPropertyTreeView.Column.CompareEntry) ((lhs, rhs) => lhs.enumValueIndex.CompareTo(rhs.enumValueIndex));
+      public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareInt = (SerializedPropertyTreeView.Column.CompareEntry) ((lhs, rhs) => lhs.intValue.CompareTo(rhs.intValue));
+      public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareColor = (SerializedPropertyTreeView.Column.CompareEntry) ((lhs, rhs) =>
+      {
+        float H1;
+        float S1;
+        float V1;
+        Color.RGBToHSV(lhs.colorValue, out H1, out S1, out V1);
+        float H2;
+        float S2;
+        float V2;
+        Color.RGBToHSV(rhs.colorValue, out H2, out S2, out V2);
+        return H1.CompareTo(H2);
+      });
+      public static readonly SerializedPropertyTreeView.Column.CompareEntry s_CompareName = (SerializedPropertyTreeView.Column.CompareEntry) ((lhs, rhs) => 0);
+      public static readonly SerializedPropertyTreeView.Column.CopyDelegate s_CopyDefault = (SerializedPropertyTreeView.Column.CopyDelegate) ((target, source) => target.serializedObject.CopyFromSerializedProperty(source));
+    }
+  }
 }

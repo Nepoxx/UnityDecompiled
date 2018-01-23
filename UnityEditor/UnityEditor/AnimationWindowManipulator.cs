@@ -1,74 +1,75 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AnimationWindowManipulator
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class AnimationWindowManipulator
-	{
-		public delegate bool OnStartDragDelegate(AnimationWindowManipulator manipulator, Event evt);
+  internal class AnimationWindowManipulator
+  {
+    public AnimationWindowManipulator.OnStartDragDelegate onStartDrag;
+    public AnimationWindowManipulator.OnDragDelegate onDrag;
+    public AnimationWindowManipulator.OnEndDragDelegate onEndDrag;
+    public Rect rect;
+    public int controlID;
 
-		public delegate bool OnDragDelegate(AnimationWindowManipulator manipulator, Event evt);
+    public AnimationWindowManipulator()
+    {
+      this.onStartDrag += (AnimationWindowManipulator.OnStartDragDelegate) ((manipulator, evt) => false);
+      this.onDrag += (AnimationWindowManipulator.OnDragDelegate) ((manipulator, evt) => false);
+      this.onEndDrag += (AnimationWindowManipulator.OnEndDragDelegate) ((manipulator, evt) => false);
+    }
 
-		public delegate bool OnEndDragDelegate(AnimationWindowManipulator manipulator, Event evt);
+    public virtual void HandleEvents()
+    {
+      this.controlID = GUIUtility.GetControlID(FocusType.Passive);
+      Event current = Event.current;
+      EventType typeForControl = current.GetTypeForControl(this.controlID);
+      bool flag = false;
+      switch (typeForControl)
+      {
+        case EventType.MouseDown:
+          if (current.button == 0)
+          {
+            flag = this.onStartDrag(this, current);
+            if (flag)
+              GUIUtility.hotControl = this.controlID;
+            break;
+          }
+          break;
+        case EventType.MouseUp:
+          if (GUIUtility.hotControl == this.controlID)
+          {
+            flag = this.onEndDrag(this, current);
+            GUIUtility.hotControl = 0;
+            break;
+          }
+          break;
+        case EventType.MouseDrag:
+          if (GUIUtility.hotControl == this.controlID)
+          {
+            flag = this.onDrag(this, current);
+            break;
+          }
+          break;
+      }
+      if (!flag)
+        return;
+      current.Use();
+    }
 
-		public AnimationWindowManipulator.OnStartDragDelegate onStartDrag;
+    public virtual void IgnoreEvents()
+    {
+      GUIUtility.GetControlID(FocusType.Passive);
+    }
 
-		public AnimationWindowManipulator.OnDragDelegate onDrag;
+    public delegate bool OnStartDragDelegate(AnimationWindowManipulator manipulator, Event evt);
 
-		public AnimationWindowManipulator.OnEndDragDelegate onEndDrag;
+    public delegate bool OnDragDelegate(AnimationWindowManipulator manipulator, Event evt);
 
-		public Rect rect;
-
-		public int controlID;
-
-		public AnimationWindowManipulator()
-		{
-			this.onStartDrag = (AnimationWindowManipulator.OnStartDragDelegate)Delegate.Combine(this.onStartDrag, new AnimationWindowManipulator.OnStartDragDelegate((AnimationWindowManipulator manipulator, Event evt) => false));
-			this.onDrag = (AnimationWindowManipulator.OnDragDelegate)Delegate.Combine(this.onDrag, new AnimationWindowManipulator.OnDragDelegate((AnimationWindowManipulator manipulator, Event evt) => false));
-			this.onEndDrag = (AnimationWindowManipulator.OnEndDragDelegate)Delegate.Combine(this.onEndDrag, new AnimationWindowManipulator.OnEndDragDelegate((AnimationWindowManipulator manipulator, Event evt) => false));
-		}
-
-		public virtual void HandleEvents()
-		{
-			this.controlID = GUIUtility.GetControlID(FocusType.Passive);
-			Event current = Event.current;
-			EventType typeForControl = current.GetTypeForControl(this.controlID);
-			bool flag = false;
-			if (typeForControl != EventType.MouseDown)
-			{
-				if (typeForControl != EventType.MouseDrag)
-				{
-					if (typeForControl == EventType.MouseUp)
-					{
-						if (GUIUtility.hotControl == this.controlID)
-						{
-							flag = this.onEndDrag(this, current);
-							GUIUtility.hotControl = 0;
-						}
-					}
-				}
-				else if (GUIUtility.hotControl == this.controlID)
-				{
-					flag = this.onDrag(this, current);
-				}
-			}
-			else if (current.button == 0)
-			{
-				flag = this.onStartDrag(this, current);
-				if (flag)
-				{
-					GUIUtility.hotControl = this.controlID;
-				}
-			}
-			if (flag)
-			{
-				current.Use();
-			}
-		}
-
-		public virtual void IgnoreEvents()
-		{
-			GUIUtility.GetControlID(FocusType.Passive);
-		}
-	}
+    public delegate bool OnEndDragDelegate(AnimationWindowManipulator manipulator, Event evt);
+  }
 }

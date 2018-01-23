@@ -1,35 +1,38 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.JointMotor2D
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	public struct JointMotor2D
-	{
-		private float m_MotorSpeed;
+  public struct JointMotor2D
+  {
+    private float m_MotorSpeed;
+    private float m_MaximumMotorTorque;
 
-		private float m_MaximumMotorTorque;
+    public float motorSpeed
+    {
+      get
+      {
+        return this.m_MotorSpeed;
+      }
+      set
+      {
+        this.m_MotorSpeed = value;
+      }
+    }
 
-		public float motorSpeed
-		{
-			get
-			{
-				return this.m_MotorSpeed;
-			}
-			set
-			{
-				this.m_MotorSpeed = value;
-			}
-		}
-
-		public float maxMotorTorque
-		{
-			get
-			{
-				return this.m_MaximumMotorTorque;
-			}
-			set
-			{
-				this.m_MaximumMotorTorque = value;
-			}
-		}
-	}
+    public float maxMotorTorque
+    {
+      get
+      {
+        return this.m_MaximumMotorTorque;
+      }
+      set
+      {
+        this.m_MaximumMotorTorque = value;
+      }
+    }
+  }
 }

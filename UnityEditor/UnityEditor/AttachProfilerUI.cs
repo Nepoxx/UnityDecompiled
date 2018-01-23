@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AttachProfilerUI
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,205 +13,177 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class AttachProfilerUI
-	{
-		private GUIContent m_CurrentProfiler;
+  internal class AttachProfilerUI
+  {
+    private static string kEnterIPText = "<Enter IP>";
+    private static GUIContent ms_NotificationMessage;
+    private const int PLAYER_DIRECT_IP_CONNECT_GUID = 65261;
+    private const int PLAYER_DIRECT_URL_CONNECT_GUID = 65262;
 
-		private static string kEnterIPText = "<Enter IP>";
+    protected void SelectProfilerClick(object userData, string[] options, int selected)
+    {
+      List<ProfilerChoise> source = (List<ProfilerChoise>) userData;
+      if (selected >= source.Count<ProfilerChoise>())
+        return;
+      source[selected].ConnectTo();
+    }
 
-		private static GUIContent ms_NotificationMessage;
+    public bool IsEditor()
+    {
+      return ProfilerDriver.IsConnectionEditor();
+    }
 
-		private const int PLAYER_DIRECT_IP_CONNECT_GUID = 65261;
+    public string GetConnectedProfiler()
+    {
+      return ProfilerDriver.GetConnectionIdentifier(ProfilerDriver.connectedProfiler);
+    }
 
-		private const int PLAYER_DIRECT_URL_CONNECT_GUID = 65262;
+    public static void DirectIPConnect(string ip)
+    {
+      ConsoleWindow.ShowConsoleWindow(true);
+      AttachProfilerUI.ms_NotificationMessage = new GUIContent("Connecting to player...(this can take a while)");
+      ProfilerDriver.DirectIPConnect(ip);
+      AttachProfilerUI.ms_NotificationMessage = (GUIContent) null;
+    }
 
-		private void SelectProfilerClick(object userData, string[] options, int selected)
-		{
-			List<ProfilerChoise> list = (List<ProfilerChoise>)userData;
-			if (selected < list.Count<ProfilerChoise>())
-			{
-				list[selected].ConnectTo();
-			}
-		}
+    public static void DirectURLConnect(string url)
+    {
+      ConsoleWindow.ShowConsoleWindow(true);
+      AttachProfilerUI.ms_NotificationMessage = new GUIContent("Connecting to player...(this can take a while)");
+      ProfilerDriver.DirectURLConnect(url);
+      AttachProfilerUI.ms_NotificationMessage = (GUIContent) null;
+    }
 
-		public bool IsEditor()
-		{
-			return ProfilerDriver.IsConnectionEditor();
-		}
+    public void OnGUILayout(EditorWindow window)
+    {
+      this.OnGUI();
+      if (AttachProfilerUI.ms_NotificationMessage != null)
+        window.ShowNotification(AttachProfilerUI.ms_NotificationMessage);
+      else
+        window.RemoveNotification();
+    }
 
-		public string GetConnectedProfiler()
-		{
-			return ProfilerDriver.GetConnectionIdentifier(ProfilerDriver.connectedProfiler);
-		}
+    private static void AddLastIPProfiler(List<ProfilerChoise> profilers)
+    {
+      // ISSUE: object of a compiler-generated type is created
+      // ISSUE: variable of a compiler-generated type
+      AttachProfilerUI.\u003CAddLastIPProfiler\u003Ec__AnonStorey0 profilerCAnonStorey0 = new AttachProfilerUI.\u003CAddLastIPProfiler\u003Ec__AnonStorey0();
+      // ISSUE: reference to a compiler-generated field
+      profilerCAnonStorey0.lastIP = ProfilerIPWindow.GetLastIPString();
+      // ISSUE: reference to a compiler-generated field
+      if (string.IsNullOrEmpty(profilerCAnonStorey0.lastIP))
+        return;
+      // ISSUE: reference to a compiler-generated field
+      // ISSUE: reference to a compiler-generated method
+      profilers.Add(new ProfilerChoise()
+      {
+        Name = profilerCAnonStorey0.lastIP,
+        Enabled = true,
+        IsSelected = (Func<bool>) (() => ProfilerDriver.connectedProfiler == 65261),
+        ConnectTo = new Action(profilerCAnonStorey0.\u003C\u003Em__0)
+      });
+    }
 
-		public static void DirectIPConnect(string ip)
-		{
-			ConsoleWindow.ShowConsoleWindow(true);
-			AttachProfilerUI.ms_NotificationMessage = new GUIContent("Connecting to player...(this can take a while)");
-			ProfilerDriver.DirectIPConnect(ip);
-			AttachProfilerUI.ms_NotificationMessage = null;
-		}
+    private static void AddPlayerProfilers(List<ProfilerChoise> profilers)
+    {
+      foreach (int availableProfiler in ProfilerDriver.GetAvailableProfilers())
+      {
+        // ISSUE: object of a compiler-generated type is created
+        // ISSUE: variable of a compiler-generated type
+        AttachProfilerUI.\u003CAddPlayerProfilers\u003Ec__AnonStorey1 profilersCAnonStorey1 = new AttachProfilerUI.\u003CAddPlayerProfilers\u003Ec__AnonStorey1();
+        // ISSUE: reference to a compiler-generated field
+        profilersCAnonStorey1.guid = availableProfiler;
+        // ISSUE: reference to a compiler-generated field
+        string str = ProfilerDriver.GetConnectionIdentifier(profilersCAnonStorey1.guid);
+        // ISSUE: reference to a compiler-generated field
+        bool flag1 = ProfilerDriver.IsIdentifierOnLocalhost(profilersCAnonStorey1.guid) && str.Contains("MetroPlayerX");
+        // ISSUE: reference to a compiler-generated field
+        bool flag2 = !flag1 && ProfilerDriver.IsIdentifierConnectable(profilersCAnonStorey1.guid);
+        if (!flag2)
+          str = !flag1 ? str + " (Version mismatch)" : str + " (Localhost prohibited)";
+        // ISSUE: reference to a compiler-generated method
+        // ISSUE: reference to a compiler-generated method
+        profilers.Add(new ProfilerChoise()
+        {
+          Name = str,
+          Enabled = flag2,
+          IsSelected = new Func<bool>(profilersCAnonStorey1.\u003C\u003Em__0),
+          ConnectTo = new Action(profilersCAnonStorey1.\u003C\u003Em__1)
+        });
+      }
+    }
 
-		public static void DirectURLConnect(string url)
-		{
-			ConsoleWindow.ShowConsoleWindow(true);
-			AttachProfilerUI.ms_NotificationMessage = new GUIContent("Connecting to player...(this can take a while)");
-			ProfilerDriver.DirectURLConnect(url);
-			AttachProfilerUI.ms_NotificationMessage = null;
-		}
+    private static void AddDeviceProfilers(List<ProfilerChoise> profilers)
+    {
+      foreach (DevDevice device in DevDeviceList.GetDevices())
+      {
+        // ISSUE: object of a compiler-generated type is created
+        // ISSUE: variable of a compiler-generated type
+        AttachProfilerUI.\u003CAddDeviceProfilers\u003Ec__AnonStorey2 profilersCAnonStorey2 = new AttachProfilerUI.\u003CAddDeviceProfilers\u003Ec__AnonStorey2();
+        bool flag = (device.features & DevDeviceFeatures.PlayerConnection) != DevDeviceFeatures.None;
+        if (device.isConnected && flag)
+        {
+          // ISSUE: reference to a compiler-generated field
+          profilersCAnonStorey2.url = "device://" + device.id;
+          // ISSUE: reference to a compiler-generated method
+          // ISSUE: reference to a compiler-generated method
+          profilers.Add(new ProfilerChoise()
+          {
+            Name = device.name,
+            Enabled = true,
+            IsSelected = new Func<bool>(profilersCAnonStorey2.\u003C\u003Em__0),
+            ConnectTo = new Action(profilersCAnonStorey2.\u003C\u003Em__1)
+          });
+        }
+      }
+    }
 
-		public void OnGUILayout(EditorWindow window)
-		{
-			if (this.m_CurrentProfiler == null)
-			{
-				this.m_CurrentProfiler = EditorGUIUtility.TextContent("Connected Player|Select player to connect to for receiving profiler and log data.");
-			}
-			Rect rect = GUILayoutUtility.GetRect(this.m_CurrentProfiler, EditorStyles.toolbarDropDown, new GUILayoutOption[]
-			{
-				GUILayout.Width(100f)
-			});
-			this.OnGUI(rect, this.m_CurrentProfiler);
-			if (AttachProfilerUI.ms_NotificationMessage != null)
-			{
-				window.ShowNotification(AttachProfilerUI.ms_NotificationMessage);
-			}
-			else
-			{
-				window.RemoveNotification();
-			}
-		}
+    private void AddEnterIPProfiler(List<ProfilerChoise> profilers, Rect buttonScreenRect)
+    {
+      profilers.Add(new ProfilerChoise()
+      {
+        Name = AttachProfilerUI.kEnterIPText,
+        Enabled = true,
+        IsSelected = (Func<bool>) (() => false),
+        ConnectTo = (Action) (() => ProfilerIPWindow.Show(buttonScreenRect))
+      });
+    }
 
-		private static void AddLastIPProfiler(List<ProfilerChoise> profilers)
-		{
-			string lastIP = ProfilerIPWindow.GetLastIPString();
-			if (!string.IsNullOrEmpty(lastIP))
-			{
-				ProfilerChoise item = default(ProfilerChoise);
-				item.Name = lastIP;
-				item.Enabled = true;
-				item.IsSelected = (() => ProfilerDriver.connectedProfiler == 65261);
-				item.ConnectTo = delegate
-				{
-					AttachProfilerUI.DirectIPConnect(lastIP);
-				};
-				profilers.Add(item);
-			}
-		}
+    public void OnGUI()
+    {
+      GUIContent content = EditorGUIUtility.TextContent(this.GetConnectedProfiler() + "|Specifies the target player for receiving profiler and log data.");
+      Vector2 vector2 = EditorStyles.toolbarDropDown.CalcSize(content);
+      Rect rect = GUILayoutUtility.GetRect(vector2.x, vector2.y);
+      if (!EditorGUI.DropdownButton(rect, content, FocusType.Passive, EditorStyles.toolbarDropDown))
+        return;
+      List<ProfilerChoise> profilerChoiseList = new List<ProfilerChoise>();
+      profilerChoiseList.Clear();
+      AttachProfilerUI.AddPlayerProfilers(profilerChoiseList);
+      AttachProfilerUI.AddDeviceProfilers(profilerChoiseList);
+      AttachProfilerUI.AddLastIPProfiler(profilerChoiseList);
+      if (!ProfilerDriver.IsConnectionEditor() && !profilerChoiseList.Any<ProfilerChoise>((Func<ProfilerChoise, bool>) (p => p.IsSelected())))
+        profilerChoiseList.Add(new ProfilerChoise()
+        {
+          Name = "(Autoconnected Player)",
+          Enabled = false,
+          IsSelected = (Func<bool>) (() => true),
+          ConnectTo = (Action) (() => {})
+        });
+      this.AddEnterIPProfiler(profilerChoiseList, GUIUtility.GUIToScreenRect(rect));
+      this.OnGUIMenu(rect, profilerChoiseList);
+    }
 
-		private static void AddPlayerProfilers(List<ProfilerChoise> profilers)
-		{
-			int[] availableProfilers = ProfilerDriver.GetAvailableProfilers();
-			for (int i = 0; i < availableProfilers.Length; i++)
-			{
-				int guid = availableProfilers[i];
-				string text = ProfilerDriver.GetConnectionIdentifier(guid);
-				bool flag = ProfilerDriver.IsIdentifierOnLocalhost(guid) && text.Contains("MetroPlayerX");
-				bool flag2 = !flag && ProfilerDriver.IsIdentifierConnectable(guid);
-				if (!flag2)
-				{
-					if (flag)
-					{
-						text += " (Localhost prohibited)";
-					}
-					else
-					{
-						text += " (Version mismatch)";
-					}
-				}
-				profilers.Add(new ProfilerChoise
-				{
-					Name = text,
-					Enabled = flag2,
-					IsSelected = (() => ProfilerDriver.connectedProfiler == guid),
-					ConnectTo = delegate
-					{
-						ProfilerDriver.connectedProfiler = guid;
-					}
-				});
-			}
-		}
-
-		private static void AddDeviceProfilers(List<ProfilerChoise> profilers)
-		{
-			DevDevice[] devices = DevDeviceList.GetDevices();
-			for (int i = 0; i < devices.Length; i++)
-			{
-				DevDevice devDevice = devices[i];
-				bool flag = (devDevice.features & DevDeviceFeatures.PlayerConnection) != DevDeviceFeatures.None;
-				if (devDevice.isConnected && flag)
-				{
-					string url = "device://" + devDevice.id;
-					profilers.Add(new ProfilerChoise
-					{
-						Name = devDevice.name,
-						Enabled = true,
-						IsSelected = (() => ProfilerDriver.connectedProfiler == 65262 && ProfilerDriver.directConnectionUrl == url),
-						ConnectTo = delegate
-						{
-							AttachProfilerUI.DirectURLConnect(url);
-						}
-					});
-				}
-			}
-		}
-
-		private void AddEnterIPProfiler(List<ProfilerChoise> profilers, Rect buttonScreenRect)
-		{
-			ProfilerChoise item = default(ProfilerChoise);
-			item.Name = AttachProfilerUI.kEnterIPText;
-			item.Enabled = true;
-			item.IsSelected = (() => false);
-			item.ConnectTo = delegate
-			{
-				ProfilerIPWindow.Show(buttonScreenRect);
-			};
-			profilers.Add(item);
-		}
-
-		public void OnGUI(Rect connectRect, GUIContent profilerLabel)
-		{
-			if (EditorGUI.DropdownButton(connectRect, profilerLabel, FocusType.Passive, EditorStyles.toolbarDropDown))
-			{
-				List<ProfilerChoise> list = new List<ProfilerChoise>();
-				list.Clear();
-				AttachProfilerUI.AddPlayerProfilers(list);
-				AttachProfilerUI.AddDeviceProfilers(list);
-				AttachProfilerUI.AddLastIPProfiler(list);
-				if (!ProfilerDriver.IsConnectionEditor())
-				{
-					if (!list.Any((ProfilerChoise p) => p.IsSelected()))
-					{
-						List<ProfilerChoise> arg_D2_0 = list;
-						ProfilerChoise item = default(ProfilerChoise);
-						item.Name = "(Autoconnected Player)";
-						item.Enabled = false;
-						item.IsSelected = (() => true);
-						item.ConnectTo = delegate
-						{
-						};
-						arg_D2_0.Add(item);
-					}
-				}
-				this.AddEnterIPProfiler(list, GUIUtility.GUIToScreenRect(connectRect));
-				string[] options = (from p in list
-				select p.Name).ToArray<string>();
-				bool[] enabled = (from p in list
-				select p.Enabled).ToArray<bool>();
-				int num = list.FindIndex((ProfilerChoise p) => p.IsSelected());
-				int[] selected;
-				if (num == -1)
-				{
-					selected = new int[0];
-				}
-				else
-				{
-					selected = new int[]
-					{
-						num
-					};
-				}
-				EditorUtility.DisplayCustomMenu(connectRect, options, enabled, selected, new EditorUtility.SelectMenuItemFunction(this.SelectProfilerClick), list);
-			}
-		}
-	}
+    protected virtual void OnGUIMenu(Rect connectRect, List<ProfilerChoise> profilers)
+    {
+      string[] array1 = profilers.Select<ProfilerChoise, string>((Func<ProfilerChoise, string>) (p => p.Name)).ToArray<string>();
+      bool[] array2 = profilers.Select<ProfilerChoise, bool>((Func<ProfilerChoise, bool>) (p => p.Enabled)).ToArray<bool>();
+      int index = profilers.FindIndex((Predicate<ProfilerChoise>) (p => p.IsSelected()));
+      int[] selected;
+      if (index == -1)
+        selected = new int[0];
+      else
+        selected = new int[1]{ index };
+      EditorUtility.DisplayCustomMenu(connectRect, array1, array2, selected, new EditorUtility.SelectMenuItemFunction(this.SelectProfilerClick), (object) profilers);
+    }
+  }
 }

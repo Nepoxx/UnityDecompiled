@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.Object
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -8,316 +14,395 @@ using UnityEngineInternal;
 
 namespace UnityEngine
 {
-	[RequiredByNativeCode]
-	[StructLayout(LayoutKind.Sequential)]
-	public class Object
-	{
-		private IntPtr m_CachedPtr;
+  /// <summary>
+  ///   <para>Base class for all objects Unity can reference.</para>
+  /// </summary>
+  [RequiredByNativeCode]
+  [StructLayout(LayoutKind.Sequential)]
+  public class Object
+  {
+    internal static int OffsetOfInstanceIDInCPlusPlusObject = -1;
+    private IntPtr m_CachedPtr;
+    private int m_InstanceID;
+    private string m_UnityRuntimeErrorString;
 
-		private int m_InstanceID;
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern Object Internal_CloneSingle(Object data);
 
-		private string m_UnityRuntimeErrorString;
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern Object Internal_CloneSingleWithParent(Object data, Transform parent, bool worldPositionStays);
 
-		internal static int OffsetOfInstanceIDInCPlusPlusObject = -1;
+    private static Object Internal_InstantiateSingle(Object data, Vector3 pos, Quaternion rot)
+    {
+      return Object.INTERNAL_CALL_Internal_InstantiateSingle(data, ref pos, ref rot);
+    }
 
-		public extern string name
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern Object INTERNAL_CALL_Internal_InstantiateSingle(Object data, ref Vector3 pos, ref Quaternion rot);
 
-		public extern HideFlags hideFlags
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    private static Object Internal_InstantiateSingleWithParent(Object data, Transform parent, Vector3 pos, Quaternion rot)
+    {
+      return Object.INTERNAL_CALL_Internal_InstantiateSingleWithParent(data, parent, ref pos, ref rot);
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern Object Internal_CloneSingle(Object data);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern Object INTERNAL_CALL_Internal_InstantiateSingleWithParent(Object data, Transform parent, ref Vector3 pos, ref Quaternion rot);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern Object Internal_CloneSingleWithParent(Object data, Transform parent, bool worldPositionStays);
+    [ThreadAndSerializationSafe]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern int GetOffsetOfInstanceIDInCPlusPlusObject();
 
-		private static Object Internal_InstantiateSingle(Object data, Vector3 pos, Quaternion rot)
-		{
-			return Object.INTERNAL_CALL_Internal_InstantiateSingle(data, ref pos, ref rot);
-		}
+    [ThreadAndSerializationSafe]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private extern void EnsureRunningOnMainThread();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern Object INTERNAL_CALL_Internal_InstantiateSingle(Object data, ref Vector3 pos, ref Quaternion rot);
+    /// <summary>
+    ///   <para>Removes a gameobject, component or asset.</para>
+    /// </summary>
+    /// <param name="obj">The object to destroy.</param>
+    /// <param name="t">The optional amount of time to delay before destroying the object.</param>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void Destroy(Object obj, [DefaultValue("0.0F")] float t);
 
-		private static Object Internal_InstantiateSingleWithParent(Object data, Transform parent, Vector3 pos, Quaternion rot)
-		{
-			return Object.INTERNAL_CALL_Internal_InstantiateSingleWithParent(data, parent, ref pos, ref rot);
-		}
+    /// <summary>
+    ///   <para>Removes a gameobject, component or asset.</para>
+    /// </summary>
+    /// <param name="obj">The object to destroy.</param>
+    /// <param name="t">The optional amount of time to delay before destroying the object.</param>
+    [ExcludeFromDocs]
+    public static void Destroy(Object obj)
+    {
+      float t = 0.0f;
+      Object.Destroy(obj, t);
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern Object INTERNAL_CALL_Internal_InstantiateSingleWithParent(Object data, Transform parent, ref Vector3 pos, ref Quaternion rot);
+    /// <summary>
+    ///   <para>Destroys the object obj immediately. You are strongly recommended to use Destroy instead.</para>
+    /// </summary>
+    /// <param name="obj">Object to be destroyed.</param>
+    /// <param name="allowDestroyingAssets">Set to true to allow assets to be destoyed.</param>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void DestroyImmediate(Object obj, [DefaultValue("false")] bool allowDestroyingAssets);
 
-		[GeneratedByOldBindingsGenerator, ThreadAndSerializationSafe]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private static extern int GetOffsetOfInstanceIDInCPlusPlusObject();
+    /// <summary>
+    ///   <para>Destroys the object obj immediately. You are strongly recommended to use Destroy instead.</para>
+    /// </summary>
+    /// <param name="obj">Object to be destroyed.</param>
+    /// <param name="allowDestroyingAssets">Set to true to allow assets to be destoyed.</param>
+    [ExcludeFromDocs]
+    public static void DestroyImmediate(Object obj)
+    {
+      bool allowDestroyingAssets = false;
+      Object.DestroyImmediate(obj, allowDestroyingAssets);
+    }
 
-		[GeneratedByOldBindingsGenerator, ThreadAndSerializationSafe]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		private extern void EnsureRunningOnMainThread();
+    /// <summary>
+    ///   <para>Returns a list of all active loaded objects of Type type.</para>
+    /// </summary>
+    /// <param name="type">The type of object to find.</param>
+    /// <returns>
+    ///   <para>The array of objects found matching the type specified.</para>
+    /// </returns>
+    [TypeInferenceRule(TypeInferenceRules.ArrayOfTypeReferencedByFirstArgument)]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern Object[] FindObjectsOfType(System.Type type);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void Destroy(Object obj, [DefaultValue("0.0F")] float t);
+    /// <summary>
+    ///   <para>The name of the object.</para>
+    /// </summary>
+    public extern string name { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		[ExcludeFromDocs]
-		public static void Destroy(Object obj)
-		{
-			float t = 0f;
-			Object.Destroy(obj, t);
-		}
+    /// <summary>
+    ///   <para>Makes the object target not be destroyed automatically when loading a new scene.</para>
+    /// </summary>
+    /// <param name="target"></param>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void DontDestroyOnLoad(Object target);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void DestroyImmediate(Object obj, [DefaultValue("false")] bool allowDestroyingAssets);
+    /// <summary>
+    ///   <para>Should the object be hidden, saved with the scene or modifiable by the user?</para>
+    /// </summary>
+    public extern HideFlags hideFlags { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		[ExcludeFromDocs]
-		public static void DestroyImmediate(Object obj)
-		{
-			bool allowDestroyingAssets = false;
-			Object.DestroyImmediate(obj, allowDestroyingAssets);
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void DestroyObject(Object obj, [DefaultValue("0.0F")] float t);
 
-		[GeneratedByOldBindingsGenerator, TypeInferenceRule(TypeInferenceRules.ArrayOfTypeReferencedByFirstArgument)]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern Object[] FindObjectsOfType(Type type);
+    [ExcludeFromDocs]
+    public static void DestroyObject(Object obj)
+    {
+      float t = 0.0f;
+      Object.DestroyObject(obj, t);
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void DontDestroyOnLoad(Object target);
+    [Obsolete("use Object.FindObjectsOfType instead.")]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern Object[] FindSceneObjectsOfType(System.Type type);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void DestroyObject(Object obj, [DefaultValue("0.0F")] float t);
+    /// <summary>
+    ///   <para>Returns a list of all active and inactive loaded objects of Type type, including assets.</para>
+    /// </summary>
+    /// <param name="type">The type of object or asset to find.</param>
+    /// <returns>
+    ///   <para>The array of objects and assets found matching the type specified.</para>
+    /// </returns>
+    [Obsolete("use Resources.FindObjectsOfTypeAll instead.")]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern Object[] FindObjectsOfTypeIncludingAssets(System.Type type);
 
-		[ExcludeFromDocs]
-		public static void DestroyObject(Object obj)
-		{
-			float t = 0f;
-			Object.DestroyObject(obj, t);
-		}
+    /// <summary>
+    ///   <para>Returns a list of all active and inactive loaded objects of Type type.</para>
+    /// </summary>
+    /// <param name="type">The type of object to find.</param>
+    /// <returns>
+    ///   <para>The array of objects found matching the type specified.</para>
+    /// </returns>
+    [Obsolete("Please use Resources.FindObjectsOfTypeAll instead")]
+    public static Object[] FindObjectsOfTypeAll(System.Type type)
+    {
+      return Resources.FindObjectsOfTypeAll(type);
+    }
 
-		[Obsolete("use Object.FindObjectsOfType instead."), GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern Object[] FindSceneObjectsOfType(Type type);
+    /// <summary>
+    ///   <para>Returns the name of the game object.</para>
+    /// </summary>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public override extern string ToString();
 
-		[Obsolete("use Resources.FindObjectsOfTypeAll instead."), GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern Object[] FindObjectsOfTypeIncludingAssets(Type type);
+    [ThreadAndSerializationSafe]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern bool DoesObjectWithInstanceIDExist(int instanceID);
 
-		[Obsolete("Please use Resources.FindObjectsOfTypeAll instead")]
-		public static Object[] FindObjectsOfTypeAll(Type type)
-		{
-			return Resources.FindObjectsOfTypeAll(type);
-		}
+    /// <summary>
+    ///   <para>Returns the instance id of the object.</para>
+    /// </summary>
+    [SecuritySafeCritical]
+    public int GetInstanceID()
+    {
+      this.EnsureRunningOnMainThread();
+      return this.m_InstanceID;
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public override extern string ToString();
+    public override int GetHashCode()
+    {
+      return this.m_InstanceID;
+    }
 
-		[GeneratedByOldBindingsGenerator, ThreadAndSerializationSafe]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal static extern bool DoesObjectWithInstanceIDExist(int instanceID);
+    public override bool Equals(object other)
+    {
+      Object rhs = other as Object;
+      if (rhs == (Object) null && other != null && (object) (other as Object) == null)
+        return false;
+      return Object.CompareBaseObjects(this, rhs);
+    }
 
-		[SecuritySafeCritical]
-		public int GetInstanceID()
-		{
-			this.EnsureRunningOnMainThread();
-			return this.m_InstanceID;
-		}
+    public static implicit operator bool(Object exists)
+    {
+      return !Object.CompareBaseObjects(exists, (Object) null);
+    }
 
-		public override int GetHashCode()
-		{
-			return this.m_InstanceID;
-		}
+    private static bool CompareBaseObjects(Object lhs, Object rhs)
+    {
+      bool flag1 = (object) lhs == null;
+      bool flag2 = (object) rhs == null;
+      if (flag2 && flag1)
+        return true;
+      if (flag2)
+        return !Object.IsNativeObjectAlive(lhs);
+      if (flag1)
+        return !Object.IsNativeObjectAlive(rhs);
+      return lhs.m_InstanceID == rhs.m_InstanceID;
+    }
 
-		public override bool Equals(object other)
-		{
-			Object @object = other as Object;
-			return (!(@object == null) || other == null || other is Object) && Object.CompareBaseObjects(this, @object);
-		}
+    private static bool IsNativeObjectAlive(Object o)
+    {
+      if (o.GetCachedPtr() != IntPtr.Zero)
+        return true;
+      if (o is MonoBehaviour || o is ScriptableObject)
+        return false;
+      return Object.DoesObjectWithInstanceIDExist(o.GetInstanceID());
+    }
 
-		public static implicit operator bool(Object exists)
-		{
-			return !Object.CompareBaseObjects(exists, null);
-		}
+    private IntPtr GetCachedPtr()
+    {
+      return this.m_CachedPtr;
+    }
 
-		private static bool CompareBaseObjects(Object lhs, Object rhs)
-		{
-			bool flag = lhs == null;
-			bool flag2 = rhs == null;
-			bool result;
-			if (flag2 && flag)
-			{
-				result = true;
-			}
-			else if (flag2)
-			{
-				result = !Object.IsNativeObjectAlive(lhs);
-			}
-			else if (flag)
-			{
-				result = !Object.IsNativeObjectAlive(rhs);
-			}
-			else
-			{
-				result = (lhs.m_InstanceID == rhs.m_InstanceID);
-			}
-			return result;
-		}
+    /// <summary>
+    ///   <para>Clones the object original and returns the clone.</para>
+    /// </summary>
+    /// <param name="original">An existing object that you want to make a copy of.</param>
+    /// <param name="position">Position for the new object.</param>
+    /// <param name="rotation">Orientation of the new object.</param>
+    /// <param name="parent">Parent that will be assigned to the new object.</param>
+    /// <param name="instantiateInWorldSpace">Pass true when assigning a parent Object to maintain the world position of the Object, instead of setting its position relative to the new parent. Pass false to set the Object's position relative to its new parent.</param>
+    /// <returns>
+    ///   <para>The instantiated clone.</para>
+    /// </returns>
+    [TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
+    public static Object Instantiate(Object original, Vector3 position, Quaternion rotation)
+    {
+      Object.CheckNullArgument((object) original, "The Object you want to instantiate is null.");
+      if (original is ScriptableObject)
+        throw new ArgumentException("Cannot instantiate a ScriptableObject with a position and rotation");
+      return Object.Internal_InstantiateSingle(original, position, rotation);
+    }
 
-		private static bool IsNativeObjectAlive(Object o)
-		{
-			return o.GetCachedPtr() != IntPtr.Zero || (!(o is MonoBehaviour) && !(o is ScriptableObject) && Object.DoesObjectWithInstanceIDExist(o.GetInstanceID()));
-		}
+    /// <summary>
+    ///   <para>Clones the object original and returns the clone.</para>
+    /// </summary>
+    /// <param name="original">An existing object that you want to make a copy of.</param>
+    /// <param name="position">Position for the new object.</param>
+    /// <param name="rotation">Orientation of the new object.</param>
+    /// <param name="parent">Parent that will be assigned to the new object.</param>
+    /// <param name="instantiateInWorldSpace">Pass true when assigning a parent Object to maintain the world position of the Object, instead of setting its position relative to the new parent. Pass false to set the Object's position relative to its new parent.</param>
+    /// <returns>
+    ///   <para>The instantiated clone.</para>
+    /// </returns>
+    [TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
+    public static Object Instantiate(Object original, Vector3 position, Quaternion rotation, Transform parent)
+    {
+      if ((Object) parent == (Object) null)
+        return Object.Internal_InstantiateSingle(original, position, rotation);
+      Object.CheckNullArgument((object) original, "The Object you want to instantiate is null.");
+      return Object.Internal_InstantiateSingleWithParent(original, parent, position, rotation);
+    }
 
-		private IntPtr GetCachedPtr()
-		{
-			return this.m_CachedPtr;
-		}
+    /// <summary>
+    ///   <para>Clones the object original and returns the clone.</para>
+    /// </summary>
+    /// <param name="original">An existing object that you want to make a copy of.</param>
+    /// <param name="position">Position for the new object.</param>
+    /// <param name="rotation">Orientation of the new object.</param>
+    /// <param name="parent">Parent that will be assigned to the new object.</param>
+    /// <param name="instantiateInWorldSpace">Pass true when assigning a parent Object to maintain the world position of the Object, instead of setting its position relative to the new parent. Pass false to set the Object's position relative to its new parent.</param>
+    /// <returns>
+    ///   <para>The instantiated clone.</para>
+    /// </returns>
+    [TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
+    public static Object Instantiate(Object original)
+    {
+      Object.CheckNullArgument((object) original, "The Object you want to instantiate is null.");
+      return Object.Internal_CloneSingle(original);
+    }
 
-		[TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
-		public static Object Instantiate(Object original, Vector3 position, Quaternion rotation)
-		{
-			Object.CheckNullArgument(original, "The Object you want to instantiate is null.");
-			if (original is ScriptableObject)
-			{
-				throw new ArgumentException("Cannot instantiate a ScriptableObject with a position and rotation");
-			}
-			return Object.Internal_InstantiateSingle(original, position, rotation);
-		}
+    /// <summary>
+    ///   <para>Clones the object original and returns the clone.</para>
+    /// </summary>
+    /// <param name="original">An existing object that you want to make a copy of.</param>
+    /// <param name="position">Position for the new object.</param>
+    /// <param name="rotation">Orientation of the new object.</param>
+    /// <param name="parent">Parent that will be assigned to the new object.</param>
+    /// <param name="instantiateInWorldSpace">Pass true when assigning a parent Object to maintain the world position of the Object, instead of setting its position relative to the new parent. Pass false to set the Object's position relative to its new parent.</param>
+    /// <returns>
+    ///   <para>The instantiated clone.</para>
+    /// </returns>
+    [TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
+    public static Object Instantiate(Object original, Transform parent)
+    {
+      return Object.Instantiate(original, parent, false);
+    }
 
-		[TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
-		public static Object Instantiate(Object original, Vector3 position, Quaternion rotation, Transform parent)
-		{
-			Object result;
-			if (parent == null)
-			{
-				result = Object.Internal_InstantiateSingle(original, position, rotation);
-			}
-			else
-			{
-				Object.CheckNullArgument(original, "The Object you want to instantiate is null.");
-				result = Object.Internal_InstantiateSingleWithParent(original, parent, position, rotation);
-			}
-			return result;
-		}
+    /// <summary>
+    ///   <para>Clones the object original and returns the clone.</para>
+    /// </summary>
+    /// <param name="original">An existing object that you want to make a copy of.</param>
+    /// <param name="position">Position for the new object.</param>
+    /// <param name="rotation">Orientation of the new object.</param>
+    /// <param name="parent">Parent that will be assigned to the new object.</param>
+    /// <param name="instantiateInWorldSpace">Pass true when assigning a parent Object to maintain the world position of the Object, instead of setting its position relative to the new parent. Pass false to set the Object's position relative to its new parent.</param>
+    /// <returns>
+    ///   <para>The instantiated clone.</para>
+    /// </returns>
+    [TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
+    public static Object Instantiate(Object original, Transform parent, bool instantiateInWorldSpace)
+    {
+      if ((Object) parent == (Object) null)
+        return Object.Internal_CloneSingle(original);
+      Object.CheckNullArgument((object) original, "The Object you want to instantiate is null.");
+      return Object.Internal_CloneSingleWithParent(original, parent, instantiateInWorldSpace);
+    }
 
-		[TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
-		public static Object Instantiate(Object original)
-		{
-			Object.CheckNullArgument(original, "The Object you want to instantiate is null.");
-			return Object.Internal_CloneSingle(original);
-		}
+    public static T Instantiate<T>(T original) where T : Object
+    {
+      Object.CheckNullArgument((object) original, "The Object you want to instantiate is null.");
+      return (T) Object.Internal_CloneSingle((Object) original);
+    }
 
-		[TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
-		public static Object Instantiate(Object original, Transform parent)
-		{
-			return Object.Instantiate(original, parent, false);
-		}
+    public static T Instantiate<T>(T original, Vector3 position, Quaternion rotation) where T : Object
+    {
+      return (T) Object.Instantiate((Object) original, position, rotation);
+    }
 
-		[TypeInferenceRule(TypeInferenceRules.TypeOfFirstArgument)]
-		public static Object Instantiate(Object original, Transform parent, bool instantiateInWorldSpace)
-		{
-			Object result;
-			if (parent == null)
-			{
-				result = Object.Internal_CloneSingle(original);
-			}
-			else
-			{
-				Object.CheckNullArgument(original, "The Object you want to instantiate is null.");
-				result = Object.Internal_CloneSingleWithParent(original, parent, instantiateInWorldSpace);
-			}
-			return result;
-		}
+    public static T Instantiate<T>(T original, Vector3 position, Quaternion rotation, Transform parent) where T : Object
+    {
+      return (T) Object.Instantiate((Object) original, position, rotation, parent);
+    }
 
-		public static T Instantiate<T>(T original) where T : Object
-		{
-			Object.CheckNullArgument(original, "The Object you want to instantiate is null.");
-			return (T)((object)Object.Internal_CloneSingle(original));
-		}
+    public static T Instantiate<T>(T original, Transform parent) where T : Object
+    {
+      return Object.Instantiate<T>(original, parent, false);
+    }
 
-		public static T Instantiate<T>(T original, Vector3 position, Quaternion rotation) where T : Object
-		{
-			return (T)((object)Object.Instantiate(original, position, rotation));
-		}
+    public static T Instantiate<T>(T original, Transform parent, bool worldPositionStays) where T : Object
+    {
+      return (T) Object.Instantiate((Object) original, parent, worldPositionStays);
+    }
 
-		public static T Instantiate<T>(T original, Vector3 position, Quaternion rotation, Transform parent) where T : Object
-		{
-			return (T)((object)Object.Instantiate(original, position, rotation, parent));
-		}
+    public static T[] FindObjectsOfType<T>() where T : Object
+    {
+      return Resources.ConvertObjects<T>(Object.FindObjectsOfType(typeof (T)));
+    }
 
-		public static T Instantiate<T>(T original, Transform parent) where T : Object
-		{
-			return Object.Instantiate<T>(original, parent, false);
-		}
+    public static T FindObjectOfType<T>() where T : Object
+    {
+      return (T) Object.FindObjectOfType(typeof (T));
+    }
 
-		public static T Instantiate<T>(T original, Transform parent, bool worldPositionStays) where T : Object
-		{
-			return (T)((object)Object.Instantiate(original, parent, worldPositionStays));
-		}
+    private static void CheckNullArgument(object arg, string message)
+    {
+      if (arg == null)
+        throw new ArgumentException(message);
+    }
 
-		public static T[] FindObjectsOfType<T>() where T : Object
-		{
-			return Resources.ConvertObjects<T>(Object.FindObjectsOfType(typeof(T)));
-		}
+    /// <summary>
+    ///   <para>Returns the first active loaded object of Type type.</para>
+    /// </summary>
+    /// <param name="type">The type of object to find.</param>
+    /// <returns>
+    ///   <para>An array of objects which matched the specified type, cast as Object.</para>
+    /// </returns>
+    [TypeInferenceRule(TypeInferenceRules.TypeReferencedByFirstArgument)]
+    public static Object FindObjectOfType(System.Type type)
+    {
+      Object[] objectsOfType = Object.FindObjectsOfType(type);
+      if (objectsOfType.Length > 0)
+        return objectsOfType[0];
+      return (Object) null;
+    }
 
-		public static T FindObjectOfType<T>() where T : Object
-		{
-			return (T)((object)Object.FindObjectOfType(typeof(T)));
-		}
+    public static bool operator ==(Object x, Object y)
+    {
+      return Object.CompareBaseObjects(x, y);
+    }
 
-		private static void CheckNullArgument(object arg, string message)
-		{
-			if (arg == null)
-			{
-				throw new ArgumentException(message);
-			}
-		}
-
-		[TypeInferenceRule(TypeInferenceRules.TypeReferencedByFirstArgument)]
-		public static Object FindObjectOfType(Type type)
-		{
-			Object[] array = Object.FindObjectsOfType(type);
-			Object result;
-			if (array.Length > 0)
-			{
-				result = array[0];
-			}
-			else
-			{
-				result = null;
-			}
-			return result;
-		}
-
-		public static bool operator ==(Object x, Object y)
-		{
-			return Object.CompareBaseObjects(x, y);
-		}
-
-		public static bool operator !=(Object x, Object y)
-		{
-			return !Object.CompareBaseObjects(x, y);
-		}
-	}
+    public static bool operator !=(Object x, Object y)
+    {
+      return !Object.CompareBaseObjects(x, y);
+    }
+  }
 }

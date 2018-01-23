@@ -1,21 +1,25 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.ScreenCapture
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System.Runtime.CompilerServices;
 using UnityEngine.Internal;
-using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	public static class ScreenCapture
-	{
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void CaptureScreenshot(string filename, [DefaultValue("0")] int superSize);
+  public static class ScreenCapture
+  {
+    public static void CaptureScreenshot(string filename)
+    {
+      ScreenCapture.CaptureScreenshot(filename, 1);
+    }
 
-		[ExcludeFromDocs]
-		public static void CaptureScreenshot(string filename)
-		{
-			int superSize = 0;
-			ScreenCapture.CaptureScreenshot(filename, superSize);
-		}
-	}
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void CaptureScreenshot(string filename, [DefaultValue("1")] int superSize);
+
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern Texture2D CaptureScreenshotAsTexture(int superSize = 1);
+  }
 }

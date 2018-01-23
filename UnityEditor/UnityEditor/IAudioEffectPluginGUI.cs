@@ -1,24 +1,19 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.IAudioEffectPluginGUI
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
 
 namespace UnityEditor
 {
-	public abstract class IAudioEffectPluginGUI
-	{
-		public abstract string Name
-		{
-			get;
-		}
+  public abstract class IAudioEffectPluginGUI
+  {
+    public abstract string Name { get; }
 
-		public abstract string Description
-		{
-			get;
-		}
+    public abstract string Description { get; }
 
-		public abstract string Vendor
-		{
-			get;
-		}
+    public abstract string Vendor { get; }
 
-		public abstract bool OnGUI(IAudioEffectPlugin plugin);
-	}
+    public abstract bool OnGUI(IAudioEffectPlugin plugin);
+  }
 }

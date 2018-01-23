@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: SimpleJson.PocoJsonSerializerStrategy
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using SimpleJson.Reflection;
 using System;
 using System.CodeDom.Compiler;
@@ -8,337 +14,232 @@ using System.Reflection;
 
 namespace SimpleJson
 {
-	[GeneratedCode("simple-json", "1.0.0")]
-	internal class PocoJsonSerializerStrategy : IJsonSerializerStrategy
-	{
-		internal IDictionary<Type, ReflectionUtils.ConstructorDelegate> ConstructorCache;
+  [GeneratedCode("simple-json", "1.0.0")]
+  internal class PocoJsonSerializerStrategy : IJsonSerializerStrategy
+  {
+    internal static readonly Type[] EmptyTypes = new Type[0];
+    internal static readonly Type[] ArrayConstructorParameterTypes = new Type[1]{ typeof (int) };
+    private static readonly string[] Iso8601Format = new string[3]{ "yyyy-MM-dd\\THH:mm:ss.FFFFFFF\\Z", "yyyy-MM-dd\\THH:mm:ss\\Z", "yyyy-MM-dd\\THH:mm:ssK" };
+    internal IDictionary<Type, ReflectionUtils.ConstructorDelegate> ConstructorCache;
+    internal IDictionary<Type, IDictionary<string, ReflectionUtils.GetDelegate>> GetCache;
+    internal IDictionary<Type, IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>> SetCache;
 
-		internal IDictionary<Type, IDictionary<string, ReflectionUtils.GetDelegate>> GetCache;
+    public PocoJsonSerializerStrategy()
+    {
+      this.ConstructorCache = (IDictionary<Type, ReflectionUtils.ConstructorDelegate>) new ReflectionUtils.ThreadSafeDictionary<Type, ReflectionUtils.ConstructorDelegate>(new ReflectionUtils.ThreadSafeDictionaryValueFactory<Type, ReflectionUtils.ConstructorDelegate>(this.ContructorDelegateFactory));
+      this.GetCache = (IDictionary<Type, IDictionary<string, ReflectionUtils.GetDelegate>>) new ReflectionUtils.ThreadSafeDictionary<Type, IDictionary<string, ReflectionUtils.GetDelegate>>(new ReflectionUtils.ThreadSafeDictionaryValueFactory<Type, IDictionary<string, ReflectionUtils.GetDelegate>>(this.GetterValueFactory));
+      this.SetCache = (IDictionary<Type, IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>>) new ReflectionUtils.ThreadSafeDictionary<Type, IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>>(new ReflectionUtils.ThreadSafeDictionaryValueFactory<Type, IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>>(this.SetterValueFactory));
+    }
 
-		internal IDictionary<Type, IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>> SetCache;
+    protected virtual string MapClrMemberNameToJsonFieldName(string clrPropertyName)
+    {
+      return clrPropertyName;
+    }
 
-		internal static readonly Type[] EmptyTypes = new Type[0];
+    internal virtual ReflectionUtils.ConstructorDelegate ContructorDelegateFactory(Type key)
+    {
+      return ReflectionUtils.GetContructor(key, !key.IsArray ? PocoJsonSerializerStrategy.EmptyTypes : PocoJsonSerializerStrategy.ArrayConstructorParameterTypes);
+    }
 
-		internal static readonly Type[] ArrayConstructorParameterTypes = new Type[]
-		{
-			typeof(int)
-		};
+    internal virtual IDictionary<string, ReflectionUtils.GetDelegate> GetterValueFactory(Type type)
+    {
+      IDictionary<string, ReflectionUtils.GetDelegate> dictionary = (IDictionary<string, ReflectionUtils.GetDelegate>) new Dictionary<string, ReflectionUtils.GetDelegate>();
+      foreach (PropertyInfo property in ReflectionUtils.GetProperties(type))
+      {
+        if (property.CanRead)
+        {
+          MethodInfo getterMethodInfo = ReflectionUtils.GetGetterMethodInfo(property);
+          if (!getterMethodInfo.IsStatic && getterMethodInfo.IsPublic)
+            dictionary[this.MapClrMemberNameToJsonFieldName(property.Name)] = ReflectionUtils.GetGetMethod(property);
+        }
+      }
+      foreach (FieldInfo field in ReflectionUtils.GetFields(type))
+      {
+        if (!field.IsStatic && field.IsPublic)
+          dictionary[this.MapClrMemberNameToJsonFieldName(field.Name)] = ReflectionUtils.GetGetMethod(field);
+      }
+      return dictionary;
+    }
 
-		private static readonly string[] Iso8601Format = new string[]
-		{
-			"yyyy-MM-dd\\THH:mm:ss.FFFFFFF\\Z",
-			"yyyy-MM-dd\\THH:mm:ss\\Z",
-			"yyyy-MM-dd\\THH:mm:ssK"
-		};
+    internal virtual IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>> SetterValueFactory(Type type)
+    {
+      IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>> dictionary = (IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>) new Dictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>();
+      foreach (PropertyInfo property in ReflectionUtils.GetProperties(type))
+      {
+        if (property.CanWrite)
+        {
+          MethodInfo setterMethodInfo = ReflectionUtils.GetSetterMethodInfo(property);
+          if (!setterMethodInfo.IsStatic && setterMethodInfo.IsPublic)
+            dictionary[this.MapClrMemberNameToJsonFieldName(property.Name)] = new KeyValuePair<Type, ReflectionUtils.SetDelegate>(property.PropertyType, ReflectionUtils.GetSetMethod(property));
+        }
+      }
+      foreach (FieldInfo field in ReflectionUtils.GetFields(type))
+      {
+        if (!field.IsInitOnly && !field.IsStatic && field.IsPublic)
+          dictionary[this.MapClrMemberNameToJsonFieldName(field.Name)] = new KeyValuePair<Type, ReflectionUtils.SetDelegate>(field.FieldType, ReflectionUtils.GetSetMethod(field));
+      }
+      return dictionary;
+    }
 
-		public PocoJsonSerializerStrategy()
-		{
-			this.ConstructorCache = new ReflectionUtils.ThreadSafeDictionary<Type, ReflectionUtils.ConstructorDelegate>(new ReflectionUtils.ThreadSafeDictionaryValueFactory<Type, ReflectionUtils.ConstructorDelegate>(this.ContructorDelegateFactory));
-			this.GetCache = new ReflectionUtils.ThreadSafeDictionary<Type, IDictionary<string, ReflectionUtils.GetDelegate>>(new ReflectionUtils.ThreadSafeDictionaryValueFactory<Type, IDictionary<string, ReflectionUtils.GetDelegate>>(this.GetterValueFactory));
-			this.SetCache = new ReflectionUtils.ThreadSafeDictionary<Type, IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>>(new ReflectionUtils.ThreadSafeDictionaryValueFactory<Type, IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>>(this.SetterValueFactory));
-		}
+    public virtual bool TrySerializeNonPrimitiveObject(object input, out object output)
+    {
+      return this.TrySerializeKnownTypes(input, out output) || this.TrySerializeUnknownTypes(input, out output);
+    }
 
-		protected virtual string MapClrMemberNameToJsonFieldName(string clrPropertyName)
-		{
-			return clrPropertyName;
-		}
+    public virtual object DeserializeObject(object value, Type type)
+    {
+      if (type == null)
+        throw new ArgumentNullException(nameof (type));
+      string str = value as string;
+      if (type == typeof (Guid) && string.IsNullOrEmpty(str))
+        return (object) new Guid();
+      if (value == null)
+        return (object) null;
+      object source = (object) null;
+      if (str != null)
+      {
+        if (str.Length != 0)
+        {
+          if (type == typeof (DateTime) || ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof (DateTime))
+            return (object) DateTime.ParseExact(str, PocoJsonSerializerStrategy.Iso8601Format, (IFormatProvider) CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
+          if (type == typeof (DateTimeOffset) || ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof (DateTimeOffset))
+            return (object) DateTimeOffset.ParseExact(str, PocoJsonSerializerStrategy.Iso8601Format, (IFormatProvider) CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
+          if (type == typeof (Guid) || ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof (Guid))
+            return (object) new Guid(str);
+          return (object) str;
+        }
+        source = type != typeof (Guid) ? (!ReflectionUtils.IsNullableType(type) || Nullable.GetUnderlyingType(type) != typeof (Guid) ? (object) str : (object) null) : (object) new Guid();
+        if (!ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof (Guid))
+          return (object) str;
+      }
+      else if (value is bool)
+        return value;
+      bool flag1 = value is long;
+      bool flag2 = value is double;
+      if (flag1 && type == typeof (long) || flag2 && type == typeof (double))
+        return value;
+      if (flag2 && type != typeof (double) || flag1 && type != typeof (long))
+      {
+        object obj = !typeof (IConvertible).IsAssignableFrom(type) ? value : Convert.ChangeType(value, type, (IFormatProvider) CultureInfo.InvariantCulture);
+        if (ReflectionUtils.IsNullableType(type))
+          return ReflectionUtils.ToNullableType(obj, type);
+        return obj;
+      }
+      IDictionary<string, object> dictionary1 = value as IDictionary<string, object>;
+      if (dictionary1 != null)
+      {
+        IDictionary<string, object> dictionary2 = dictionary1;
+        if (ReflectionUtils.IsTypeDictionary(type))
+        {
+          Type[] genericTypeArguments = ReflectionUtils.GetGenericTypeArguments(type);
+          Type type1 = genericTypeArguments[0];
+          Type type2 = genericTypeArguments[1];
+          IDictionary dictionary3 = (IDictionary) this.ConstructorCache[typeof (Dictionary<,>).MakeGenericType(type1, type2)]((object[]) null);
+          foreach (KeyValuePair<string, object> keyValuePair in (IEnumerable<KeyValuePair<string, object>>) dictionary2)
+            dictionary3.Add((object) keyValuePair.Key, this.DeserializeObject(keyValuePair.Value, type2));
+          source = (object) dictionary3;
+        }
+        else if (type == typeof (object))
+        {
+          source = value;
+        }
+        else
+        {
+          source = this.ConstructorCache[type]((object[]) null);
+          foreach (KeyValuePair<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>> keyValuePair in (IEnumerable<KeyValuePair<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>>) this.SetCache[type])
+          {
+            object obj;
+            if (dictionary2.TryGetValue(keyValuePair.Key, out obj))
+            {
+              obj = this.DeserializeObject(obj, keyValuePair.Value.Key);
+              keyValuePair.Value.Value(source, obj);
+            }
+          }
+        }
+      }
+      else
+      {
+        IList<object> objectList1 = value as IList<object>;
+        if (objectList1 != null)
+        {
+          IList<object> objectList2 = objectList1;
+          IList list = (IList) null;
+          if (type.IsArray)
+          {
+            list = (IList) this.ConstructorCache[type](new object[1]
+            {
+              (object) objectList2.Count
+            });
+            int num = 0;
+            foreach (object obj in (IEnumerable<object>) objectList2)
+              list[num++] = this.DeserializeObject(obj, type.GetElementType());
+          }
+          else if (ReflectionUtils.IsTypeGenericeCollectionInterface(type) || ReflectionUtils.IsAssignableFrom(typeof (IList), type))
+          {
+            Type genericTypeArgument = ReflectionUtils.GetGenericTypeArguments(type)[0];
+            list = (IList) this.ConstructorCache[typeof (List<>).MakeGenericType(genericTypeArgument)](new object[1]
+            {
+              (object) objectList2.Count
+            });
+            foreach (object obj in (IEnumerable<object>) objectList2)
+              list.Add(this.DeserializeObject(obj, genericTypeArgument));
+          }
+          source = (object) list;
+        }
+      }
+      return source;
+    }
 
-		internal virtual ReflectionUtils.ConstructorDelegate ContructorDelegateFactory(Type key)
-		{
-			return ReflectionUtils.GetContructor(key, (!key.IsArray) ? PocoJsonSerializerStrategy.EmptyTypes : PocoJsonSerializerStrategy.ArrayConstructorParameterTypes);
-		}
+    protected virtual object SerializeEnum(Enum p)
+    {
+      return (object) Convert.ToDouble((object) p, (IFormatProvider) CultureInfo.InvariantCulture);
+    }
 
-		internal virtual IDictionary<string, ReflectionUtils.GetDelegate> GetterValueFactory(Type type)
-		{
-			IDictionary<string, ReflectionUtils.GetDelegate> dictionary = new Dictionary<string, ReflectionUtils.GetDelegate>();
-			foreach (PropertyInfo current in ReflectionUtils.GetProperties(type))
-			{
-				if (current.CanRead)
-				{
-					MethodInfo getterMethodInfo = ReflectionUtils.GetGetterMethodInfo(current);
-					if (!getterMethodInfo.IsStatic && getterMethodInfo.IsPublic)
-					{
-						dictionary[this.MapClrMemberNameToJsonFieldName(current.Name)] = ReflectionUtils.GetGetMethod(current);
-					}
-				}
-			}
-			foreach (FieldInfo current2 in ReflectionUtils.GetFields(type))
-			{
-				if (!current2.IsStatic && current2.IsPublic)
-				{
-					dictionary[this.MapClrMemberNameToJsonFieldName(current2.Name)] = ReflectionUtils.GetGetMethod(current2);
-				}
-			}
-			return dictionary;
-		}
+    protected virtual bool TrySerializeKnownTypes(object input, out object output)
+    {
+      bool flag = true;
+      if (input is DateTime)
+        output = (object) ((DateTime) input).ToUniversalTime().ToString(PocoJsonSerializerStrategy.Iso8601Format[0], (IFormatProvider) CultureInfo.InvariantCulture);
+      else if (input is DateTimeOffset)
+        output = (object) ((DateTimeOffset) input).ToUniversalTime().ToString(PocoJsonSerializerStrategy.Iso8601Format[0], (IFormatProvider) CultureInfo.InvariantCulture);
+      else if (input is Guid)
+        output = (object) ((Guid) input).ToString("D");
+      else if ((object) (input as Uri) != null)
+      {
+        output = (object) input.ToString();
+      }
+      else
+      {
+        Enum p = input as Enum;
+        if (p != null)
+        {
+          output = this.SerializeEnum(p);
+        }
+        else
+        {
+          flag = false;
+          output = (object) null;
+        }
+      }
+      return flag;
+    }
 
-		internal virtual IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>> SetterValueFactory(Type type)
-		{
-			IDictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>> dictionary = new Dictionary<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>>();
-			foreach (PropertyInfo current in ReflectionUtils.GetProperties(type))
-			{
-				if (current.CanWrite)
-				{
-					MethodInfo setterMethodInfo = ReflectionUtils.GetSetterMethodInfo(current);
-					if (!setterMethodInfo.IsStatic && setterMethodInfo.IsPublic)
-					{
-						dictionary[this.MapClrMemberNameToJsonFieldName(current.Name)] = new KeyValuePair<Type, ReflectionUtils.SetDelegate>(current.PropertyType, ReflectionUtils.GetSetMethod(current));
-					}
-				}
-			}
-			foreach (FieldInfo current2 in ReflectionUtils.GetFields(type))
-			{
-				if (!current2.IsInitOnly && !current2.IsStatic && current2.IsPublic)
-				{
-					dictionary[this.MapClrMemberNameToJsonFieldName(current2.Name)] = new KeyValuePair<Type, ReflectionUtils.SetDelegate>(current2.FieldType, ReflectionUtils.GetSetMethod(current2));
-				}
-			}
-			return dictionary;
-		}
-
-		public virtual bool TrySerializeNonPrimitiveObject(object input, out object output)
-		{
-			return this.TrySerializeKnownTypes(input, out output) || this.TrySerializeUnknownTypes(input, out output);
-		}
-
-		public virtual object DeserializeObject(object value, Type type)
-		{
-			if (type == null)
-			{
-				throw new ArgumentNullException("type");
-			}
-			string text = value as string;
-			object result;
-			if (type == typeof(Guid) && string.IsNullOrEmpty(text))
-			{
-				result = default(Guid);
-			}
-			else if (value == null)
-			{
-				result = null;
-			}
-			else
-			{
-				object obj = null;
-				if (text != null)
-				{
-					if (text.Length != 0)
-					{
-						if (type == typeof(DateTime) || (ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof(DateTime)))
-						{
-							result = DateTime.ParseExact(text, PocoJsonSerializerStrategy.Iso8601Format, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
-							return result;
-						}
-						if (type == typeof(DateTimeOffset) || (ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof(DateTimeOffset)))
-						{
-							result = DateTimeOffset.ParseExact(text, PocoJsonSerializerStrategy.Iso8601Format, CultureInfo.InvariantCulture, DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal);
-							return result;
-						}
-						if (type == typeof(Guid) || (ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof(Guid)))
-						{
-							result = new Guid(text);
-							return result;
-						}
-						result = text;
-						return result;
-					}
-					else
-					{
-						if (type == typeof(Guid))
-						{
-							obj = default(Guid);
-						}
-						else if (ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof(Guid))
-						{
-							obj = null;
-						}
-						else
-						{
-							obj = text;
-						}
-						if (!ReflectionUtils.IsNullableType(type) && Nullable.GetUnderlyingType(type) == typeof(Guid))
-						{
-							result = text;
-							return result;
-						}
-					}
-				}
-				else if (value is bool)
-				{
-					result = value;
-					return result;
-				}
-				bool flag = value is long;
-				bool flag2 = value is double;
-				if ((flag && type == typeof(long)) || (flag2 && type == typeof(double)))
-				{
-					result = value;
-				}
-				else if ((flag2 && type != typeof(double)) || (flag && type != typeof(long)))
-				{
-					obj = ((!typeof(IConvertible).IsAssignableFrom(type)) ? value : Convert.ChangeType(value, type, CultureInfo.InvariantCulture));
-					if (ReflectionUtils.IsNullableType(type))
-					{
-						result = ReflectionUtils.ToNullableType(obj, type);
-					}
-					else
-					{
-						result = obj;
-					}
-				}
-				else
-				{
-					IDictionary<string, object> dictionary = value as IDictionary<string, object>;
-					if (dictionary != null)
-					{
-						IDictionary<string, object> dictionary2 = dictionary;
-						if (ReflectionUtils.IsTypeDictionary(type))
-						{
-							Type[] genericTypeArguments = ReflectionUtils.GetGenericTypeArguments(type);
-							Type type2 = genericTypeArguments[0];
-							Type type3 = genericTypeArguments[1];
-							Type key = typeof(Dictionary<, >).MakeGenericType(new Type[]
-							{
-								type2,
-								type3
-							});
-							IDictionary dictionary3 = (IDictionary)this.ConstructorCache[key](null);
-							foreach (KeyValuePair<string, object> current in dictionary2)
-							{
-								dictionary3.Add(current.Key, this.DeserializeObject(current.Value, type3));
-							}
-							obj = dictionary3;
-						}
-						else if (type == typeof(object))
-						{
-							obj = value;
-						}
-						else
-						{
-							obj = this.ConstructorCache[type](null);
-							foreach (KeyValuePair<string, KeyValuePair<Type, ReflectionUtils.SetDelegate>> current2 in this.SetCache[type])
-							{
-								object value2;
-								if (dictionary2.TryGetValue(current2.Key, out value2))
-								{
-									value2 = this.DeserializeObject(value2, current2.Value.Key);
-									current2.Value.Value(obj, value2);
-								}
-							}
-						}
-					}
-					else
-					{
-						IList<object> list = value as IList<object>;
-						if (list != null)
-						{
-							IList<object> list2 = list;
-							IList list3 = null;
-							if (type.IsArray)
-							{
-								list3 = (IList)this.ConstructorCache[type](new object[]
-								{
-									list2.Count
-								});
-								int num = 0;
-								foreach (object current3 in list2)
-								{
-									list3[num++] = this.DeserializeObject(current3, type.GetElementType());
-								}
-							}
-							else if (ReflectionUtils.IsTypeGenericeCollectionInterface(type) || ReflectionUtils.IsAssignableFrom(typeof(IList), type))
-							{
-								Type type4 = ReflectionUtils.GetGenericTypeArguments(type)[0];
-								Type key2 = typeof(List<>).MakeGenericType(new Type[]
-								{
-									type4
-								});
-								list3 = (IList)this.ConstructorCache[key2](new object[]
-								{
-									list2.Count
-								});
-								foreach (object current4 in list2)
-								{
-									list3.Add(this.DeserializeObject(current4, type4));
-								}
-							}
-							obj = list3;
-						}
-					}
-					result = obj;
-				}
-			}
-			return result;
-		}
-
-		protected virtual object SerializeEnum(Enum p)
-		{
-			return Convert.ToDouble(p, CultureInfo.InvariantCulture);
-		}
-
-		protected virtual bool TrySerializeKnownTypes(object input, out object output)
-		{
-			bool result = true;
-			if (input is DateTime)
-			{
-				output = ((DateTime)input).ToUniversalTime().ToString(PocoJsonSerializerStrategy.Iso8601Format[0], CultureInfo.InvariantCulture);
-			}
-			else if (input is DateTimeOffset)
-			{
-				output = ((DateTimeOffset)input).ToUniversalTime().ToString(PocoJsonSerializerStrategy.Iso8601Format[0], CultureInfo.InvariantCulture);
-			}
-			else if (input is Guid)
-			{
-				output = ((Guid)input).ToString("D");
-			}
-			else if (input is Uri)
-			{
-				output = input.ToString();
-			}
-			else
-			{
-				Enum @enum = input as Enum;
-				if (@enum != null)
-				{
-					output = this.SerializeEnum(@enum);
-				}
-				else
-				{
-					result = false;
-					output = null;
-				}
-			}
-			return result;
-		}
-
-		protected virtual bool TrySerializeUnknownTypes(object input, out object output)
-		{
-			if (input == null)
-			{
-				throw new ArgumentNullException("input");
-			}
-			output = null;
-			Type type = input.GetType();
-			bool result;
-			if (type.FullName == null)
-			{
-				result = false;
-			}
-			else
-			{
-				IDictionary<string, object> dictionary = new JsonObject();
-				IDictionary<string, ReflectionUtils.GetDelegate> dictionary2 = this.GetCache[type];
-				foreach (KeyValuePair<string, ReflectionUtils.GetDelegate> current in dictionary2)
-				{
-					if (current.Value != null)
-					{
-						dictionary.Add(this.MapClrMemberNameToJsonFieldName(current.Key), current.Value(input));
-					}
-				}
-				output = dictionary;
-				result = true;
-			}
-			return result;
-		}
-	}
+    protected virtual bool TrySerializeUnknownTypes(object input, out object output)
+    {
+      if (input == null)
+        throw new ArgumentNullException(nameof (input));
+      output = (object) null;
+      Type type = input.GetType();
+      if (type.FullName == null)
+        return false;
+      IDictionary<string, object> dictionary = (IDictionary<string, object>) new JsonObject();
+      foreach (KeyValuePair<string, ReflectionUtils.GetDelegate> keyValuePair in (IEnumerable<KeyValuePair<string, ReflectionUtils.GetDelegate>>) this.GetCache[type])
+      {
+        if (keyValuePair.Value != null)
+          dictionary.Add(this.MapClrMemberNameToJsonFieldName(keyValuePair.Key), keyValuePair.Value(input));
+      }
+      output = (object) dictionary;
+      return true;
+    }
+  }
 }

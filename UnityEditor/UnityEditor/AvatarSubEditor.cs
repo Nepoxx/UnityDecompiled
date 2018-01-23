@@ -1,162 +1,153 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AvatarSubEditor
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[Serializable]
-	internal class AvatarSubEditor : ScriptableObject
-	{
-		protected AvatarEditor m_Inspector;
+  [Serializable]
+  internal class AvatarSubEditor : ScriptableObject
+  {
+    protected AvatarEditor m_Inspector;
 
-		protected GameObject gameObject
-		{
-			get
-			{
-				return this.m_Inspector.m_GameObject;
-			}
-		}
+    private static void DoWriteAllAssets()
+    {
+      foreach (UnityEngine.Object target in UnityEngine.Resources.FindObjectsOfTypeAll(typeof (UnityEngine.Object)))
+      {
+        if (AssetDatabase.Contains(target))
+          EditorUtility.SetDirty(target);
+      }
+      AssetDatabase.SaveAssets();
+    }
 
-		protected GameObject prefab
-		{
-			get
-			{
-				return this.m_Inspector.prefab;
-			}
-		}
+    protected GameObject gameObject
+    {
+      get
+      {
+        return this.m_Inspector.m_GameObject;
+      }
+    }
 
-		protected Dictionary<Transform, bool> modelBones
-		{
-			get
-			{
-				return this.m_Inspector.m_ModelBones;
-			}
-		}
+    protected GameObject prefab
+    {
+      get
+      {
+        return this.m_Inspector.prefab;
+      }
+    }
 
-		protected Transform root
-		{
-			get
-			{
-				return (!(this.gameObject == null)) ? this.gameObject.transform : null;
-			}
-		}
+    protected Dictionary<Transform, bool> modelBones
+    {
+      get
+      {
+        return this.m_Inspector.m_ModelBones;
+      }
+    }
 
-		protected SerializedObject serializedObject
-		{
-			get
-			{
-				return this.m_Inspector.serializedObject;
-			}
-		}
+    protected Transform root
+    {
+      get
+      {
+        return !((UnityEngine.Object) this.gameObject == (UnityEngine.Object) null) ? this.gameObject.transform : (Transform) null;
+      }
+    }
 
-		protected Avatar avatarAsset
-		{
-			get
-			{
-				return this.m_Inspector.avatar;
-			}
-		}
+    protected SerializedObject serializedObject
+    {
+      get
+      {
+        return this.m_Inspector.serializedObject;
+      }
+    }
 
-		private static void DoWriteAllAssets()
-		{
-			UnityEngine.Object[] array = Resources.FindObjectsOfTypeAll(typeof(UnityEngine.Object));
-			UnityEngine.Object[] array2 = array;
-			for (int i = 0; i < array2.Length; i++)
-			{
-				UnityEngine.Object @object = array2[i];
-				if (AssetDatabase.Contains(@object))
-				{
-					EditorUtility.SetDirty(@object);
-				}
-			}
-			AssetDatabase.SaveAssets();
-		}
+    protected Avatar avatarAsset
+    {
+      get
+      {
+        return this.m_Inspector.avatar;
+      }
+    }
 
-		public virtual void Enable(AvatarEditor inspector)
-		{
-			this.m_Inspector = inspector;
-		}
+    public virtual void Enable(AvatarEditor inspector)
+    {
+      this.m_Inspector = inspector;
+    }
 
-		public virtual void Disable()
-		{
-		}
+    public virtual void Disable()
+    {
+    }
 
-		public virtual void OnDestroy()
-		{
-			if (this.HasModified())
-			{
-				AssetImporter atPath = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath(this.avatarAsset));
-				if (atPath)
-				{
-					if (EditorUtility.DisplayDialog("Unapplied import settings", "Unapplied import settings for '" + atPath.assetPath + "'", "Apply", "Revert"))
-					{
-						this.ApplyAndImport();
-					}
-					else
-					{
-						this.ResetValues();
-					}
-				}
-			}
-		}
+    public virtual void OnDestroy()
+    {
+      if (!this.HasModified())
+        return;
+      AssetImporter atPath = AssetImporter.GetAtPath(AssetDatabase.GetAssetPath((UnityEngine.Object) this.avatarAsset));
+      if ((bool) ((UnityEngine.Object) atPath))
+      {
+        if (EditorUtility.DisplayDialog("Unapplied import settings", "Unapplied import settings for '" + atPath.assetPath + "'", "Apply", "Revert"))
+          this.ApplyAndImport();
+        else
+          this.ResetValues();
+      }
+    }
 
-		public virtual void OnInspectorGUI()
-		{
-		}
+    public virtual void OnInspectorGUI()
+    {
+    }
 
-		public virtual void OnSceneGUI()
-		{
-		}
+    public virtual void OnSceneGUI()
+    {
+    }
 
-		protected bool HasModified()
-		{
-			return this.serializedObject.hasModifiedProperties;
-		}
+    protected bool HasModified()
+    {
+      return this.serializedObject.hasModifiedProperties;
+    }
 
-		protected virtual void ResetValues()
-		{
-			this.serializedObject.Update();
-		}
+    protected virtual void ResetValues()
+    {
+      this.serializedObject.Update();
+    }
 
-		protected void Apply()
-		{
-			this.serializedObject.ApplyModifiedProperties();
-		}
+    protected void Apply()
+    {
+      this.serializedObject.ApplyModifiedProperties();
+    }
 
-		public void ApplyAndImport()
-		{
-			this.Apply();
-			string assetPath = AssetDatabase.GetAssetPath(this.avatarAsset);
-			AssetDatabase.ImportAsset(assetPath);
-			this.ResetValues();
-		}
+    public void ApplyAndImport()
+    {
+      this.Apply();
+      AssetDatabase.ImportAsset(AssetDatabase.GetAssetPath((UnityEngine.Object) this.avatarAsset));
+      this.ResetValues();
+    }
 
-		protected void ApplyRevertGUI()
-		{
-			EditorGUILayout.Space();
-			GUILayout.BeginHorizontal(new GUILayoutOption[0]);
-			using (new EditorGUI.DisabledScope(!this.HasModified()))
-			{
-				GUILayout.FlexibleSpace();
-				if (GUILayout.Button("Revert", new GUILayoutOption[0]))
-				{
-					this.ResetValues();
-					if (this.HasModified())
-					{
-						Debug.LogError("Avatar tool reports modified values after reset.");
-					}
-				}
-				if (GUILayout.Button("Apply", new GUILayoutOption[0]))
-				{
-					this.ApplyAndImport();
-				}
-			}
-			if (GUILayout.Button("Done", new GUILayoutOption[0]))
-			{
-				this.m_Inspector.SwitchToAssetMode();
-				GUIUtility.ExitGUI();
-			}
-			GUILayout.EndHorizontal();
-		}
-	}
+    protected void ApplyRevertGUI()
+    {
+      EditorGUILayout.Space();
+      GUILayout.BeginHorizontal();
+      using (new EditorGUI.DisabledScope(!this.HasModified()))
+      {
+        GUILayout.FlexibleSpace();
+        if (GUILayout.Button("Revert"))
+        {
+          this.ResetValues();
+          if (this.HasModified())
+            Debug.LogError((object) "Avatar tool reports modified values after reset.");
+        }
+        if (GUILayout.Button("Apply"))
+          this.ApplyAndImport();
+      }
+      if (GUILayout.Button("Done"))
+      {
+        this.m_Inspector.SwitchToAssetMode();
+        GUIUtility.ExitGUI();
+      }
+      GUILayout.EndHorizontal();
+    }
+  }
 }

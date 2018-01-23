@@ -1,168 +1,160 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.MemoryElementDataManager
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using UnityEditorInternal;
 
 namespace UnityEditor
 {
-	internal class MemoryElementDataManager
-	{
-		private enum ObjectTypeFilter
-		{
-			Scene,
-			Asset,
-			BuiltinResource,
-			DontSave,
-			Other
-		}
+  internal class MemoryElementDataManager
+  {
+    private static int SortByMemoryClassName(ObjectInfo x, ObjectInfo y)
+    {
+      return y.className.CompareTo(x.className);
+    }
 
-		[CompilerGenerated]
-		private static Comparison<MemoryElement> <>f__mg$cache0;
+    private static int SortByMemorySize(MemoryElement x, MemoryElement y)
+    {
+      return y.totalMemory.CompareTo(x.totalMemory);
+    }
 
-		[CompilerGenerated]
-		private static Comparison<MemoryElement> <>f__mg$cache1;
+    private static MemoryElementDataManager.ObjectTypeFilter GetObjectTypeFilter(ObjectInfo info)
+    {
+      switch (info.reason)
+      {
+        case 1:
+          return MemoryElementDataManager.ObjectTypeFilter.BuiltinResource;
+        case 2:
+          return MemoryElementDataManager.ObjectTypeFilter.DontSave;
+        case 3:
+        case 8:
+        case 9:
+          return MemoryElementDataManager.ObjectTypeFilter.Asset;
+        case 10:
+          return MemoryElementDataManager.ObjectTypeFilter.Other;
+        default:
+          return MemoryElementDataManager.ObjectTypeFilter.Scene;
+      }
+    }
 
-		[CompilerGenerated]
-		private static Comparison<ObjectInfo> <>f__mg$cache2;
+    private static bool HasValidNames(List<MemoryElement> memory)
+    {
+      for (int index = 0; index < memory.Count; ++index)
+      {
+        if (!string.IsNullOrEmpty(memory[index].name))
+          return true;
+      }
+      return false;
+    }
 
-		[CompilerGenerated]
-		private static Comparison<MemoryElement> <>f__mg$cache3;
+    private static List<MemoryElement> GenerateObjectTypeGroups(ObjectInfo[] memory, MemoryElementDataManager.ObjectTypeFilter filter)
+    {
+      List<MemoryElement> memoryElementList1 = new List<MemoryElement>();
+      MemoryElement memoryElement1 = (MemoryElement) null;
+      foreach (ObjectInfo objectInfo in memory)
+      {
+        if (MemoryElementDataManager.GetObjectTypeFilter(objectInfo) == filter)
+        {
+          if (memoryElement1 == null || objectInfo.className != memoryElement1.name)
+          {
+            memoryElement1 = new MemoryElement(objectInfo.className);
+            memoryElementList1.Add(memoryElement1);
+          }
+          memoryElement1.AddChild(new MemoryElement(objectInfo, true));
+        }
+      }
+      List<MemoryElement> memoryElementList2 = memoryElementList1;
+      // ISSUE: reference to a compiler-generated field
+      if (MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache0 == null)
+      {
+        // ISSUE: reference to a compiler-generated field
+        MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache0 = new Comparison<MemoryElement>(MemoryElementDataManager.SortByMemorySize);
+      }
+      // ISSUE: reference to a compiler-generated field
+      Comparison<MemoryElement> fMgCache0 = MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache0;
+      memoryElementList2.Sort(fMgCache0);
+      foreach (MemoryElement memoryElement2 in memoryElementList1)
+      {
+        List<MemoryElement> children = memoryElement2.children;
+        // ISSUE: reference to a compiler-generated field
+        if (MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache1 == null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache1 = new Comparison<MemoryElement>(MemoryElementDataManager.SortByMemorySize);
+        }
+        // ISSUE: reference to a compiler-generated field
+        Comparison<MemoryElement> fMgCache1 = MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache1;
+        children.Sort(fMgCache1);
+        if (filter == MemoryElementDataManager.ObjectTypeFilter.Other && !MemoryElementDataManager.HasValidNames(memoryElement2.children))
+          memoryElement2.children.Clear();
+      }
+      return memoryElementList1;
+    }
 
-		private static int SortByMemoryClassName(ObjectInfo x, ObjectInfo y)
-		{
-			return y.className.CompareTo(x.className);
-		}
+    public static MemoryElement GetTreeRoot(ObjectMemoryInfo[] memoryObjectList, int[] referencesIndices)
+    {
+      ObjectInfo[] memory = new ObjectInfo[memoryObjectList.Length];
+      for (int index = 0; index < memoryObjectList.Length; ++index)
+        memory[index] = new ObjectInfo()
+        {
+          instanceId = memoryObjectList[index].instanceId,
+          memorySize = memoryObjectList[index].memorySize,
+          reason = memoryObjectList[index].reason,
+          name = memoryObjectList[index].name,
+          className = memoryObjectList[index].className
+        };
+      int num = 0;
+      for (int index1 = 0; index1 < memoryObjectList.Length; ++index1)
+      {
+        for (int index2 = 0; index2 < memoryObjectList[index1].count; ++index2)
+        {
+          int referencesIndex = referencesIndices[index2 + num];
+          if (memory[referencesIndex].referencedBy == null)
+            memory[referencesIndex].referencedBy = new List<ObjectInfo>();
+          memory[referencesIndex].referencedBy.Add(memory[index1]);
+        }
+        num += memoryObjectList[index1].count;
+      }
+      MemoryElement memoryElement = new MemoryElement();
+      ObjectInfo[] array = memory;
+      // ISSUE: reference to a compiler-generated field
+      if (MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache2 == null)
+      {
+        // ISSUE: reference to a compiler-generated field
+        MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache2 = new Comparison<ObjectInfo>(MemoryElementDataManager.SortByMemoryClassName);
+      }
+      // ISSUE: reference to a compiler-generated field
+      Comparison<ObjectInfo> fMgCache2 = MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache2;
+      Array.Sort<ObjectInfo>(array, fMgCache2);
+      memoryElement.AddChild(new MemoryElement("Scene Memory", MemoryElementDataManager.GenerateObjectTypeGroups(memory, MemoryElementDataManager.ObjectTypeFilter.Scene)));
+      memoryElement.AddChild(new MemoryElement("Assets", MemoryElementDataManager.GenerateObjectTypeGroups(memory, MemoryElementDataManager.ObjectTypeFilter.Asset)));
+      memoryElement.AddChild(new MemoryElement("Builtin Resources", MemoryElementDataManager.GenerateObjectTypeGroups(memory, MemoryElementDataManager.ObjectTypeFilter.BuiltinResource)));
+      memoryElement.AddChild(new MemoryElement("Not Saved", MemoryElementDataManager.GenerateObjectTypeGroups(memory, MemoryElementDataManager.ObjectTypeFilter.DontSave)));
+      memoryElement.AddChild(new MemoryElement("Other", MemoryElementDataManager.GenerateObjectTypeGroups(memory, MemoryElementDataManager.ObjectTypeFilter.Other)));
+      List<MemoryElement> children = memoryElement.children;
+      // ISSUE: reference to a compiler-generated field
+      if (MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache3 == null)
+      {
+        // ISSUE: reference to a compiler-generated field
+        MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache3 = new Comparison<MemoryElement>(MemoryElementDataManager.SortByMemorySize);
+      }
+      // ISSUE: reference to a compiler-generated field
+      Comparison<MemoryElement> fMgCache3 = MemoryElementDataManager.\u003C\u003Ef__mg\u0024cache3;
+      children.Sort(fMgCache3);
+      return memoryElement;
+    }
 
-		private static int SortByMemorySize(MemoryElement x, MemoryElement y)
-		{
-			return y.totalMemory.CompareTo(x.totalMemory);
-		}
-
-		private static MemoryElementDataManager.ObjectTypeFilter GetObjectTypeFilter(ObjectInfo info)
-		{
-			MemoryElementDataManager.ObjectTypeFilter result;
-			switch (info.reason)
-			{
-			case 1:
-				result = MemoryElementDataManager.ObjectTypeFilter.BuiltinResource;
-				return result;
-			case 2:
-				result = MemoryElementDataManager.ObjectTypeFilter.DontSave;
-				return result;
-			case 3:
-			case 8:
-			case 9:
-				result = MemoryElementDataManager.ObjectTypeFilter.Asset;
-				return result;
-			case 10:
-				result = MemoryElementDataManager.ObjectTypeFilter.Other;
-				return result;
-			}
-			result = MemoryElementDataManager.ObjectTypeFilter.Scene;
-			return result;
-		}
-
-		private static bool HasValidNames(List<MemoryElement> memory)
-		{
-			bool result;
-			for (int i = 0; i < memory.Count; i++)
-			{
-				if (!string.IsNullOrEmpty(memory[i].name))
-				{
-					result = true;
-					return result;
-				}
-			}
-			result = false;
-			return result;
-		}
-
-		private static List<MemoryElement> GenerateObjectTypeGroups(ObjectInfo[] memory, MemoryElementDataManager.ObjectTypeFilter filter)
-		{
-			List<MemoryElement> list = new List<MemoryElement>();
-			MemoryElement memoryElement = null;
-			for (int i = 0; i < memory.Length; i++)
-			{
-				ObjectInfo objectInfo = memory[i];
-				if (MemoryElementDataManager.GetObjectTypeFilter(objectInfo) == filter)
-				{
-					if (memoryElement == null || objectInfo.className != memoryElement.name)
-					{
-						memoryElement = new MemoryElement(objectInfo.className);
-						list.Add(memoryElement);
-					}
-					memoryElement.AddChild(new MemoryElement(objectInfo, true));
-				}
-			}
-			List<MemoryElement> arg_98_0 = list;
-			if (MemoryElementDataManager.<>f__mg$cache0 == null)
-			{
-				MemoryElementDataManager.<>f__mg$cache0 = new Comparison<MemoryElement>(MemoryElementDataManager.SortByMemorySize);
-			}
-			arg_98_0.Sort(MemoryElementDataManager.<>f__mg$cache0);
-			foreach (MemoryElement current in list)
-			{
-				List<MemoryElement> arg_D9_0 = current.children;
-				if (MemoryElementDataManager.<>f__mg$cache1 == null)
-				{
-					MemoryElementDataManager.<>f__mg$cache1 = new Comparison<MemoryElement>(MemoryElementDataManager.SortByMemorySize);
-				}
-				arg_D9_0.Sort(MemoryElementDataManager.<>f__mg$cache1);
-				if (filter == MemoryElementDataManager.ObjectTypeFilter.Other && !MemoryElementDataManager.HasValidNames(current.children))
-				{
-					current.children.Clear();
-				}
-			}
-			return list;
-		}
-
-		public static MemoryElement GetTreeRoot(ObjectMemoryInfo[] memoryObjectList, int[] referencesIndices)
-		{
-			ObjectInfo[] array = new ObjectInfo[memoryObjectList.Length];
-			for (int i = 0; i < memoryObjectList.Length; i++)
-			{
-				array[i] = new ObjectInfo
-				{
-					instanceId = memoryObjectList[i].instanceId,
-					memorySize = memoryObjectList[i].memorySize,
-					reason = memoryObjectList[i].reason,
-					name = memoryObjectList[i].name,
-					className = memoryObjectList[i].className
-				};
-			}
-			int num = 0;
-			for (int j = 0; j < memoryObjectList.Length; j++)
-			{
-				for (int k = 0; k < memoryObjectList[j].count; k++)
-				{
-					int num2 = referencesIndices[k + num];
-					if (array[num2].referencedBy == null)
-					{
-						array[num2].referencedBy = new List<ObjectInfo>();
-					}
-					array[num2].referencedBy.Add(array[j]);
-				}
-				num += memoryObjectList[j].count;
-			}
-			MemoryElement memoryElement = new MemoryElement();
-			ObjectInfo[] arg_113_0 = array;
-			if (MemoryElementDataManager.<>f__mg$cache2 == null)
-			{
-				MemoryElementDataManager.<>f__mg$cache2 = new Comparison<ObjectInfo>(MemoryElementDataManager.SortByMemoryClassName);
-			}
-			Array.Sort<ObjectInfo>(arg_113_0, MemoryElementDataManager.<>f__mg$cache2);
-			memoryElement.AddChild(new MemoryElement("Scene Memory", MemoryElementDataManager.GenerateObjectTypeGroups(array, MemoryElementDataManager.ObjectTypeFilter.Scene)));
-			memoryElement.AddChild(new MemoryElement("Assets", MemoryElementDataManager.GenerateObjectTypeGroups(array, MemoryElementDataManager.ObjectTypeFilter.Asset)));
-			memoryElement.AddChild(new MemoryElement("Builtin Resources", MemoryElementDataManager.GenerateObjectTypeGroups(array, MemoryElementDataManager.ObjectTypeFilter.BuiltinResource)));
-			memoryElement.AddChild(new MemoryElement("Not Saved", MemoryElementDataManager.GenerateObjectTypeGroups(array, MemoryElementDataManager.ObjectTypeFilter.DontSave)));
-			memoryElement.AddChild(new MemoryElement("Other", MemoryElementDataManager.GenerateObjectTypeGroups(array, MemoryElementDataManager.ObjectTypeFilter.Other)));
-			List<MemoryElement> arg_1B4_0 = memoryElement.children;
-			if (MemoryElementDataManager.<>f__mg$cache3 == null)
-			{
-				MemoryElementDataManager.<>f__mg$cache3 = new Comparison<MemoryElement>(MemoryElementDataManager.SortByMemorySize);
-			}
-			arg_1B4_0.Sort(MemoryElementDataManager.<>f__mg$cache3);
-			return memoryElement;
-		}
-	}
+    private enum ObjectTypeFilter
+    {
+      Scene,
+      Asset,
+      BuiltinResource,
+      DontSave,
+      Other,
+    }
+  }
 }

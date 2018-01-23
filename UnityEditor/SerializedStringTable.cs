@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: SerializedStringTable
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections;
 using UnityEngine;
@@ -5,97 +11,83 @@ using UnityEngine;
 [Serializable]
 internal class SerializedStringTable
 {
-	[SerializeField]
-	private string[] keys;
+  [SerializeField]
+  private string[] keys;
+  [SerializeField]
+  private int[] values;
+  private Hashtable table;
 
-	[SerializeField]
-	private int[] values;
+  public Hashtable hashtable
+  {
+    get
+    {
+      this.SanityCheck();
+      return this.table;
+    }
+  }
 
-	private Hashtable table;
+  public int Length
+  {
+    get
+    {
+      this.SanityCheck();
+      return this.keys.Length;
+    }
+  }
 
-	public Hashtable hashtable
-	{
-		get
-		{
-			this.SanityCheck();
-			return this.table;
-		}
-	}
+  private void SanityCheck()
+  {
+    if (this.keys == null)
+    {
+      this.keys = new string[0];
+      this.values = new int[0];
+    }
+    if (this.table != null)
+      return;
+    this.table = new Hashtable();
+    for (int index = 0; index < this.keys.Length; ++index)
+      this.table[(object) this.keys[index]] = (object) this.values[index];
+  }
 
-	public int Length
-	{
-		get
-		{
-			this.SanityCheck();
-			return this.keys.Length;
-		}
-	}
+  private void SynchArrays()
+  {
+    this.keys = new string[this.table.Count];
+    this.values = new int[this.table.Count];
+    this.table.Keys.CopyTo((Array) this.keys, 0);
+    this.table.Values.CopyTo((Array) this.values, 0);
+  }
 
-	private void SanityCheck()
-	{
-		if (this.keys == null)
-		{
-			this.keys = new string[0];
-			this.values = new int[0];
-		}
-		if (this.table == null)
-		{
-			this.table = new Hashtable();
-			for (int i = 0; i < this.keys.Length; i++)
-			{
-				this.table[this.keys[i]] = this.values[i];
-			}
-		}
-	}
+  public void Set(string key, int value)
+  {
+    this.SanityCheck();
+    this.table[(object) key] = (object) value;
+    this.SynchArrays();
+  }
 
-	private void SynchArrays()
-	{
-		this.keys = new string[this.table.Count];
-		this.values = new int[this.table.Count];
-		this.table.Keys.CopyTo(this.keys, 0);
-		this.table.Values.CopyTo(this.values, 0);
-	}
+  public void Set(string key)
+  {
+    this.Set(key, 0);
+  }
 
-	public void Set(string key, int value)
-	{
-		this.SanityCheck();
-		this.table[key] = value;
-		this.SynchArrays();
-	}
+  public bool Contains(string key)
+  {
+    this.SanityCheck();
+    return this.table.Contains((object) key);
+  }
 
-	public void Set(string key)
-	{
-		this.Set(key, 0);
-	}
+  public int Get(string key)
+  {
+    this.SanityCheck();
+    if (!this.table.Contains((object) key))
+      return -1;
+    return (int) this.table[(object) key];
+  }
 
-	public bool Contains(string key)
-	{
-		this.SanityCheck();
-		return this.table.Contains(key);
-	}
-
-	public int Get(string key)
-	{
-		this.SanityCheck();
-		int result;
-		if (!this.table.Contains(key))
-		{
-			result = -1;
-		}
-		else
-		{
-			result = (int)this.table[key];
-		}
-		return result;
-	}
-
-	public void Remove(string key)
-	{
-		this.SanityCheck();
-		if (this.table.Contains(key))
-		{
-			this.table.Remove(key);
-		}
-		this.SynchArrays();
-	}
+  public void Remove(string key)
+  {
+    this.SanityCheck();
+    if (this.table.Contains((object) key))
+      this.table.Remove((object) key);
+    this.SynchArrays();
+  }
 }

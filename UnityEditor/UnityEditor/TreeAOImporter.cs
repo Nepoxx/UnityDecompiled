@@ -1,59 +1,50 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.TreeAOImporter
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class TreeAOImporter : AssetPostprocessor
-	{
-		private void OnPostprocessModel(GameObject root)
-		{
-			string text = base.assetPath.ToLower();
-			if (text.IndexOf("ambient-occlusion") != -1)
-			{
-				Component[] componentsInChildren = root.GetComponentsInChildren(typeof(MeshFilter));
-				Component[] array = componentsInChildren;
-				for (int i = 0; i < array.Length; i++)
-				{
-					MeshFilter meshFilter = (MeshFilter)array[i];
-					if (meshFilter.sharedMesh != null)
-					{
-						Mesh sharedMesh = meshFilter.sharedMesh;
-						TreeAO.CalcSoftOcclusion(sharedMesh);
-						Bounds bounds = sharedMesh.bounds;
-						Color[] array2 = sharedMesh.colors;
-						Vector3[] vertices = sharedMesh.vertices;
-						Vector4[] tangents = sharedMesh.tangents;
-						if (array2.Length == 0)
-						{
-							array2 = new Color[sharedMesh.vertexCount];
-							for (int j = 0; j < array2.Length; j++)
-							{
-								array2[j] = Color.white;
-							}
-						}
-						float b = 0f;
-						for (int k = 0; k < tangents.Length; k++)
-						{
-							b = Mathf.Max(tangents[k].w, b);
-						}
-						float num = 0f;
-						for (int l = 0; l < array2.Length; l++)
-						{
-							Vector2 vector = new Vector2(vertices[l].x, vertices[l].z);
-							float magnitude = vector.magnitude;
-							num = Mathf.Max(magnitude, num);
-						}
-						for (int m = 0; m < array2.Length; m++)
-						{
-							Vector2 vector2 = new Vector2(vertices[m].x, vertices[m].z);
-							float num2 = vector2.magnitude / num;
-							float num3 = (vertices[m].y - bounds.min.y) / bounds.size.y;
-							array2[m].a = num3 * num2 * 0.6f + num3 * 0.5f;
-						}
-						sharedMesh.colors = array2;
-					}
-				}
-			}
-		}
-	}
+  internal class TreeAOImporter : AssetPostprocessor
+  {
+    private void OnPostprocessModel(GameObject root)
+    {
+      if (this.assetPath.ToLower().IndexOf("ambient-occlusion") == -1)
+        return;
+      foreach (MeshFilter componentsInChild in root.GetComponentsInChildren(typeof (MeshFilter)))
+      {
+        if ((Object) componentsInChild.sharedMesh != (Object) null)
+        {
+          Mesh sharedMesh = componentsInChild.sharedMesh;
+          TreeAO.CalcSoftOcclusion(sharedMesh);
+          Bounds bounds = sharedMesh.bounds;
+          Color[] colorArray = sharedMesh.colors;
+          Vector3[] vertices = sharedMesh.vertices;
+          Vector4[] tangents = sharedMesh.tangents;
+          if (colorArray.Length == 0)
+          {
+            colorArray = new Color[sharedMesh.vertexCount];
+            for (int index = 0; index < colorArray.Length; ++index)
+              colorArray[index] = Color.white;
+          }
+          float b1 = 0.0f;
+          for (int index = 0; index < tangents.Length; ++index)
+            b1 = Mathf.Max(tangents[index].w, b1);
+          float b2 = 0.0f;
+          for (int index = 0; index < colorArray.Length; ++index)
+            b2 = Mathf.Max(new Vector2(vertices[index].x, vertices[index].z).magnitude, b2);
+          for (int index = 0; index < colorArray.Length; ++index)
+          {
+            float num1 = new Vector2(vertices[index].x, vertices[index].z).magnitude / b2;
+            float num2 = (vertices[index].y - bounds.min.y) / bounds.size.y;
+            colorArray[index].a = (float) ((double) num2 * (double) num1 * 0.600000023841858 + (double) num2 * 0.5);
+          }
+          sharedMesh.colors = colorArray;
+        }
+      }
+    }
+  }
 }

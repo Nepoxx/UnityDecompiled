@@ -1,15 +1,22 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.CollisionFlags
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	public enum CollisionFlags
-	{
-		None,
-		Sides,
-		Above,
-		Below = 4,
-		CollidedSides = 1,
-		CollidedAbove,
-		CollidedBelow = 4
-	}
+  /// <summary>
+  ///   <para>CollisionFlags is a bitmask returned by CharacterController.Move.</para>
+  /// </summary>
+  public enum CollisionFlags
+  {
+    None = 0,
+    CollidedSides = 1,
+    Sides = 1,
+    Above = 2,
+    CollidedAbove = 2,
+    Below = 4,
+    CollidedBelow = 4,
+  }
 }

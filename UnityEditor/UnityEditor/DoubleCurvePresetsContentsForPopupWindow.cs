@@ -1,170 +1,134 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.DoubleCurvePresetsContentsForPopupWindow
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class DoubleCurvePresetsContentsForPopupWindow : PopupWindowContent
-	{
-		private PresetLibraryEditor<DoubleCurvePresetLibrary> m_CurveLibraryEditor;
+  internal class DoubleCurvePresetsContentsForPopupWindow : PopupWindowContent
+  {
+    private bool m_WantsToClose = false;
+    private PresetLibraryEditor<DoubleCurvePresetLibrary> m_CurveLibraryEditor;
+    private PresetLibraryEditorState m_CurveLibraryEditorState;
+    private DoubleCurve m_DoubleCurve;
+    private Action<DoubleCurve> m_PresetSelectedCallback;
 
-		private PresetLibraryEditorState m_CurveLibraryEditorState;
+    public DoubleCurvePresetsContentsForPopupWindow(DoubleCurve doubleCurveToSave, Action<DoubleCurve> presetSelectedCallback)
+    {
+      this.m_DoubleCurve = doubleCurveToSave;
+      this.m_PresetSelectedCallback = presetSelectedCallback;
+    }
 
-		private DoubleCurve m_DoubleCurve;
+    public DoubleCurve doubleCurveToSave
+    {
+      get
+      {
+        return this.m_DoubleCurve;
+      }
+      set
+      {
+        this.m_DoubleCurve = value;
+      }
+    }
 
-		private bool m_WantsToClose = false;
+    public override void OnClose()
+    {
+      this.m_CurveLibraryEditorState.TransferEditorPrefsState(false);
+    }
 
-		private Action<DoubleCurve> m_PresetSelectedCallback;
+    public PresetLibraryEditor<DoubleCurvePresetLibrary> GetPresetLibraryEditor()
+    {
+      return this.m_CurveLibraryEditor;
+    }
 
-		public DoubleCurve doubleCurveToSave
-		{
-			get
-			{
-				return this.m_DoubleCurve;
-			}
-			set
-			{
-				this.m_DoubleCurve = value;
-			}
-		}
+    private bool IsSingleCurve(DoubleCurve doubleCurve)
+    {
+      return doubleCurve.minCurve == null || doubleCurve.minCurve.length == 0;
+    }
 
-		public DoubleCurvePresetsContentsForPopupWindow(DoubleCurve doubleCurveToSave, Action<DoubleCurve> presetSelectedCallback)
-		{
-			this.m_DoubleCurve = doubleCurveToSave;
-			this.m_PresetSelectedCallback = presetSelectedCallback;
-		}
+    private string GetEditorPrefBaseName()
+    {
+      return PresetLibraryLocations.GetParticleCurveLibraryExtension(this.m_DoubleCurve.IsSingleCurve(), this.m_DoubleCurve.signedRange);
+    }
 
-		public override void OnClose()
-		{
-			this.m_CurveLibraryEditorState.TransferEditorPrefsState(false);
-		}
+    public void InitIfNeeded()
+    {
+      if (this.m_CurveLibraryEditorState == null)
+      {
+        this.m_CurveLibraryEditorState = new PresetLibraryEditorState(this.GetEditorPrefBaseName());
+        this.m_CurveLibraryEditorState.TransferEditorPrefsState(true);
+      }
+      if (this.m_CurveLibraryEditor != null)
+        return;
+      this.m_CurveLibraryEditor = new PresetLibraryEditor<DoubleCurvePresetLibrary>(new ScriptableObjectSaveLoadHelper<DoubleCurvePresetLibrary>(PresetLibraryLocations.GetParticleCurveLibraryExtension(this.m_DoubleCurve.IsSingleCurve(), this.m_DoubleCurve.signedRange), SaveType.Text), this.m_CurveLibraryEditorState, new Action<int, object>(this.ItemClickedCallback));
+      this.m_CurveLibraryEditor.addDefaultPresets += new Action<PresetLibrary>(this.AddDefaultPresetsToLibrary);
+      this.m_CurveLibraryEditor.presetsWasReordered = new Action(this.PresetsWasReordered);
+      this.m_CurveLibraryEditor.previewAspect = 4f;
+      this.m_CurveLibraryEditor.minMaxPreviewHeight = new Vector2(24f, 24f);
+      this.m_CurveLibraryEditor.showHeader = true;
+    }
 
-		public PresetLibraryEditor<DoubleCurvePresetLibrary> GetPresetLibraryEditor()
-		{
-			return this.m_CurveLibraryEditor;
-		}
+    private void PresetsWasReordered()
+    {
+      InspectorWindow.RepaintAllInspectors();
+    }
 
-		private bool IsSingleCurve(DoubleCurve doubleCurve)
-		{
-			return doubleCurve.minCurve == null || doubleCurve.minCurve.length == 0;
-		}
+    public override void OnGUI(Rect rect)
+    {
+      this.InitIfNeeded();
+      this.m_CurveLibraryEditor.OnGUI(rect, (object) this.m_DoubleCurve);
+      if (!this.m_WantsToClose)
+        return;
+      this.editorWindow.Close();
+    }
 
-		private string GetEditorPrefBaseName()
-		{
-			return PresetLibraryLocations.GetParticleCurveLibraryExtension(this.m_DoubleCurve.IsSingleCurve(), this.m_DoubleCurve.signedRange);
-		}
+    private void ItemClickedCallback(int clickCount, object presetObject)
+    {
+      DoubleCurve doubleCurve = presetObject as DoubleCurve;
+      if (doubleCurve == null)
+        Debug.LogError((object) ("Incorrect object passed " + presetObject));
+      this.m_PresetSelectedCallback(doubleCurve);
+    }
 
-		public void InitIfNeeded()
-		{
-			if (this.m_CurveLibraryEditorState == null)
-			{
-				this.m_CurveLibraryEditorState = new PresetLibraryEditorState(this.GetEditorPrefBaseName());
-				this.m_CurveLibraryEditorState.TransferEditorPrefsState(true);
-			}
-			if (this.m_CurveLibraryEditor == null)
-			{
-				string particleCurveLibraryExtension = PresetLibraryLocations.GetParticleCurveLibraryExtension(this.m_DoubleCurve.IsSingleCurve(), this.m_DoubleCurve.signedRange);
-				ScriptableObjectSaveLoadHelper<DoubleCurvePresetLibrary> helper = new ScriptableObjectSaveLoadHelper<DoubleCurvePresetLibrary>(particleCurveLibraryExtension, SaveType.Text);
-				this.m_CurveLibraryEditor = new PresetLibraryEditor<DoubleCurvePresetLibrary>(helper, this.m_CurveLibraryEditorState, new Action<int, object>(this.ItemClickedCallback));
-				PresetLibraryEditor<DoubleCurvePresetLibrary> expr_7F = this.m_CurveLibraryEditor;
-				expr_7F.addDefaultPresets = (Action<PresetLibrary>)Delegate.Combine(expr_7F.addDefaultPresets, new Action<PresetLibrary>(this.AddDefaultPresetsToLibrary));
-				this.m_CurveLibraryEditor.presetsWasReordered = new Action(this.PresetsWasReordered);
-				this.m_CurveLibraryEditor.previewAspect = 4f;
-				this.m_CurveLibraryEditor.minMaxPreviewHeight = new Vector2(24f, 24f);
-				this.m_CurveLibraryEditor.showHeader = true;
-			}
-		}
+    public override Vector2 GetWindowSize()
+    {
+      return new Vector2(240f, 330f);
+    }
 
-		private void PresetsWasReordered()
-		{
-			InspectorWindow.RepaintAllInspectors();
-		}
+    private void AddDefaultPresetsToLibrary(PresetLibrary presetLibrary)
+    {
+      DoubleCurvePresetLibrary curvePresetLibrary = presetLibrary as DoubleCurvePresetLibrary;
+      if ((UnityEngine.Object) curvePresetLibrary == (UnityEngine.Object) null)
+      {
+        Debug.Log((object) ("Incorrect preset library, should be a DoubleCurvePresetLibrary but was a " + (object) presetLibrary.GetType()));
+      }
+      else
+      {
+        bool signedRange = this.m_DoubleCurve.signedRange;
+        List<DoubleCurve> doubleCurveList = new List<DoubleCurve>();
+        foreach (DoubleCurve doubleCurve in !this.IsSingleCurve(this.m_DoubleCurve) ? (!signedRange ? DoubleCurvePresetsContentsForPopupWindow.GetUnsignedDoubleCurveDefaults() : DoubleCurvePresetsContentsForPopupWindow.GetSignedDoubleCurveDefaults()) : DoubleCurvePresetsContentsForPopupWindow.GetUnsignedSingleCurveDefaults(signedRange))
+          curvePresetLibrary.Add((object) doubleCurve, "");
+      }
+    }
 
-		public override void OnGUI(Rect rect)
-		{
-			this.InitIfNeeded();
-			this.m_CurveLibraryEditor.OnGUI(rect, this.m_DoubleCurve);
-			if (this.m_WantsToClose)
-			{
-				base.editorWindow.Close();
-			}
-		}
+    private static List<DoubleCurve> GetUnsignedSingleCurveDefaults(bool signedRange)
+    {
+      return new List<DoubleCurve>() { new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetConstantKeys(1f)), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetLinearKeys()), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetLinearMirrorKeys()), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetEaseInKeys()), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetEaseInMirrorKeys()), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetEaseOutKeys()), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetEaseOutMirrorKeys()), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetEaseInOutKeys()), signedRange), new DoubleCurve((AnimationCurve) null, new AnimationCurve(CurveEditorWindow.GetEaseInOutMirrorKeys()), signedRange) };
+    }
 
-		private void ItemClickedCallback(int clickCount, object presetObject)
-		{
-			DoubleCurve doubleCurve = presetObject as DoubleCurve;
-			if (doubleCurve == null)
-			{
-				Debug.LogError("Incorrect object passed " + presetObject);
-			}
-			this.m_PresetSelectedCallback(doubleCurve);
-		}
+    private static List<DoubleCurve> GetUnsignedDoubleCurveDefaults()
+    {
+      return new List<DoubleCurve>() { new DoubleCurve(new AnimationCurve(CurveEditorWindow.GetConstantKeys(0.0f)), new AnimationCurve(CurveEditorWindow.GetConstantKeys(1f)), false) };
+    }
 
-		public override Vector2 GetWindowSize()
-		{
-			return new Vector2(240f, 330f);
-		}
-
-		private void AddDefaultPresetsToLibrary(PresetLibrary presetLibrary)
-		{
-			DoubleCurvePresetLibrary doubleCurvePresetLibrary = presetLibrary as DoubleCurvePresetLibrary;
-			if (doubleCurvePresetLibrary == null)
-			{
-				Debug.Log("Incorrect preset library, should be a DoubleCurvePresetLibrary but was a " + presetLibrary.GetType());
-			}
-			else
-			{
-				bool signedRange = this.m_DoubleCurve.signedRange;
-				List<DoubleCurve> list = new List<DoubleCurve>();
-				if (this.IsSingleCurve(this.m_DoubleCurve))
-				{
-					list = DoubleCurvePresetsContentsForPopupWindow.GetUnsignedSingleCurveDefaults(signedRange);
-				}
-				else if (signedRange)
-				{
-					list = DoubleCurvePresetsContentsForPopupWindow.GetSignedDoubleCurveDefaults();
-				}
-				else
-				{
-					list = DoubleCurvePresetsContentsForPopupWindow.GetUnsignedDoubleCurveDefaults();
-				}
-				foreach (DoubleCurve current in list)
-				{
-					doubleCurvePresetLibrary.Add(current, "");
-				}
-			}
-		}
-
-		private static List<DoubleCurve> GetUnsignedSingleCurveDefaults(bool signedRange)
-		{
-			return new List<DoubleCurve>
-			{
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetConstantKeys(1f)), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetLinearKeys()), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetLinearMirrorKeys()), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetEaseInKeys()), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetEaseInMirrorKeys()), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetEaseOutKeys()), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetEaseOutMirrorKeys()), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetEaseInOutKeys()), signedRange),
-				new DoubleCurve(null, new AnimationCurve(CurveEditorWindow.GetEaseInOutMirrorKeys()), signedRange)
-			};
-		}
-
-		private static List<DoubleCurve> GetUnsignedDoubleCurveDefaults()
-		{
-			return new List<DoubleCurve>
-			{
-				new DoubleCurve(new AnimationCurve(CurveEditorWindow.GetConstantKeys(0f)), new AnimationCurve(CurveEditorWindow.GetConstantKeys(1f)), false)
-			};
-		}
-
-		private static List<DoubleCurve> GetSignedDoubleCurveDefaults()
-		{
-			return new List<DoubleCurve>
-			{
-				new DoubleCurve(new AnimationCurve(CurveEditorWindow.GetConstantKeys(-1f)), new AnimationCurve(CurveEditorWindow.GetConstantKeys(1f)), true)
-			};
-		}
-	}
+    private static List<DoubleCurve> GetSignedDoubleCurveDefaults()
+    {
+      return new List<DoubleCurve>() { new DoubleCurve(new AnimationCurve(CurveEditorWindow.GetConstantKeys(-1f)), new AnimationCurve(CurveEditorWindow.GetConstantKeys(1f)), true) };
+    }
+  }
 }

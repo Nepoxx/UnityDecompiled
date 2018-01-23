@@ -1,204 +1,153 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.PopupLocationHelper
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal static class PopupLocationHelper
-	{
-		public enum PopupLocation
-		{
-			Below,
-			Above,
-			Left,
-			Right
-		}
+  internal static class PopupLocationHelper
+  {
+    public static Rect GetDropDownRect(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow)
+    {
+      return PopupLocationHelper.GetDropDownRect(buttonRect, minSize, maxSize, popupContainerWindow, (PopupLocationHelper.PopupLocation[]) null);
+    }
 
-		private static float k_SpaceFromBottom
-		{
-			get
-			{
-				float result;
-				if (Application.platform == RuntimePlatform.OSXEditor)
-				{
-					result = 10f;
-				}
-				else
-				{
-					result = 0f;
-				}
-				return result;
-			}
-		}
+    public static Rect GetDropDownRect(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, PopupLocationHelper.PopupLocation[] locationPriorityOrder)
+    {
+      if (locationPriorityOrder == null)
+        locationPriorityOrder = new PopupLocationHelper.PopupLocation[4]
+        {
+          PopupLocationHelper.PopupLocation.Below,
+          PopupLocationHelper.PopupLocation.Above,
+          PopupLocationHelper.PopupLocation.Left,
+          PopupLocationHelper.PopupLocation.Right
+        };
+      List<Rect> rects = new List<Rect>();
+      Rect resultRect;
+      foreach (int num in locationPriorityOrder)
+      {
+        switch (num)
+        {
+          case 0:
+            if (PopupLocationHelper.PopupBelow(buttonRect, minSize, maxSize, popupContainerWindow, out resultRect))
+              return resultRect;
+            rects.Add(resultRect);
+            break;
+          case 1:
+            if (PopupLocationHelper.PopupAbove(buttonRect, minSize, maxSize, popupContainerWindow, out resultRect))
+              return resultRect;
+            rects.Add(resultRect);
+            break;
+          case 2:
+            if (PopupLocationHelper.PopupLeft(buttonRect, minSize, maxSize, popupContainerWindow, out resultRect))
+              return resultRect;
+            rects.Add(resultRect);
+            break;
+          case 3:
+            if (PopupLocationHelper.PopupRight(buttonRect, minSize, maxSize, popupContainerWindow, out resultRect))
+              return resultRect;
+            rects.Add(resultRect);
+            break;
+        }
+      }
+      return PopupLocationHelper.GetLargestRect(rects);
+    }
 
-		public static Rect GetDropDownRect(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow)
-		{
-			return PopupLocationHelper.GetDropDownRect(buttonRect, minSize, maxSize, popupContainerWindow, null);
-		}
+    private static Rect FitRect(Rect rect, ContainerWindow popupContainerWindow)
+    {
+      if ((bool) ((Object) popupContainerWindow))
+        return popupContainerWindow.FitWindowRectToScreen(rect, true, true);
+      return ContainerWindow.FitRectToScreen(rect, true, true);
+    }
 
-		public static Rect GetDropDownRect(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, PopupLocationHelper.PopupLocation[] locationPriorityOrder)
-		{
-			if (locationPriorityOrder == null)
-			{
-				locationPriorityOrder = new PopupLocationHelper.PopupLocation[]
-				{
-					PopupLocationHelper.PopupLocation.Below,
-					PopupLocationHelper.PopupLocation.Above,
-					PopupLocationHelper.PopupLocation.Left,
-					PopupLocationHelper.PopupLocation.Right
-				};
-			}
-			List<Rect> list = new List<Rect>();
-			PopupLocationHelper.PopupLocation[] array = locationPriorityOrder;
-			Rect result;
-			for (int i = 0; i < array.Length; i++)
-			{
-				switch (array[i])
-				{
-				case PopupLocationHelper.PopupLocation.Below:
-				{
-					Rect rect;
-					if (PopupLocationHelper.PopupBelow(buttonRect, minSize, maxSize, popupContainerWindow, out rect))
-					{
-						result = rect;
-						return result;
-					}
-					list.Add(rect);
-					break;
-				}
-				case PopupLocationHelper.PopupLocation.Above:
-				{
-					Rect rect;
-					if (PopupLocationHelper.PopupAbove(buttonRect, minSize, maxSize, popupContainerWindow, out rect))
-					{
-						result = rect;
-						return result;
-					}
-					list.Add(rect);
-					break;
-				}
-				case PopupLocationHelper.PopupLocation.Left:
-				{
-					Rect rect;
-					if (PopupLocationHelper.PopupLeft(buttonRect, minSize, maxSize, popupContainerWindow, out rect))
-					{
-						result = rect;
-						return result;
-					}
-					list.Add(rect);
-					break;
-				}
-				case PopupLocationHelper.PopupLocation.Right:
-				{
-					Rect rect;
-					if (PopupLocationHelper.PopupRight(buttonRect, minSize, maxSize, popupContainerWindow, out rect))
-					{
-						result = rect;
-						return result;
-					}
-					list.Add(rect);
-					break;
-				}
-				}
-			}
-			result = PopupLocationHelper.GetLargestRect(list);
-			return result;
-		}
+    private static bool PopupRight(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
+    {
+      Rect rect1 = new Rect(buttonRect.xMax, buttonRect.y, maxSize.x, maxSize.y);
+      float num = 0.0f;
+      rect1.xMax += num;
+      rect1.height += PopupLocationHelper.k_SpaceFromBottom;
+      Rect rect2 = PopupLocationHelper.FitRect(rect1, popupContainerWindow);
+      float a = Mathf.Max(rect2.xMax - buttonRect.xMax - num, 0.0f);
+      float width = Mathf.Min(a, maxSize.x);
+      resultRect = new Rect(rect2.x, rect2.y, width, rect2.height - PopupLocationHelper.k_SpaceFromBottom);
+      return (double) a >= (double) minSize.x;
+    }
 
-		private static Rect FitRect(Rect rect, ContainerWindow popupContainerWindow)
-		{
-			Rect result;
-			if (popupContainerWindow)
-			{
-				result = popupContainerWindow.FitWindowRectToScreen(rect, true, true);
-			}
-			else
-			{
-				result = ContainerWindow.FitRectToScreen(rect, true, true);
-			}
-			return result;
-		}
+    private static bool PopupLeft(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
+    {
+      Rect rect1 = new Rect(buttonRect.x - maxSize.x, buttonRect.y, maxSize.x, maxSize.y);
+      float num = 0.0f;
+      rect1.xMin -= num;
+      rect1.height += PopupLocationHelper.k_SpaceFromBottom;
+      Rect rect2 = PopupLocationHelper.FitRect(rect1, popupContainerWindow);
+      float a = Mathf.Max(buttonRect.x - rect2.x - num, 0.0f);
+      float width = Mathf.Min(a, maxSize.x);
+      resultRect = new Rect(rect2.x, rect2.y, width, rect2.height - PopupLocationHelper.k_SpaceFromBottom);
+      return (double) a >= (double) minSize.x;
+    }
 
-		private static bool PopupRight(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
-		{
-			Rect rect = new Rect(buttonRect.xMax, buttonRect.y, maxSize.x, maxSize.y);
-			float num = 0f;
-			rect.xMax += num;
-			rect.height += PopupLocationHelper.k_SpaceFromBottom;
-			rect = PopupLocationHelper.FitRect(rect, popupContainerWindow);
-			float num2 = Mathf.Max(rect.xMax - buttonRect.xMax - num, 0f);
-			float width = Mathf.Min(num2, maxSize.x);
-			resultRect = new Rect(rect.x, rect.y, width, rect.height - PopupLocationHelper.k_SpaceFromBottom);
-			return num2 >= minSize.x;
-		}
+    private static bool PopupAbove(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
+    {
+      Rect rect1 = new Rect(buttonRect.x, buttonRect.y - maxSize.y, maxSize.x, maxSize.y);
+      float num1 = 0.0f;
+      rect1.yMin -= num1;
+      Rect rect2 = PopupLocationHelper.FitRect(rect1, popupContainerWindow);
+      float num2 = Mathf.Max(buttonRect.y - rect2.y - num1, 0.0f);
+      if ((double) num2 >= (double) minSize.y)
+      {
+        float height = Mathf.Min(num2, maxSize.y);
+        resultRect = new Rect(rect2.x, buttonRect.y - height, rect2.width, height);
+        return true;
+      }
+      resultRect = new Rect(rect2.x, buttonRect.y - num2, rect2.width, num2);
+      return false;
+    }
 
-		private static bool PopupLeft(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
-		{
-			Rect rect = new Rect(buttonRect.x - maxSize.x, buttonRect.y, maxSize.x, maxSize.y);
-			float num = 0f;
-			rect.xMin -= num;
-			rect.height += PopupLocationHelper.k_SpaceFromBottom;
-			rect = PopupLocationHelper.FitRect(rect, popupContainerWindow);
-			float num2 = Mathf.Max(buttonRect.x - rect.x - num, 0f);
-			float width = Mathf.Min(num2, maxSize.x);
-			resultRect = new Rect(rect.x, rect.y, width, rect.height - PopupLocationHelper.k_SpaceFromBottom);
-			return num2 >= minSize.x;
-		}
+    private static bool PopupBelow(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
+    {
+      Rect rect1 = new Rect(buttonRect.x, buttonRect.yMax, maxSize.x, maxSize.y);
+      rect1.height += PopupLocationHelper.k_SpaceFromBottom;
+      Rect rect2 = PopupLocationHelper.FitRect(rect1, popupContainerWindow);
+      float num = Mathf.Max(rect2.yMax - buttonRect.yMax - PopupLocationHelper.k_SpaceFromBottom, 0.0f);
+      if ((double) num >= (double) minSize.y)
+      {
+        float height = Mathf.Min(num, maxSize.y);
+        resultRect = new Rect(rect2.x, buttonRect.yMax, rect2.width, height);
+        return true;
+      }
+      resultRect = new Rect(rect2.x, buttonRect.yMax, rect2.width, num);
+      return false;
+    }
 
-		private static bool PopupAbove(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
-		{
-			Rect rect = new Rect(buttonRect.x, buttonRect.y - maxSize.y, maxSize.x, maxSize.y);
-			float num = 0f;
-			rect.yMin -= num;
-			rect = PopupLocationHelper.FitRect(rect, popupContainerWindow);
-			float num2 = Mathf.Max(buttonRect.y - rect.y - num, 0f);
-			bool result;
-			if (num2 >= minSize.y)
-			{
-				float num3 = Mathf.Min(num2, maxSize.y);
-				resultRect = new Rect(rect.x, buttonRect.y - num3, rect.width, num3);
-				result = true;
-			}
-			else
-			{
-				resultRect = new Rect(rect.x, buttonRect.y - num2, rect.width, num2);
-				result = false;
-			}
-			return result;
-		}
+    private static Rect GetLargestRect(List<Rect> rects)
+    {
+      Rect rect1 = new Rect();
+      foreach (Rect rect2 in rects)
+      {
+        if ((double) rect2.height * (double) rect2.width > (double) rect1.height * (double) rect1.width)
+          rect1 = rect2;
+      }
+      return rect1;
+    }
 
-		private static bool PopupBelow(Rect buttonRect, Vector2 minSize, Vector2 maxSize, ContainerWindow popupContainerWindow, out Rect resultRect)
-		{
-			Rect rect = new Rect(buttonRect.x, buttonRect.yMax, maxSize.x, maxSize.y);
-			rect.height += PopupLocationHelper.k_SpaceFromBottom;
-			rect = PopupLocationHelper.FitRect(rect, popupContainerWindow);
-			float num = Mathf.Max(rect.yMax - buttonRect.yMax - PopupLocationHelper.k_SpaceFromBottom, 0f);
-			bool result;
-			if (num >= minSize.y)
-			{
-				float height = Mathf.Min(num, maxSize.y);
-				resultRect = new Rect(rect.x, buttonRect.yMax, rect.width, height);
-				result = true;
-			}
-			else
-			{
-				resultRect = new Rect(rect.x, buttonRect.yMax, rect.width, num);
-				result = false;
-			}
-			return result;
-		}
+    private static float k_SpaceFromBottom
+    {
+      get
+      {
+        return Application.platform == RuntimePlatform.OSXEditor ? 10f : 0.0f;
+      }
+    }
 
-		private static Rect GetLargestRect(List<Rect> rects)
-		{
-			Rect result = default(Rect);
-			foreach (Rect current in rects)
-			{
-				if (current.height * current.width > result.height * result.width)
-				{
-					result = current;
-				}
-			}
-			return result;
-		}
-	}
+    public enum PopupLocation
+    {
+      Below,
+      Above,
+      Left,
+      Right,
+    }
+  }
 }

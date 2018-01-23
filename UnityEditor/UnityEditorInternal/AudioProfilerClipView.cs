@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.AudioProfilerClipView
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using UnityEditor;
@@ -6,294 +12,258 @@ using UnityEngine;
 
 namespace UnityEditorInternal
 {
-	internal class AudioProfilerClipView
-	{
-		internal class AudioProfilerClipTreeViewItem : TreeViewItem
-		{
-			public AudioProfilerClipInfoWrapper info
-			{
-				get;
-				set;
-			}
+  internal class AudioProfilerClipView
+  {
+    private TreeViewController m_TreeView;
+    private AudioProfilerClipTreeViewState m_TreeViewState;
+    private EditorWindow m_EditorWindow;
+    private AudioProfilerClipView.AudioProfilerClipViewColumnHeader m_ColumnHeader;
+    private AudioProfilerClipViewBackend m_Backend;
+    private GUIStyle m_HeaderStyle;
 
-			public AudioProfilerClipTreeViewItem(int id, int depth, TreeViewItem parent, string displayName, AudioProfilerClipInfoWrapper info) : base(id, depth, parent, displayName)
-			{
-				this.info = info;
-			}
-		}
+    public AudioProfilerClipView(EditorWindow editorWindow, AudioProfilerClipTreeViewState state)
+    {
+      this.m_EditorWindow = editorWindow;
+      this.m_TreeViewState = state;
+    }
 
-		internal class AudioProfilerDataSource : TreeViewDataSource
-		{
-			private AudioProfilerClipViewBackend m_Backend;
+    public int GetNumItemsInData()
+    {
+      return this.m_Backend.items.Count;
+    }
 
-			public AudioProfilerDataSource(TreeViewController treeView, AudioProfilerClipViewBackend backend) : base(treeView)
-			{
-				this.m_Backend = backend;
-				this.m_Backend.OnUpdate = new AudioProfilerClipViewBackend.DataUpdateDelegate(this.FetchData);
-				base.showRootItem = false;
-				base.rootIsCollapsable = false;
-				this.FetchData();
-			}
+    public void Init(Rect rect, AudioProfilerClipViewBackend backend)
+    {
+      if (this.m_HeaderStyle == null)
+        this.m_HeaderStyle = new GUIStyle((GUIStyle) "OL title");
+      this.m_HeaderStyle.alignment = TextAnchor.MiddleLeft;
+      if (this.m_TreeView != null)
+        return;
+      this.m_Backend = backend;
+      if (this.m_TreeViewState.columnWidths == null || this.m_TreeViewState.columnWidths.Length == 0)
+      {
+        int length = AudioProfilerClipInfoHelper.GetLastColumnIndex() + 1;
+        this.m_TreeViewState.columnWidths = new float[length];
+        for (int index1 = 0; index1 < length; ++index1)
+        {
+          float[] columnWidths = this.m_TreeViewState.columnWidths;
+          int index2 = index1;
+          int num1;
+          switch (index1)
+          {
+            case 0:
+              num1 = 300;
+              break;
+            case 2:
+              num1 = 110;
+              break;
+            default:
+              num1 = 80;
+              break;
+          }
+          double num2 = (double) num1;
+          columnWidths[index2] = (float) num2;
+        }
+      }
+      this.m_TreeView = new TreeViewController(this.m_EditorWindow, (TreeViewState) this.m_TreeViewState);
+      ITreeViewGUI gui = (ITreeViewGUI) new AudioProfilerClipView.AudioProfilerClipViewGUI(this.m_TreeView);
+      ITreeViewDataSource data = (ITreeViewDataSource) new AudioProfilerClipView.AudioProfilerDataSource(this.m_TreeView, this.m_Backend);
+      this.m_TreeView.Init(rect, data, gui, (ITreeViewDragging) null);
+      this.m_ColumnHeader = new AudioProfilerClipView.AudioProfilerClipViewColumnHeader(this.m_TreeViewState, this.m_Backend);
+      this.m_ColumnHeader.columnWidths = this.m_TreeViewState.columnWidths;
+      this.m_ColumnHeader.minColumnWidth = 30f;
+      this.m_TreeView.selectionChangedCallback += new Action<int[]>(this.OnTreeSelectionChanged);
+    }
 
-			private void FillTreeItems(AudioProfilerClipView.AudioProfilerClipTreeViewItem parentNode, int depth, int parentId, List<AudioProfilerClipInfoWrapper> items)
-			{
-				parentNode.children = new List<TreeViewItem>(items.Count);
-				int num = 1;
-				foreach (AudioProfilerClipInfoWrapper current in items)
-				{
-					AudioProfilerClipView.AudioProfilerClipTreeViewItem item = new AudioProfilerClipView.AudioProfilerClipTreeViewItem(++num, 1, parentNode, current.assetName, current);
-					parentNode.children.Add(item);
-				}
-			}
+    public void OnTreeSelectionChanged(int[] selection)
+    {
+      if (selection.Length != 1)
+        return;
+      AudioProfilerClipView.AudioProfilerClipTreeViewItem clipTreeViewItem = this.m_TreeView.FindItem(selection[0]) as AudioProfilerClipView.AudioProfilerClipTreeViewItem;
+      if (clipTreeViewItem != null)
+        EditorGUIUtility.PingObject(clipTreeViewItem.info.info.assetInstanceId);
+    }
 
-			public override void FetchData()
-			{
-				AudioProfilerClipView.AudioProfilerClipTreeViewItem audioProfilerClipTreeViewItem = new AudioProfilerClipView.AudioProfilerClipTreeViewItem(1, 0, null, "ROOT", new AudioProfilerClipInfoWrapper(default(AudioProfilerClipInfo), "ROOT"));
-				this.FillTreeItems(audioProfilerClipTreeViewItem, 1, 0, this.m_Backend.items);
-				this.m_RootItem = audioProfilerClipTreeViewItem;
-				this.SetExpandedWithChildren(this.m_RootItem, true);
-				this.m_NeedRefreshRows = true;
-			}
+    public void OnGUI(Rect rect)
+    {
+      int controlId = GUIUtility.GetControlID(FocusType.Keyboard, rect);
+      Rect rect1 = new Rect(rect.x, rect.y, rect.width, this.m_HeaderStyle.fixedHeight);
+      GUI.Label(rect1, "", this.m_HeaderStyle);
+      this.m_ColumnHeader.OnGUI(rect1, true, this.m_HeaderStyle);
+      rect.y += rect1.height;
+      rect.height -= rect1.height;
+      this.m_TreeView.OnEvent();
+      this.m_TreeView.OnGUI(rect, controlId);
+    }
 
-			public override bool CanBeParent(TreeViewItem item)
-			{
-				return item.hasChildren;
-			}
+    internal class AudioProfilerClipTreeViewItem : TreeViewItem
+    {
+      public AudioProfilerClipTreeViewItem(int id, int depth, TreeViewItem parent, string displayName, AudioProfilerClipInfoWrapper info)
+        : base(id, depth, parent, displayName)
+      {
+        this.info = info;
+      }
 
-			public override bool IsRenamingItemAllowed(TreeViewItem item)
-			{
-				return false;
-			}
-		}
+      public AudioProfilerClipInfoWrapper info { get; set; }
+    }
 
-		internal class AudioProfilerClipViewColumnHeader
-		{
-			private AudioProfilerClipTreeViewState m_TreeViewState;
+    internal class AudioProfilerDataSource : TreeViewDataSource
+    {
+      private AudioProfilerClipViewBackend m_Backend;
 
-			private AudioProfilerClipViewBackend m_Backend;
+      public AudioProfilerDataSource(TreeViewController treeView, AudioProfilerClipViewBackend backend)
+        : base(treeView)
+      {
+        this.m_Backend = backend;
+        this.m_Backend.OnUpdate = new AudioProfilerClipViewBackend.DataUpdateDelegate(((TreeViewDataSource) this).FetchData);
+        this.showRootItem = false;
+        this.rootIsCollapsable = false;
+        this.FetchData();
+      }
 
-			private string[] headers = new string[]
-			{
-				"Asset",
-				"Load State",
-				"Internal Load State",
-				"Age",
-				"Disposed",
-				"Num Voices"
-			};
+      private void FillTreeItems(AudioProfilerClipView.AudioProfilerClipTreeViewItem parentNode, int depth, int parentId, List<AudioProfilerClipInfoWrapper> items)
+      {
+        parentNode.children = new List<TreeViewItem>(items.Count);
+        int num = 1;
+        foreach (AudioProfilerClipInfoWrapper info in items)
+        {
+          AudioProfilerClipView.AudioProfilerClipTreeViewItem clipTreeViewItem = new AudioProfilerClipView.AudioProfilerClipTreeViewItem(++num, 1, (TreeViewItem) parentNode, info.assetName, info);
+          parentNode.children.Add((TreeViewItem) clipTreeViewItem);
+        }
+      }
 
-			public float[] columnWidths
-			{
-				get;
-				set;
-			}
+      public override void FetchData()
+      {
+        AudioProfilerClipView.AudioProfilerClipTreeViewItem parentNode = new AudioProfilerClipView.AudioProfilerClipTreeViewItem(1, 0, (TreeViewItem) null, "ROOT", new AudioProfilerClipInfoWrapper(new AudioProfilerClipInfo(), "ROOT"));
+        this.FillTreeItems(parentNode, 1, 0, this.m_Backend.items);
+        this.m_RootItem = (TreeViewItem) parentNode;
+        this.SetExpandedWithChildren(this.m_RootItem, true);
+        this.m_NeedRefreshRows = true;
+      }
 
-			public float minColumnWidth
-			{
-				get;
-				set;
-			}
+      public override bool CanBeParent(TreeViewItem item)
+      {
+        return item.hasChildren;
+      }
 
-			public float dragWidth
-			{
-				get;
-				set;
-			}
+      public override bool IsRenamingItemAllowed(TreeViewItem item)
+      {
+        return false;
+      }
+    }
 
-			public AudioProfilerClipViewColumnHeader(AudioProfilerClipTreeViewState state, AudioProfilerClipViewBackend backend)
-			{
-				this.m_TreeViewState = state;
-				this.m_Backend = backend;
-				this.minColumnWidth = 10f;
-				this.dragWidth = 6f;
-			}
+    internal class AudioProfilerClipViewColumnHeader
+    {
+      private string[] headers = new string[6]{ "Asset", "Load State", "Internal Load State", "Age", "Disposed", "Num Voices" };
+      private AudioProfilerClipTreeViewState m_TreeViewState;
+      private AudioProfilerClipViewBackend m_Backend;
 
-			public void OnGUI(Rect rect, bool allowSorting, GUIStyle headerStyle)
-			{
-				GUI.BeginClip(rect);
-				float num = -this.m_TreeViewState.scrollPos.x;
-				int lastColumnIndex = AudioProfilerClipInfoHelper.GetLastColumnIndex();
-				for (int i = 0; i <= lastColumnIndex; i++)
-				{
-					Rect position = new Rect(num, 0f, this.columnWidths[i], rect.height - 1f);
-					num += this.columnWidths[i];
-					Rect position2 = new Rect(num - this.dragWidth / 2f, 0f, 3f, rect.height);
-					float x = EditorGUI.MouseDeltaReader(position2, true).x;
-					if (x != 0f)
-					{
-						this.columnWidths[i] += x;
-						this.columnWidths[i] = Mathf.Max(this.columnWidths[i], this.minColumnWidth);
-					}
-					string text = this.headers[i];
-					if (allowSorting && i == this.m_TreeViewState.selectedColumn)
-					{
-						text += ((!this.m_TreeViewState.sortByDescendingOrder) ? " ▲" : " ▼");
-					}
-					GUI.Box(position, text, headerStyle);
-					if (allowSorting && Event.current.type == EventType.MouseDown && position.Contains(Event.current.mousePosition))
-					{
-						this.m_TreeViewState.SetSelectedColumn(i);
-						this.m_Backend.UpdateSorting();
-					}
-					if (Event.current.type == EventType.Repaint)
-					{
-						EditorGUIUtility.AddCursorRect(position2, MouseCursor.SplitResizeLeftRight);
-					}
-				}
-				GUI.EndClip();
-			}
-		}
+      public AudioProfilerClipViewColumnHeader(AudioProfilerClipTreeViewState state, AudioProfilerClipViewBackend backend)
+      {
+        this.m_TreeViewState = state;
+        this.m_Backend = backend;
+        this.minColumnWidth = 10f;
+        this.dragWidth = 6f;
+      }
 
-		internal class AudioProfilerClipViewGUI : TreeViewGUI
-		{
-			private float[] columnWidths
-			{
-				get
-				{
-					return ((AudioProfilerClipTreeViewState)this.m_TreeView.state).columnWidths;
-				}
-			}
+      public float[] columnWidths { get; set; }
 
-			public AudioProfilerClipViewGUI(TreeViewController treeView) : base(treeView)
-			{
-				this.k_IconWidth = 0f;
-			}
+      public float minColumnWidth { get; set; }
 
-			protected override Texture GetIconForItem(TreeViewItem item)
-			{
-				return null;
-			}
+      public float dragWidth { get; set; }
 
-			protected override void RenameEnded()
-			{
-			}
+      public void OnGUI(Rect rect, bool allowSorting, GUIStyle headerStyle)
+      {
+        GUI.BeginClip(rect);
+        float x1 = -this.m_TreeViewState.scrollPos.x;
+        int lastColumnIndex = AudioProfilerClipInfoHelper.GetLastColumnIndex();
+        for (int index = 0; index <= lastColumnIndex; ++index)
+        {
+          Rect position1 = new Rect(x1, 0.0f, this.columnWidths[index], rect.height - 1f);
+          x1 += this.columnWidths[index];
+          Rect position2 = new Rect(x1 - this.dragWidth / 2f, 0.0f, 3f, rect.height);
+          float x2 = EditorGUI.MouseDeltaReader(position2, true).x;
+          if ((double) x2 != 0.0)
+          {
+            this.columnWidths[index] += x2;
+            this.columnWidths[index] = Mathf.Max(this.columnWidths[index], this.minColumnWidth);
+          }
+          string header = this.headers[index];
+          if (allowSorting && index == this.m_TreeViewState.selectedColumn)
+            header += !this.m_TreeViewState.sortByDescendingOrder ? " ▲" : " ▼";
+          GUI.Box(position1, header, headerStyle);
+          if (allowSorting && Event.current.type == EventType.MouseDown && position1.Contains(Event.current.mousePosition))
+          {
+            this.m_TreeViewState.SetSelectedColumn(index);
+            this.m_Backend.UpdateSorting();
+          }
+          if (Event.current.type == EventType.Repaint)
+            EditorGUIUtility.AddCursorRect(position2, MouseCursor.SplitResizeLeftRight);
+        }
+        GUI.EndClip();
+      }
+    }
 
-			protected override void SyncFakeItem()
-			{
-			}
+    internal class AudioProfilerClipViewGUI : TreeViewGUI
+    {
+      public AudioProfilerClipViewGUI(TreeViewController treeView)
+        : base(treeView)
+      {
+        this.k_IconWidth = 0.0f;
+      }
 
-			public override Vector2 GetTotalSize()
-			{
-				Vector2 totalSize = base.GetTotalSize();
-				totalSize.x = 0f;
-				float[] columnWidths = this.columnWidths;
-				for (int i = 0; i < columnWidths.Length; i++)
-				{
-					float num = columnWidths[i];
-					totalSize.x += num;
-				}
-				return totalSize;
-			}
+      protected override Texture GetIconForItem(TreeViewItem item)
+      {
+        return (Texture) null;
+      }
 
-			protected override void OnContentGUI(Rect rect, int row, TreeViewItem item, string label, bool selected, bool focused, bool useBoldFont, bool isPinging)
-			{
-				if (Event.current.type == EventType.Repaint)
-				{
-					GUIStyle gUIStyle = (!useBoldFont) ? TreeViewGUI.Styles.lineStyle : TreeViewGUI.Styles.lineBoldStyle;
-					gUIStyle.alignment = TextAnchor.MiddleLeft;
-					gUIStyle.padding.left = 0;
-					int num = 2;
-					base.OnContentGUI(new Rect(rect.x, rect.y, this.columnWidths[0] - (float)num, rect.height), row, item, label, selected, focused, useBoldFont, isPinging);
-					rect.x += this.columnWidths[0] + (float)num;
-					AudioProfilerClipView.AudioProfilerClipTreeViewItem audioProfilerClipTreeViewItem = item as AudioProfilerClipView.AudioProfilerClipTreeViewItem;
-					for (int i = 1; i < this.columnWidths.Length; i++)
-					{
-						rect.width = this.columnWidths[i] - (float)(2 * num);
-						gUIStyle.alignment = TextAnchor.MiddleRight;
-						gUIStyle.Draw(rect, AudioProfilerClipInfoHelper.GetColumnString(audioProfilerClipTreeViewItem.info, (AudioProfilerClipInfoHelper.ColumnIndices)i), false, false, selected, focused);
-						Handles.color = Color.black;
-						Handles.DrawLine(new Vector3(rect.x - (float)num + 1f, rect.y, 0f), new Vector3(rect.x - (float)num + 1f, rect.y + rect.height, 0f));
-						rect.x += this.columnWidths[i];
-					}
-					gUIStyle.alignment = TextAnchor.MiddleLeft;
-				}
-			}
-		}
+      protected override void RenameEnded()
+      {
+      }
 
-		private TreeViewController m_TreeView;
+      protected override void SyncFakeItem()
+      {
+      }
 
-		private AudioProfilerClipTreeViewState m_TreeViewState;
+      public override Vector2 GetTotalSize()
+      {
+        Vector2 totalSize = base.GetTotalSize();
+        totalSize.x = 0.0f;
+        foreach (float columnWidth in this.columnWidths)
+          totalSize.x += columnWidth;
+        return totalSize;
+      }
 
-		private EditorWindow m_EditorWindow;
+      protected override void OnContentGUI(Rect rect, int row, TreeViewItem item, string label, bool selected, bool focused, bool useBoldFont, bool isPinging)
+      {
+        if (Event.current.type != EventType.Repaint)
+          return;
+        GUIStyle guiStyle = !useBoldFont ? TreeViewGUI.Styles.lineStyle : TreeViewGUI.Styles.lineBoldStyle;
+        guiStyle.alignment = TextAnchor.MiddleLeft;
+        guiStyle.padding.left = 0;
+        int num = 2;
+        base.OnContentGUI(new Rect(rect.x, rect.y, this.columnWidths[0] - (float) num, rect.height), row, item, label, selected, focused, useBoldFont, isPinging);
+        rect.x += this.columnWidths[0] + (float) num;
+        AudioProfilerClipView.AudioProfilerClipTreeViewItem clipTreeViewItem = item as AudioProfilerClipView.AudioProfilerClipTreeViewItem;
+        for (int index = 1; index < this.columnWidths.Length; ++index)
+        {
+          rect.width = this.columnWidths[index] - (float) (2 * num);
+          guiStyle.alignment = TextAnchor.MiddleRight;
+          guiStyle.Draw(rect, AudioProfilerClipInfoHelper.GetColumnString(clipTreeViewItem.info, (AudioProfilerClipInfoHelper.ColumnIndices) index), false, false, selected, focused);
+          Handles.color = Color.black;
+          Handles.DrawLine(new Vector3((float) ((double) rect.x - (double) num + 1.0), rect.y, 0.0f), new Vector3((float) ((double) rect.x - (double) num + 1.0), rect.y + rect.height, 0.0f));
+          rect.x += this.columnWidths[index];
+        }
+        guiStyle.alignment = TextAnchor.MiddleLeft;
+      }
 
-		private AudioProfilerClipView.AudioProfilerClipViewColumnHeader m_ColumnHeader;
-
-		private AudioProfilerClipViewBackend m_Backend;
-
-		private GUIStyle m_HeaderStyle;
-
-		private int delayedPingObject;
-
-		public AudioProfilerClipView(EditorWindow editorWindow, AudioProfilerClipTreeViewState state)
-		{
-			this.m_EditorWindow = editorWindow;
-			this.m_TreeViewState = state;
-		}
-
-		public int GetNumItemsInData()
-		{
-			return this.m_Backend.items.Count;
-		}
-
-		public void Init(Rect rect, AudioProfilerClipViewBackend backend)
-		{
-			if (this.m_HeaderStyle == null)
-			{
-				this.m_HeaderStyle = new GUIStyle("OL title");
-			}
-			this.m_HeaderStyle.alignment = TextAnchor.MiddleLeft;
-			if (this.m_TreeView == null)
-			{
-				this.m_Backend = backend;
-				if (this.m_TreeViewState.columnWidths == null || this.m_TreeViewState.columnWidths.Length == 0)
-				{
-					int num = AudioProfilerClipInfoHelper.GetLastColumnIndex() + 1;
-					this.m_TreeViewState.columnWidths = new float[num];
-					for (int i = 0; i < num; i++)
-					{
-						this.m_TreeViewState.columnWidths[i] = (float)((i != 0) ? ((i != 2) ? 80 : 110) : 300);
-					}
-				}
-				this.m_TreeView = new TreeViewController(this.m_EditorWindow, this.m_TreeViewState);
-				ITreeViewGUI gui = new AudioProfilerClipView.AudioProfilerClipViewGUI(this.m_TreeView);
-				ITreeViewDataSource data = new AudioProfilerClipView.AudioProfilerDataSource(this.m_TreeView, this.m_Backend);
-				this.m_TreeView.Init(rect, data, gui, null);
-				this.m_ColumnHeader = new AudioProfilerClipView.AudioProfilerClipViewColumnHeader(this.m_TreeViewState, this.m_Backend);
-				this.m_ColumnHeader.columnWidths = this.m_TreeViewState.columnWidths;
-				this.m_ColumnHeader.minColumnWidth = 30f;
-				TreeViewController expr_14A = this.m_TreeView;
-				expr_14A.selectionChangedCallback = (Action<int[]>)Delegate.Combine(expr_14A.selectionChangedCallback, new Action<int[]>(this.OnTreeSelectionChanged));
-			}
-		}
-
-		private void PingObjectDelayed()
-		{
-			EditorGUIUtility.PingObject(this.delayedPingObject);
-		}
-
-		public void OnTreeSelectionChanged(int[] selection)
-		{
-			if (selection.Length == 1)
-			{
-				TreeViewItem treeViewItem = this.m_TreeView.FindItem(selection[0]);
-				AudioProfilerClipView.AudioProfilerClipTreeViewItem audioProfilerClipTreeViewItem = treeViewItem as AudioProfilerClipView.AudioProfilerClipTreeViewItem;
-				if (audioProfilerClipTreeViewItem != null)
-				{
-					EditorGUIUtility.PingObject(audioProfilerClipTreeViewItem.info.info.assetInstanceId);
-				}
-			}
-		}
-
-		public void OnGUI(Rect rect)
-		{
-			int controlID = GUIUtility.GetControlID(FocusType.Keyboard, rect);
-			Rect rect2 = new Rect(rect.x, rect.y, rect.width, this.m_HeaderStyle.fixedHeight);
-			GUI.Label(rect2, "", this.m_HeaderStyle);
-			this.m_ColumnHeader.OnGUI(rect2, true, this.m_HeaderStyle);
-			rect.y += rect2.height;
-			rect.height -= rect2.height;
-			this.m_TreeView.OnEvent();
-			this.m_TreeView.OnGUI(rect, controlID);
-		}
-	}
+      private float[] columnWidths
+      {
+        get
+        {
+          return ((AudioProfilerClipTreeViewState) this.m_TreeView.state).columnWidths;
+        }
+      }
+    }
+  }
 }

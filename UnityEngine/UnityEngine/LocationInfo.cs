@@ -1,67 +1,87 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.LocationInfo
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	public struct LocationInfo
-	{
-		private double m_Timestamp;
+  /// <summary>
+  ///   <para>Structure describing device location.</para>
+  /// </summary>
+  public struct LocationInfo
+  {
+    private double m_Timestamp;
+    private float m_Latitude;
+    private float m_Longitude;
+    private float m_Altitude;
+    private float m_HorizontalAccuracy;
+    private float m_VerticalAccuracy;
 
-		private float m_Latitude;
+    /// <summary>
+    ///   <para>Geographical device location latitude.</para>
+    /// </summary>
+    public float latitude
+    {
+      get
+      {
+        return this.m_Latitude;
+      }
+    }
 
-		private float m_Longitude;
+    /// <summary>
+    ///   <para>Geographical device location latitude.</para>
+    /// </summary>
+    public float longitude
+    {
+      get
+      {
+        return this.m_Longitude;
+      }
+    }
 
-		private float m_Altitude;
+    /// <summary>
+    ///   <para>Geographical device location altitude.</para>
+    /// </summary>
+    public float altitude
+    {
+      get
+      {
+        return this.m_Altitude;
+      }
+    }
 
-		private float m_HorizontalAccuracy;
+    /// <summary>
+    ///   <para>Horizontal accuracy of the location.</para>
+    /// </summary>
+    public float horizontalAccuracy
+    {
+      get
+      {
+        return this.m_HorizontalAccuracy;
+      }
+    }
 
-		private float m_VerticalAccuracy;
+    /// <summary>
+    ///   <para>Vertical accuracy of the location.</para>
+    /// </summary>
+    public float verticalAccuracy
+    {
+      get
+      {
+        return this.m_VerticalAccuracy;
+      }
+    }
 
-		public float latitude
-		{
-			get
-			{
-				return this.m_Latitude;
-			}
-		}
-
-		public float longitude
-		{
-			get
-			{
-				return this.m_Longitude;
-			}
-		}
-
-		public float altitude
-		{
-			get
-			{
-				return this.m_Altitude;
-			}
-		}
-
-		public float horizontalAccuracy
-		{
-			get
-			{
-				return this.m_HorizontalAccuracy;
-			}
-		}
-
-		public float verticalAccuracy
-		{
-			get
-			{
-				return this.m_VerticalAccuracy;
-			}
-		}
-
-		public double timestamp
-		{
-			get
-			{
-				return this.m_Timestamp;
-			}
-		}
-	}
+    /// <summary>
+    ///   <para>Timestamp (in seconds since 1970) when location was last time updated.</para>
+    /// </summary>
+    public double timestamp
+    {
+      get
+      {
+        return this.m_Timestamp;
+      }
+    }
+  }
 }

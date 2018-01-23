@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AssetStoreWindow
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Text;
 using System.Threading;
@@ -6,329 +12,280 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	[EditorWindowTitle(title = "Asset Store", icon = "Asset Store")]
-	internal class AssetStoreWindow : EditorWindow, IHasCustomMenu
-	{
-		internal WebView webView;
+  [EditorWindowTitle(icon = "Asset Store", title = "Asset Store")]
+  internal class AssetStoreWindow : EditorWindow, IHasCustomMenu
+  {
+    internal WebView webView;
+    internal WebScriptObject scriptObject;
+    private int m_CurrentSkin;
+    private bool m_IsDocked;
+    private bool m_IsOffline;
+    private bool m_SyncingFocus;
+    private int m_RepeatedShow;
+    private bool m_ShouldRetryInitialURL;
 
-		internal WebScriptObject scriptObject;
+    public bool initialized
+    {
+      get
+      {
+        return (UnityEngine.Object) null != (UnityEngine.Object) this.webView;
+      }
+    }
 
-		private int m_CurrentSkin;
+    public static void OpenURL(string url)
+    {
+      AssetStoreWindow assetStoreWindow = AssetStoreWindow.Init();
+      bool flag = !assetStoreWindow.initialized;
+      assetStoreWindow.InvokeJSMethod("document.AssetStore", "openURL", (object) url);
+      AssetStoreContext.GetInstance().initialOpenURL = url;
+      if (!flag)
+        return;
+      assetStoreWindow.ScheduleOpenURL(TimeSpan.FromSeconds(3.0));
+    }
 
-		private bool m_IsDocked;
+    public static AssetStoreWindow Init()
+    {
+      AssetStoreWindow window = EditorWindow.GetWindow<AssetStoreWindow>(new System.Type[1]{ typeof (SceneView) });
+      window.SetMinMaxSizes();
+      window.Show();
+      return window;
+    }
 
-		private bool m_IsOffline;
+    private void SetMinMaxSizes()
+    {
+      this.minSize = new Vector2(400f, 100f);
+      this.maxSize = new Vector2(2048f, 2048f);
+    }
 
-		private bool m_SyncingFocus;
+    public virtual void AddItemsToMenu(GenericMenu menu)
+    {
+      menu.AddItem(new GUIContent("Reload"), false, new GenericMenu.MenuFunction(this.Reload));
+    }
 
-		private int m_RepeatedShow;
+    public void Logout()
+    {
+      this.InvokeJSMethod("document.AssetStore.login", "logout");
+    }
 
-		private bool m_ShouldRetryInitialURL;
+    public void Reload()
+    {
+      this.m_CurrentSkin = EditorGUIUtility.skinIndex;
+      this.m_IsDocked = this.docked;
+      this.webView.Reload();
+    }
 
-		public bool initialized
-		{
-			get
-			{
-				return null != this.webView;
-			}
-		}
+    public void OnLoadError(string url)
+    {
+      if (!(bool) this.webView)
+        return;
+      if (this.m_IsOffline)
+      {
+        Debug.LogErrorFormat("Unexpected error: Failed to load offline Asset Store page (url={0})", (object) url);
+      }
+      else
+      {
+        this.m_IsOffline = true;
+        this.webView.LoadFile(AssetStoreUtils.GetOfflinePath());
+      }
+    }
 
-		public static void OpenURL(string url)
-		{
-			AssetStoreWindow assetStoreWindow = AssetStoreWindow.Init();
-			bool flag = !assetStoreWindow.initialized;
-			assetStoreWindow.InvokeJSMethod("document.AssetStore", "openURL", new object[]
-			{
-				url
-			});
-			AssetStoreContext.GetInstance().initialOpenURL = url;
-			if (flag)
-			{
-				assetStoreWindow.ScheduleOpenURL(TimeSpan.FromSeconds(3.0));
-			}
-		}
+    public void OnInitScripting()
+    {
+      this.SetScriptObject();
+    }
 
-		public static AssetStoreWindow Init()
-		{
-			AssetStoreWindow window = EditorWindow.GetWindow<AssetStoreWindow>(new Type[]
-			{
-				typeof(SceneView)
-			});
-			window.SetMinMaxSizes();
-			window.Show();
-			return window;
-		}
+    public void OnOpenExternalLink(string url)
+    {
+      if (!url.StartsWith("http://") && !url.StartsWith("https://"))
+        return;
+      Application.OpenURL(url);
+    }
 
-		private void SetMinMaxSizes()
-		{
-			base.minSize = new Vector2(400f, 100f);
-			base.maxSize = new Vector2(2048f, 2048f);
-		}
+    public void OnEnable()
+    {
+      this.SetMinMaxSizes();
+      this.titleContent = this.GetLocalizedTitleContent();
+      AssetStoreUtils.RegisterDownloadDelegate((ScriptableObject) this);
+    }
 
-		public virtual void AddItemsToMenu(GenericMenu menu)
-		{
-			menu.AddItem(new GUIContent("Reload"), false, new GenericMenu.MenuFunction(this.Reload));
-		}
+    public void OnDisable()
+    {
+      AssetStoreUtils.UnRegisterDownloadDelegate((ScriptableObject) this);
+    }
 
-		public void Logout()
-		{
-			this.InvokeJSMethod("document.AssetStore.login", "logout", new object[0]);
-		}
+    public void OnDownloadProgress(string id, string message, ulong bytes, ulong total)
+    {
+      this.InvokeJSMethod("document.AssetStore.pkgs", nameof (OnDownloadProgress), (object) id, (object) message, (object) bytes, (object) total);
+    }
 
-		public void Reload()
-		{
-			this.m_CurrentSkin = EditorGUIUtility.skinIndex;
-			this.m_IsDocked = base.docked;
-			this.webView.Reload();
-		}
+    public void OnGUI()
+    {
+      Rect webViewRect = GUIClip.Unclip(new Rect(0.0f, 0.0f, this.position.width, this.position.height));
+      if (!(bool) this.webView)
+        this.InitWebView(webViewRect);
+      if (this.m_RepeatedShow-- > 0)
+        this.Refresh();
+      if (Event.current.type != EventType.Repaint)
+        return;
+      this.webView.SetHostView((GUIView) this.m_Parent);
+      this.webView.SetSizeAndPosition((int) webViewRect.x, (int) webViewRect.y, (int) webViewRect.width, (int) webViewRect.height);
+      if (this.m_CurrentSkin != EditorGUIUtility.skinIndex)
+      {
+        this.m_CurrentSkin = EditorGUIUtility.skinIndex;
+        this.InvokeJSMethod("document.AssetStore", "refreshSkinIndex");
+      }
+      this.UpdateDockStatusIfNeeded();
+    }
 
-		public void OnLoadError(string url)
-		{
-			if (this.webView)
-			{
-				if (this.m_IsOffline)
-				{
-					Debug.LogErrorFormat("Unexpected error: Failed to load offline Asset Store page (url={0})", new object[]
-					{
-						url
-					});
-				}
-				else
-				{
-					this.m_IsOffline = true;
-					this.webView.LoadFile(AssetStoreUtils.GetOfflinePath());
-				}
-			}
-		}
+    private void Update()
+    {
+      if (!this.m_ShouldRetryInitialURL)
+        return;
+      this.m_ShouldRetryInitialURL = false;
+      string initialOpenUrl = AssetStoreContext.GetInstance().initialOpenURL;
+      if (string.IsNullOrEmpty(initialOpenUrl))
+        return;
+      AssetStoreWindow.OpenURL(initialOpenUrl);
+    }
 
-		public void OnInitScripting()
-		{
-			this.SetScriptObject();
-		}
+    public void UpdateDockStatusIfNeeded()
+    {
+      if (this.m_IsDocked == this.docked)
+        return;
+      this.m_IsDocked = this.docked;
+      if ((UnityEngine.Object) this.scriptObject != (UnityEngine.Object) null)
+      {
+        AssetStoreContext.GetInstance().docked = this.docked;
+        this.InvokeJSMethod("document.AssetStore", "updateDockStatus");
+      }
+    }
 
-		public void OnOpenExternalLink(string url)
-		{
-			if (url.StartsWith("http://") || url.StartsWith("https://"))
-			{
-				Application.OpenURL(url);
-			}
-		}
+    public void ToggleMaximize()
+    {
+      this.maximized = !this.maximized;
+      this.Refresh();
+      this.SetFocus(true);
+    }
 
-		public void OnEnable()
-		{
-			this.SetMinMaxSizes();
-			base.titleContent = base.GetLocalizedTitleContent();
-			AssetStoreUtils.RegisterDownloadDelegate(this);
-		}
+    public void Refresh()
+    {
+      this.webView.Hide();
+      this.webView.Show();
+    }
 
-		public void OnDisable()
-		{
-			AssetStoreUtils.UnRegisterDownloadDelegate(this);
-		}
+    public void OnFocus()
+    {
+      this.SetFocus(true);
+    }
 
-		public void OnDownloadProgress(string id, string message, ulong bytes, ulong total)
-		{
-			this.InvokeJSMethod("document.AssetStore.pkgs", "OnDownloadProgress", new object[]
-			{
-				id,
-				message,
-				bytes,
-				total
-			});
-		}
+    public void OnLostFocus()
+    {
+      this.SetFocus(false);
+    }
 
-		public void OnGUI()
-		{
-			Rect webViewRect = GUIClip.Unclip(new Rect(0f, 0f, base.position.width, base.position.height));
-			if (!this.webView)
-			{
-				this.InitWebView(webViewRect);
-			}
-			if (this.m_RepeatedShow-- > 0)
-			{
-				this.Refresh();
-			}
-			if (Event.current.type == EventType.Repaint)
-			{
-				this.webView.SetHostView(this.m_Parent);
-				this.webView.SetSizeAndPosition((int)webViewRect.x, (int)webViewRect.y, (int)webViewRect.width, (int)webViewRect.height);
-				if (this.m_CurrentSkin != EditorGUIUtility.skinIndex)
-				{
-					this.m_CurrentSkin = EditorGUIUtility.skinIndex;
-					this.InvokeJSMethod("document.AssetStore", "refreshSkinIndex", new object[0]);
-				}
-				this.UpdateDockStatusIfNeeded();
-			}
-		}
+    public void OnBecameInvisible()
+    {
+      if (!(bool) this.webView)
+        return;
+      this.webView.SetHostView((GUIView) null);
+    }
 
-		private void Update()
-		{
-			if (this.m_ShouldRetryInitialURL)
-			{
-				this.m_ShouldRetryInitialURL = false;
-				string initialOpenURL = AssetStoreContext.GetInstance().initialOpenURL;
-				if (!string.IsNullOrEmpty(initialOpenURL))
-				{
-					AssetStoreWindow.OpenURL(initialOpenURL);
-				}
-			}
-		}
+    public void OnDestroy()
+    {
+      UnityEngine.Object.DestroyImmediate((UnityEngine.Object) this.webView);
+    }
 
-		public void UpdateDockStatusIfNeeded()
-		{
-			if (this.m_IsDocked != base.docked)
-			{
-				this.m_IsDocked = base.docked;
-				if (this.scriptObject != null)
-				{
-					AssetStoreContext.GetInstance().docked = base.docked;
-					this.InvokeJSMethod("document.AssetStore", "updateDockStatus", new object[0]);
-				}
-			}
-		}
+    private void InitWebView(Rect webViewRect)
+    {
+      this.m_CurrentSkin = EditorGUIUtility.skinIndex;
+      this.m_IsDocked = this.docked;
+      this.m_IsOffline = false;
+      if (!(bool) this.webView)
+      {
+        int x = (int) webViewRect.x;
+        int y = (int) webViewRect.y;
+        int width = (int) webViewRect.width;
+        int height = (int) webViewRect.height;
+        this.webView = ScriptableObject.CreateInstance<WebView>();
+        this.webView.InitWebView((GUIView) this.m_Parent, x, y, width, height, false);
+        this.webView.hideFlags = HideFlags.HideAndDontSave;
+        this.webView.AllowRightClickMenu(true);
+        if (this.hasFocus)
+          this.SetFocus(true);
+      }
+      this.webView.SetDelegateObject((ScriptableObject) this);
+      this.webView.LoadFile(AssetStoreUtils.GetLoaderPath());
+    }
 
-		public void ToggleMaximize()
-		{
-			base.maximized = !base.maximized;
-			this.Refresh();
-			this.SetFocus(true);
-		}
+    private void CreateScriptObject()
+    {
+      if ((UnityEngine.Object) this.scriptObject != (UnityEngine.Object) null)
+        return;
+      this.scriptObject = ScriptableObject.CreateInstance<WebScriptObject>();
+      this.scriptObject.hideFlags = HideFlags.HideAndDontSave;
+      this.scriptObject.webView = this.webView;
+    }
 
-		public void Refresh()
-		{
-			this.webView.Hide();
-			this.webView.Show();
-		}
+    private void SetScriptObject()
+    {
+      if (!(bool) this.webView)
+        return;
+      this.CreateScriptObject();
+      this.webView.DefineScriptObject("window.unityScriptObject", (ScriptableObject) this.scriptObject);
+    }
 
-		public void OnFocus()
-		{
-			this.SetFocus(true);
-		}
+    private void InvokeJSMethod(string objectName, string name, params object[] args)
+    {
+      if (!(bool) this.webView)
+        return;
+      StringBuilder stringBuilder = new StringBuilder();
+      stringBuilder.Append(objectName);
+      stringBuilder.Append('.');
+      stringBuilder.Append(name);
+      stringBuilder.Append('(');
+      bool flag1 = true;
+      foreach (object obj in args)
+      {
+        if (!flag1)
+          stringBuilder.Append(',');
+        bool flag2 = obj is string;
+        if (flag2)
+          stringBuilder.Append('"');
+        stringBuilder.Append(obj);
+        if (flag2)
+          stringBuilder.Append('"');
+        flag1 = false;
+      }
+      stringBuilder.Append(");");
+      this.webView.ExecuteJavascript(stringBuilder.ToString());
+    }
 
-		public void OnLostFocus()
-		{
-			this.SetFocus(false);
-		}
+    private void SetFocus(bool value)
+    {
+      if (this.m_SyncingFocus)
+        return;
+      this.m_SyncingFocus = true;
+      if ((bool) this.webView)
+      {
+        if (value)
+        {
+          this.webView.SetHostView((GUIView) this.m_Parent);
+          this.webView.Show();
+          if (Application.platform == RuntimePlatform.OSXEditor)
+            this.m_RepeatedShow = 5;
+        }
+        this.webView.SetFocus(value);
+      }
+      this.m_SyncingFocus = false;
+    }
 
-		public void OnBecameInvisible()
-		{
-			if (this.webView)
-			{
-				this.webView.SetHostView(null);
-			}
-		}
-
-		public void OnDestroy()
-		{
-			UnityEngine.Object.DestroyImmediate(this.webView);
-		}
-
-		private void InitWebView(Rect webViewRect)
-		{
-			this.m_CurrentSkin = EditorGUIUtility.skinIndex;
-			this.m_IsDocked = base.docked;
-			this.m_IsOffline = false;
-			if (!this.webView)
-			{
-				int x = (int)webViewRect.x;
-				int y = (int)webViewRect.y;
-				int width = (int)webViewRect.width;
-				int height = (int)webViewRect.height;
-				this.webView = ScriptableObject.CreateInstance<WebView>();
-				this.webView.InitWebView(this.m_Parent, x, y, width, height, false);
-				this.webView.hideFlags = HideFlags.HideAndDontSave;
-				this.webView.AllowRightClickMenu(true);
-				if (base.hasFocus)
-				{
-					this.SetFocus(true);
-				}
-			}
-			this.webView.SetDelegateObject(this);
-			this.webView.LoadFile(AssetStoreUtils.GetLoaderPath());
-		}
-
-		private void CreateScriptObject()
-		{
-			if (!(this.scriptObject != null))
-			{
-				this.scriptObject = ScriptableObject.CreateInstance<WebScriptObject>();
-				this.scriptObject.hideFlags = HideFlags.HideAndDontSave;
-				this.scriptObject.webView = this.webView;
-			}
-		}
-
-		private void SetScriptObject()
-		{
-			if (this.webView)
-			{
-				this.CreateScriptObject();
-				this.webView.DefineScriptObject("window.unityScriptObject", this.scriptObject);
-			}
-		}
-
-		private void InvokeJSMethod(string objectName, string name, params object[] args)
-		{
-			if (this.webView)
-			{
-				StringBuilder stringBuilder = new StringBuilder();
-				stringBuilder.Append(objectName);
-				stringBuilder.Append('.');
-				stringBuilder.Append(name);
-				stringBuilder.Append('(');
-				bool flag = true;
-				for (int i = 0; i < args.Length; i++)
-				{
-					object obj = args[i];
-					if (!flag)
-					{
-						stringBuilder.Append(',');
-					}
-					bool flag2 = obj is string;
-					if (flag2)
-					{
-						stringBuilder.Append('"');
-					}
-					stringBuilder.Append(obj);
-					if (flag2)
-					{
-						stringBuilder.Append('"');
-					}
-					flag = false;
-				}
-				stringBuilder.Append(");");
-				this.webView.ExecuteJavascript(stringBuilder.ToString());
-			}
-		}
-
-		private void SetFocus(bool value)
-		{
-			if (!this.m_SyncingFocus)
-			{
-				this.m_SyncingFocus = true;
-				if (this.webView)
-				{
-					if (value)
-					{
-						this.webView.SetHostView(this.m_Parent);
-						this.webView.Show();
-						if (Application.platform == RuntimePlatform.OSXEditor)
-						{
-							this.m_RepeatedShow = 5;
-						}
-					}
-					this.webView.SetFocus(value);
-				}
-				this.m_SyncingFocus = false;
-			}
-		}
-
-		private void ScheduleOpenURL(TimeSpan timeout)
-		{
-			ThreadPool.QueueUserWorkItem(delegate
-			{
-				Thread.Sleep(timeout);
-				this.m_ShouldRetryInitialURL = true;
-			});
-		}
-	}
+    private void ScheduleOpenURL(TimeSpan timeout)
+    {
+      ThreadPool.QueueUserWorkItem((WaitCallback) delegate
+      {
+        Thread.Sleep(timeout);
+        this.m_ShouldRetryInitialURL = true;
+      });
+    }
+  }
 }

@@ -1,41 +1,33 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.IStylePainter
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	internal interface IStylePainter
-	{
-		Rect currentWorldClip
-		{
-			get;
-			set;
-		}
+  internal interface IStylePainter
+  {
+    void DrawRect(RectStylePainterParameters painterParams);
 
-		Vector2 mousePosition
-		{
-			get;
-			set;
-		}
+    void DrawTexture(TextureStylePainterParameters painterParams);
 
-		Event repaintEvent
-		{
-			get;
-			set;
-		}
+    void DrawText(TextStylePainterParameters painterParams);
 
-		float opacity
-		{
-			get;
-			set;
-		}
+    Vector2 GetCursorPosition(CursorPositionStylePainterParameters painterParams);
 
-		void DrawRect(Rect screenRect, Color color, float borderWidth = 0f, float borderRadius = 0f);
+    Rect currentWorldClip { get; set; }
 
-		void DrawTexture(Rect screenRect, Texture texture, Color color, ScaleMode scaleMode = ScaleMode.StretchToFill, float borderWidth = 0f, float borderRadius = 0f, int leftBorder = 0, int rightBorder = 0, int topBorder = 0, int bottomBorder = 0);
+    Vector2 mousePosition { get; set; }
 
-		void DrawText(Rect screenRect, string text, Font font, int fontSize, FontStyle fontStyle, Color fontColor, TextAnchor anchor, bool wordWrap, float wordWrapWidth, bool richText, TextClipping clipping);
+    Matrix4x4 currentTransform { get; set; }
 
-		float ComputeTextWidth(string text, Font font, int fontSize, FontStyle fontStyle, TextAnchor anchor, bool richText);
+    Event repaintEvent { get; set; }
 
-		float ComputeTextHeight(string text, float width, bool wordWrap, Font font, int fontSize, FontStyle fontStyle, TextAnchor anchor, bool richText);
-	}
+    float opacity { get; set; }
+
+    float ComputeTextWidth(TextStylePainterParameters painterParams);
+
+    float ComputeTextHeight(TextStylePainterParameters painterParams);
+  }
 }

@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.DesktopPluginImporterExtension
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -6,274 +12,178 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class DesktopPluginImporterExtension : DefaultPluginImporterExtension
-	{
-		internal enum DesktopPluginCPUArchitecture
-		{
-			None,
-			AnyCPU,
-			x86,
-			x86_64
-		}
+  internal class DesktopPluginImporterExtension : DefaultPluginImporterExtension
+  {
+    private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_WindowsX86;
+    private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_WindowsX86_X64;
+    private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_LinuxX86;
+    private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_LinuxX86_X64;
+    private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_OSX_X64;
 
-		internal class DesktopSingleCPUProperty : DefaultPluginImporterExtension.Property
-		{
-			public DesktopSingleCPUProperty(GUIContent name, string platformName) : this(name, platformName, DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.AnyCPU)
-			{
-			}
+    public DesktopPluginImporterExtension()
+      : base((DefaultPluginImporterExtension.Property[]) null)
+    {
+      this.properties = this.GetProperties();
+    }
 
-			public DesktopSingleCPUProperty(GUIContent name, string platformName, DesktopPluginImporterExtension.DesktopPluginCPUArchitecture architecture) : base(name, "CPU", architecture, platformName)
-			{
-			}
+    private DefaultPluginImporterExtension.Property[] GetProperties()
+    {
+      List<DefaultPluginImporterExtension.Property> propertyList = new List<DefaultPluginImporterExtension.Property>();
+      this.m_WindowsX86 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneWindows));
+      this.m_WindowsX86_X64 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86_x64"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneWindows64));
+      this.m_LinuxX86 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneLinux), DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86);
+      this.m_LinuxX86_X64 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86_x64"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneLinux64), DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86_64);
+      this.m_OSX_X64 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x64"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneOSX));
+      propertyList.Add((DefaultPluginImporterExtension.Property) this.m_WindowsX86);
+      propertyList.Add((DefaultPluginImporterExtension.Property) this.m_WindowsX86_X64);
+      propertyList.Add((DefaultPluginImporterExtension.Property) this.m_LinuxX86);
+      propertyList.Add((DefaultPluginImporterExtension.Property) this.m_LinuxX86_X64);
+      propertyList.Add((DefaultPluginImporterExtension.Property) this.m_OSX_X64);
+      return propertyList.ToArray();
+    }
 
-			internal bool IsTargetEnabled(PluginImporterInspector inspector)
-			{
-				PluginImporterInspector.Compatibility platformCompatibility = inspector.GetPlatformCompatibility(base.platformName);
-				if (platformCompatibility == PluginImporterInspector.Compatibility.Mixed)
-				{
-					throw new Exception("Unexpected mixed value for '" + inspector.importer.assetPath + "', platform: " + base.platformName);
-				}
-				return platformCompatibility == PluginImporterInspector.Compatibility.Compatible;
-			}
+    private DesktopPluginImporterExtension.DesktopPluginCPUArchitecture CalculateMultiCPUArchitecture(bool x86, bool x64)
+    {
+      if (x86 && x64)
+        return DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.AnyCPU;
+      if (x86)
+        return DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86;
+      return x64 ? DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86_64 : DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.None;
+    }
 
-			internal override void OnGUI(PluginImporterInspector inspector)
-			{
-				EditorGUILayout.BeginHorizontal(new GUILayoutOption[0]);
-				GUILayout.Space(10f);
-				EditorGUI.BeginChangeCheck();
-				bool flag = EditorGUILayout.Toggle(base.name, this.IsTargetEnabled(inspector), new GUILayoutOption[0]);
-				if (EditorGUI.EndChangeCheck())
-				{
-					base.value = ((!flag) ? DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.None : base.defaultValue);
-					inspector.SetPlatformCompatibility(base.platformName, flag);
-				}
-				EditorGUILayout.EndHorizontal();
-			}
-		}
+    private bool IsUsableOnWindows(PluginImporter imp)
+    {
+      return !imp.isNativePlugin || Path.GetExtension(imp.assetPath).ToLower() == ".dll";
+    }
 
-		private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_WindowsX86;
+    private bool IsUsableOnOSX(PluginImporter imp)
+    {
+      if (!imp.isNativePlugin)
+        return true;
+      string lower = Path.GetExtension(imp.assetPath).ToLower();
+      return lower == ".so" || lower == ".bundle";
+    }
 
-		private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_WindowsX86_X64;
+    private bool IsUsableOnLinux(PluginImporter imp)
+    {
+      return !imp.isNativePlugin || Path.GetExtension(imp.assetPath).ToLower() == ".so";
+    }
 
-		private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_LinuxX86;
+    public override void OnPlatformSettingsGUI(PluginImporterInspector inspector)
+    {
+      PluginImporter importer = inspector.importer;
+      EditorGUI.BeginChangeCheck();
+      if (this.IsUsableOnWindows(importer))
+      {
+        EditorGUILayout.LabelField(EditorGUIUtility.TextContent("Windows"), EditorStyles.boldLabel, new GUILayoutOption[0]);
+        this.m_WindowsX86.OnGUI(inspector);
+        this.m_WindowsX86_X64.OnGUI(inspector);
+        EditorGUILayout.Space();
+      }
+      if (this.IsUsableOnLinux(importer))
+      {
+        EditorGUILayout.LabelField(EditorGUIUtility.TextContent("Linux"), EditorStyles.boldLabel, new GUILayoutOption[0]);
+        this.m_LinuxX86.OnGUI(inspector);
+        this.m_LinuxX86_X64.OnGUI(inspector);
+        EditorGUILayout.Space();
+      }
+      if (this.IsUsableOnOSX(importer))
+      {
+        EditorGUILayout.LabelField(EditorGUIUtility.TextContent("Mac OS X"), EditorStyles.boldLabel, new GUILayoutOption[0]);
+        this.m_OSX_X64.OnGUI(inspector);
+      }
+      if (!EditorGUI.EndChangeCheck())
+        return;
+      this.ValidateUniversalTargets(inspector);
+      this.hasModified = true;
+    }
 
-		private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_LinuxX86_X64;
+    public void ValidateSingleCPUTargets(PluginImporterInspector inspector)
+    {
+      DesktopPluginImporterExtension.DesktopSingleCPUProperty[] singleCpuPropertyArray = new DesktopPluginImporterExtension.DesktopSingleCPUProperty[5]{ this.m_WindowsX86, this.m_WindowsX86_X64, this.m_LinuxX86, this.m_LinuxX86_X64, this.m_OSX_X64 };
+      foreach (DesktopPluginImporterExtension.DesktopSingleCPUProperty singleCpuProperty in singleCpuPropertyArray)
+      {
+        string str = !singleCpuProperty.IsTargetEnabled(inspector) ? DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.None.ToString() : singleCpuProperty.defaultValue.ToString();
+        foreach (PluginImporter importer in inspector.importers)
+          importer.SetPlatformData(singleCpuProperty.platformName, "CPU", str);
+      }
+      this.ValidateUniversalTargets(inspector);
+    }
 
-		private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_OSXX86;
+    private void ValidateUniversalTargets(PluginImporterInspector inspector)
+    {
+      bool x86 = this.m_LinuxX86.IsTargetEnabled(inspector);
+      bool x64 = this.m_LinuxX86_X64.IsTargetEnabled(inspector);
+      DesktopPluginImporterExtension.DesktopPluginCPUArchitecture multiCpuArchitecture1 = this.CalculateMultiCPUArchitecture(x86, x64);
+      foreach (PluginImporter importer in inspector.importers)
+        importer.SetPlatformData(BuildTarget.StandaloneLinuxUniversal, "CPU", multiCpuArchitecture1.ToString());
+      inspector.SetPlatformCompatibility(BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneLinuxUniversal), x86 || x64);
+      bool flag = this.m_OSX_X64.IsTargetEnabled(inspector);
+      DesktopPluginImporterExtension.DesktopPluginCPUArchitecture multiCpuArchitecture2 = this.CalculateMultiCPUArchitecture(true, flag);
+      foreach (PluginImporter importer in inspector.importers)
+        importer.SetPlatformData(BuildTarget.StandaloneOSX, "CPU", multiCpuArchitecture2.ToString());
+      inspector.SetPlatformCompatibility(BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneOSX), flag);
+    }
 
-		private DesktopPluginImporterExtension.DesktopSingleCPUProperty m_OSXX86_X64;
+    public override string CalculateFinalPluginPath(string platformName, PluginImporter imp)
+    {
+      BuildTarget buildTargetByName = BuildPipeline.GetBuildTargetByName(platformName);
+      bool flag1 = buildTargetByName == BuildTarget.StandaloneWindows || buildTargetByName == BuildTarget.StandaloneWindows64;
+      bool flag2 = buildTargetByName == BuildTarget.StandaloneOSXIntel || buildTargetByName == BuildTarget.StandaloneOSXIntel64 || buildTargetByName == BuildTarget.StandaloneOSX;
+      bool flag3 = buildTargetByName == BuildTarget.StandaloneLinux || buildTargetByName == BuildTarget.StandaloneLinux64 || buildTargetByName == BuildTarget.StandaloneLinuxUniversal;
+      if (!flag3 && !flag2 && !flag1)
+        throw new Exception(string.Format("Failed to resolve standalone platform, platform string '{0}', resolved target '{1}'", (object) platformName, (object) buildTargetByName.ToString()));
+      if (flag1 && !this.IsUsableOnWindows(imp) || flag2 && !this.IsUsableOnOSX(imp) || flag3 && !this.IsUsableOnLinux(imp))
+        return string.Empty;
+      string platformData = imp.GetPlatformData(platformName, "CPU");
+      if (string.Compare(platformData, "None", true) == 0)
+        return string.Empty;
+      if (!string.IsNullOrEmpty(platformData) && string.Compare(platformData, "AnyCPU", true) != 0)
+        return Path.Combine(platformData, Path.GetFileName(imp.assetPath));
+      return Path.GetFileName(imp.assetPath);
+    }
 
-		public DesktopPluginImporterExtension() : base(null)
-		{
-			this.properties = this.GetProperties();
-		}
+    internal enum DesktopPluginCPUArchitecture
+    {
+      None,
+      AnyCPU,
+      x86,
+      x86_64,
+    }
 
-		private DefaultPluginImporterExtension.Property[] GetProperties()
-		{
-			List<DefaultPluginImporterExtension.Property> list = new List<DefaultPluginImporterExtension.Property>();
-			this.m_WindowsX86 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneWindows));
-			this.m_WindowsX86_X64 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86_x64"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneWindows64));
-			this.m_LinuxX86 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneLinux), DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86);
-			this.m_LinuxX86_X64 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86_x64"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneLinux64), DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86_64);
-			this.m_OSXX86 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneOSXIntel));
-			this.m_OSXX86_X64 = new DesktopPluginImporterExtension.DesktopSingleCPUProperty(EditorGUIUtility.TextContent("x86_x64"), BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneOSXIntel64));
-			list.Add(this.m_WindowsX86);
-			list.Add(this.m_WindowsX86_X64);
-			list.Add(this.m_LinuxX86);
-			list.Add(this.m_LinuxX86_X64);
-			list.Add(this.m_OSXX86);
-			list.Add(this.m_OSXX86_X64);
-			return list.ToArray();
-		}
+    internal class DesktopSingleCPUProperty : DefaultPluginImporterExtension.Property
+    {
+      public DesktopSingleCPUProperty(GUIContent name, string platformName)
+        : this(name, platformName, DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.AnyCPU)
+      {
+      }
 
-		private DesktopPluginImporterExtension.DesktopPluginCPUArchitecture CalculateMultiCPUArchitecture(bool x86, bool x64)
-		{
-			DesktopPluginImporterExtension.DesktopPluginCPUArchitecture result;
-			if (x86 && x64)
-			{
-				result = DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.AnyCPU;
-			}
-			else if (x86)
-			{
-				result = DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86;
-			}
-			else if (x64)
-			{
-				result = DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.x86_64;
-			}
-			else
-			{
-				result = DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.None;
-			}
-			return result;
-		}
+      public DesktopSingleCPUProperty(GUIContent name, string platformName, DesktopPluginImporterExtension.DesktopPluginCPUArchitecture architecture)
+        : base(name, "CPU", (object) architecture, platformName)
+      {
+      }
 
-		private bool IsUsableOnWindows(PluginImporter imp)
-		{
-			bool result;
-			if (!imp.isNativePlugin)
-			{
-				result = true;
-			}
-			else
-			{
-				string a = Path.GetExtension(imp.assetPath).ToLower();
-				result = (a == ".dll");
-			}
-			return result;
-		}
+      internal bool IsTargetEnabled(PluginImporterInspector inspector)
+      {
+        PluginImporterInspector.Compatibility platformCompatibility = inspector.GetPlatformCompatibility(this.platformName);
+        if (platformCompatibility == PluginImporterInspector.Compatibility.Mixed)
+          throw new Exception("Unexpected mixed value for '" + inspector.importer.assetPath + "', platform: " + this.platformName);
+        return platformCompatibility == PluginImporterInspector.Compatibility.Compatible;
+      }
 
-		private bool IsUsableOnOSX(PluginImporter imp)
-		{
-			bool result;
-			if (!imp.isNativePlugin)
-			{
-				result = true;
-			}
-			else
-			{
-				string a = Path.GetExtension(imp.assetPath).ToLower();
-				result = (a == ".so" || a == ".bundle");
-			}
-			return result;
-		}
-
-		private bool IsUsableOnLinux(PluginImporter imp)
-		{
-			bool result;
-			if (!imp.isNativePlugin)
-			{
-				result = true;
-			}
-			else
-			{
-				string a = Path.GetExtension(imp.assetPath).ToLower();
-				result = (a == ".so");
-			}
-			return result;
-		}
-
-		public override void OnPlatformSettingsGUI(PluginImporterInspector inspector)
-		{
-			PluginImporter importer = inspector.importer;
-			EditorGUI.BeginChangeCheck();
-			if (this.IsUsableOnWindows(importer))
-			{
-				EditorGUILayout.LabelField(EditorGUIUtility.TextContent("Windows"), EditorStyles.boldLabel, new GUILayoutOption[0]);
-				this.m_WindowsX86.OnGUI(inspector);
-				this.m_WindowsX86_X64.OnGUI(inspector);
-				EditorGUILayout.Space();
-			}
-			if (this.IsUsableOnLinux(importer))
-			{
-				EditorGUILayout.LabelField(EditorGUIUtility.TextContent("Linux"), EditorStyles.boldLabel, new GUILayoutOption[0]);
-				this.m_LinuxX86.OnGUI(inspector);
-				this.m_LinuxX86_X64.OnGUI(inspector);
-				EditorGUILayout.Space();
-			}
-			if (this.IsUsableOnOSX(importer))
-			{
-				EditorGUILayout.LabelField(EditorGUIUtility.TextContent("Mac OS X"), EditorStyles.boldLabel, new GUILayoutOption[0]);
-				this.m_OSXX86.OnGUI(inspector);
-				this.m_OSXX86_X64.OnGUI(inspector);
-			}
-			if (EditorGUI.EndChangeCheck())
-			{
-				this.ValidateUniversalTargets(inspector);
-				this.hasModified = true;
-			}
-		}
-
-		public void ValidateSingleCPUTargets(PluginImporterInspector inspector)
-		{
-			DesktopPluginImporterExtension.DesktopSingleCPUProperty[] array = new DesktopPluginImporterExtension.DesktopSingleCPUProperty[]
-			{
-				this.m_WindowsX86,
-				this.m_WindowsX86_X64,
-				this.m_LinuxX86,
-				this.m_LinuxX86_X64,
-				this.m_OSXX86,
-				this.m_OSXX86_X64
-			};
-			DesktopPluginImporterExtension.DesktopSingleCPUProperty[] array2 = array;
-			for (int i = 0; i < array2.Length; i++)
-			{
-				DesktopPluginImporterExtension.DesktopSingleCPUProperty desktopSingleCPUProperty = array2[i];
-				string value = (!desktopSingleCPUProperty.IsTargetEnabled(inspector)) ? DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.None.ToString() : desktopSingleCPUProperty.defaultValue.ToString();
-				PluginImporter[] importers = inspector.importers;
-				for (int j = 0; j < importers.Length; j++)
-				{
-					PluginImporter pluginImporter = importers[j];
-					pluginImporter.SetPlatformData(desktopSingleCPUProperty.platformName, "CPU", value);
-				}
-			}
-			this.ValidateUniversalTargets(inspector);
-		}
-
-		private void ValidateUniversalTargets(PluginImporterInspector inspector)
-		{
-			bool flag = this.m_LinuxX86.IsTargetEnabled(inspector);
-			bool flag2 = this.m_LinuxX86_X64.IsTargetEnabled(inspector);
-			DesktopPluginImporterExtension.DesktopPluginCPUArchitecture desktopPluginCPUArchitecture = this.CalculateMultiCPUArchitecture(flag, flag2);
-			PluginImporter[] importers = inspector.importers;
-			for (int i = 0; i < importers.Length; i++)
-			{
-				PluginImporter pluginImporter = importers[i];
-				pluginImporter.SetPlatformData(BuildTarget.StandaloneLinuxUniversal, "CPU", desktopPluginCPUArchitecture.ToString());
-			}
-			inspector.SetPlatformCompatibility(BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneLinuxUniversal), flag || flag2);
-			bool flag3 = this.m_OSXX86.IsTargetEnabled(inspector);
-			bool flag4 = this.m_OSXX86_X64.IsTargetEnabled(inspector);
-			DesktopPluginImporterExtension.DesktopPluginCPUArchitecture desktopPluginCPUArchitecture2 = this.CalculateMultiCPUArchitecture(flag3, flag4);
-			PluginImporter[] importers2 = inspector.importers;
-			for (int j = 0; j < importers2.Length; j++)
-			{
-				PluginImporter pluginImporter2 = importers2[j];
-				pluginImporter2.SetPlatformData(BuildTarget.StandaloneOSXUniversal, "CPU", desktopPluginCPUArchitecture2.ToString());
-			}
-			inspector.SetPlatformCompatibility(BuildPipeline.GetBuildTargetName(BuildTarget.StandaloneOSXUniversal), flag3 || flag4);
-		}
-
-		public override string CalculateFinalPluginPath(string platformName, PluginImporter imp)
-		{
-			BuildTarget buildTargetByName = BuildPipeline.GetBuildTargetByName(platformName);
-			bool flag = buildTargetByName == BuildTarget.StandaloneWindows || buildTargetByName == BuildTarget.StandaloneWindows64;
-			bool flag2 = buildTargetByName == BuildTarget.StandaloneOSXIntel || buildTargetByName == BuildTarget.StandaloneOSXIntel64 || buildTargetByName == BuildTarget.StandaloneOSXUniversal;
-			bool flag3 = buildTargetByName == BuildTarget.StandaloneLinux || buildTargetByName == BuildTarget.StandaloneLinux64 || buildTargetByName == BuildTarget.StandaloneLinuxUniversal;
-			if (!flag3 && !flag2 && !flag)
-			{
-				throw new Exception(string.Format("Failed to resolve standalone platform, platform string '{0}', resolved target '{1}'", platformName, buildTargetByName.ToString()));
-			}
-			string result;
-			if (flag && !this.IsUsableOnWindows(imp))
-			{
-				result = string.Empty;
-			}
-			else if (flag2 && !this.IsUsableOnOSX(imp))
-			{
-				result = string.Empty;
-			}
-			else if (flag3 && !this.IsUsableOnLinux(imp))
-			{
-				result = string.Empty;
-			}
-			else
-			{
-				string platformData = imp.GetPlatformData(platformName, "CPU");
-				if (string.Compare(platformData, "None", true) == 0)
-				{
-					result = string.Empty;
-				}
-				else if (!string.IsNullOrEmpty(platformData) && string.Compare(platformData, "AnyCPU", true) != 0)
-				{
-					result = Path.Combine(platformData, Path.GetFileName(imp.assetPath));
-				}
-				else
-				{
-					result = Path.GetFileName(imp.assetPath);
-				}
-			}
-			return result;
-		}
-	}
+      internal override void OnGUI(PluginImporterInspector inspector)
+      {
+        EditorGUILayout.BeginHorizontal();
+        GUILayout.Space(10f);
+        EditorGUI.BeginChangeCheck();
+        bool compatible = EditorGUILayout.Toggle(this.name, this.IsTargetEnabled(inspector), new GUILayoutOption[0]);
+        if (EditorGUI.EndChangeCheck())
+        {
+          this.value = !compatible ? (object) DesktopPluginImporterExtension.DesktopPluginCPUArchitecture.None : this.defaultValue;
+          inspector.SetPlatformCompatibility(this.platformName, compatible);
+        }
+        EditorGUILayout.EndHorizontal();
+      }
+    }
+  }
 }

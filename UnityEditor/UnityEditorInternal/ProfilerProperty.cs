@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.ProfilerProperty
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Runtime.CompilerServices;
 using UnityEngine;
@@ -5,170 +11,124 @@ using UnityEngine.Scripting;
 
 namespace UnityEditorInternal
 {
-	public sealed class ProfilerProperty
-	{
-		private IntPtr m_Ptr;
+  public sealed class ProfilerProperty
+  {
+    private IntPtr m_Ptr;
 
-		public extern bool HasChildren
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern ProfilerProperty();
 
-		public extern bool onlyShowGPUSamples
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			set;
-		}
+    [ThreadAndSerializationSafe]
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern void Dispose();
 
-		public extern int[] instanceIDs
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    ~ProfilerProperty()
+    {
+      this.Dispose();
+    }
 
-		public extern int depth
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern void Cleanup();
 
-		public extern string propertyPath
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern bool Next(bool enterChildren);
 
-		public extern string propertyName
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern void SetRoot(int frame, ProfilerColumn profilerSortColumn, ProfilerViewType viewType);
 
-		public extern string frameFPS
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern void ResetToRoot();
 
-		public extern string frameTime
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern void InitializeDetailProperty(ProfilerProperty source);
 
-		public extern string frameGpuTime
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    public extern bool HasChildren { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		public extern bool frameDataReady
-		{
-			[GeneratedByOldBindingsGenerator]
-			[MethodImpl(MethodImplOptions.InternalCall)]
-			get;
-		}
+    public extern bool onlyShowGPUSamples { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] set; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern ProfilerProperty();
+    public extern int[] instanceIDs { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator, ThreadAndSerializationSafe]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern void Dispose();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern string GetTooltip(ProfilerColumn column);
 
-		~ProfilerProperty()
-		{
-			this.Dispose();
-		}
+    public extern int depth { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern void Cleanup();
+    public extern string propertyPath { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern bool Next(bool enterChildren);
+    public extern string propertyName { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern void SetRoot(int frame, ProfilerColumn profilerSortColumn, ProfilerViewType viewType);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern string GetColumn(ProfilerColumn column);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern void ResetToRoot();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern float GetColumnAsSingle(ProfilerColumn column);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern void InitializeDetailProperty(ProfilerProperty source);
+    public extern string frameFPS { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern string GetTooltip(ProfilerColumn column);
+    public extern string frameTime { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern string GetColumn(ProfilerColumn column);
+    public extern string frameGpuTime { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern float GetColumnAsSingle(ProfilerColumn column);
+    public extern bool frameDataReady { [GeneratedByOldBindingsGenerator, MethodImpl(MethodImplOptions.InternalCall)] get; }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern AudioProfilerGroupInfo[] GetAudioProfilerGroupInfo();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern AudioProfilerGroupInfo[] GetAudioProfilerGroupInfo();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern AudioProfilerDSPInfo[] GetAudioProfilerDSPInfo();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern AudioProfilerDSPInfo[] GetAudioProfilerDSPInfo();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern AudioProfilerClipInfo[] GetAudioProfilerClipInfo();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern AudioProfilerClipInfo[] GetAudioProfilerClipInfo();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern string GetAudioProfilerNameByOffset(int offset);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern string GetAudioProfilerNameByOffset(int offset);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern UISystemProfilerInfo[] GetUISystemProfilerInfo();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern UISystemProfilerInfo[] GetUISystemProfilerInfo();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern string GetUISystemProfilerNameByOffset(int offset);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern string GetUISystemProfilerNameByOffset(int offset);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern EventMarker[] GetUISystemEventMarkers();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern EventMarker[] GetUISystemEventMarkers();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern string GetUISystemEventMarkerNameByOffset(int offset);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern string GetUISystemEventMarkerNameByOffset(int offset);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public extern int[] GetUISystemBatchInstanceIDs();
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public extern int[] GetUISystemBatchInstanceIDs();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern Texture2D UISystemProfilerRender(int renderDataIndex, int renderDataCount, bool renderOverdraw);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern Texture2D UISystemProfilerRender(int frameIndex, int renderDataIndex, int renderDataCount, bool renderOverdraw);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void ReleaseUISystemProfilerRender(Texture2D t);
-	}
+    [Obsolete("Deprecated API, it will always return the first frameIndex")]
+    private static Texture2D UISystemProfilerRender(int renderDataIndex, int renderDataCount, bool renderOverdraw)
+    {
+      return ProfilerProperty.UISystemProfilerRender(0, renderDataIndex, renderDataCount, renderOverdraw);
+    }
+
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern void ReleaseUISystemProfilerRender(Texture2D t);
+  }
 }

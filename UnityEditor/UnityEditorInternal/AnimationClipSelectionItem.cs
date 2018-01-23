@@ -1,52 +1,57 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.AnimationClipSelectionItem
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditorInternal
 {
-	internal class AnimationClipSelectionItem : AnimationWindowSelectionItem
-	{
-		public override bool canPreview
-		{
-			get
-			{
-				return false;
-			}
-		}
+  internal class AnimationClipSelectionItem : AnimationWindowSelectionItem
+  {
+    public static AnimationClipSelectionItem Create(AnimationClip animationClip, Object sourceObject)
+    {
+      AnimationClipSelectionItem instance = ScriptableObject.CreateInstance(typeof (AnimationClipSelectionItem)) as AnimationClipSelectionItem;
+      instance.hideFlags = HideFlags.HideAndDontSave;
+      instance.gameObject = sourceObject as GameObject;
+      instance.scriptableObject = sourceObject as ScriptableObject;
+      instance.animationClip = animationClip;
+      instance.timeOffset = 0.0f;
+      instance.id = 0;
+      return instance;
+    }
 
-		public override bool canRecord
-		{
-			get
-			{
-				return false;
-			}
-		}
+    public override bool canPreview
+    {
+      get
+      {
+        return false;
+      }
+    }
 
-		public override bool canChangeAnimationClip
-		{
-			get
-			{
-				return false;
-			}
-		}
+    public override bool canRecord
+    {
+      get
+      {
+        return false;
+      }
+    }
 
-		public override bool canSyncSceneSelection
-		{
-			get
-			{
-				return false;
-			}
-		}
+    public override bool canChangeAnimationClip
+    {
+      get
+      {
+        return false;
+      }
+    }
 
-		public static AnimationClipSelectionItem Create(AnimationClip animationClip, UnityEngine.Object sourceObject)
-		{
-			AnimationClipSelectionItem animationClipSelectionItem = ScriptableObject.CreateInstance(typeof(AnimationClipSelectionItem)) as AnimationClipSelectionItem;
-			animationClipSelectionItem.hideFlags = HideFlags.HideAndDontSave;
-			animationClipSelectionItem.gameObject = (sourceObject as GameObject);
-			animationClipSelectionItem.scriptableObject = (sourceObject as ScriptableObject);
-			animationClipSelectionItem.animationClip = animationClip;
-			animationClipSelectionItem.timeOffset = 0f;
-			animationClipSelectionItem.id = 0;
-			return animationClipSelectionItem;
-		}
-	}
+    public override bool canSyncSceneSelection
+    {
+      get
+      {
+        return false;
+      }
+    }
+  }
 }

@@ -1,202 +1,233 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.AnimationEvent
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 using System.Runtime.InteropServices;
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[RequiredByNativeCode]
-	[Serializable]
-	[StructLayout(LayoutKind.Sequential)]
-	public sealed class AnimationEvent
-	{
-		internal float m_Time;
+  /// <summary>
+  ///   <para>AnimationEvent lets you call a script function similar to SendMessage as part of playing back an animation.</para>
+  /// </summary>
+  [RequiredByNativeCode]
+  [Serializable]
+  [StructLayout(LayoutKind.Sequential)]
+  public sealed class AnimationEvent
+  {
+    internal float m_Time;
+    internal string m_FunctionName;
+    internal string m_StringParameter;
+    internal Object m_ObjectReferenceParameter;
+    internal float m_FloatParameter;
+    internal int m_IntParameter;
+    internal int m_MessageOptions;
+    internal AnimationEventSource m_Source;
+    internal AnimationState m_StateSender;
+    internal AnimatorStateInfo m_AnimatorStateInfo;
+    internal AnimatorClipInfo m_AnimatorClipInfo;
 
-		internal string m_FunctionName;
+    /// <summary>
+    ///   <para>Creates a new animation event.</para>
+    /// </summary>
+    public AnimationEvent()
+    {
+      this.m_Time = 0.0f;
+      this.m_FunctionName = "";
+      this.m_StringParameter = "";
+      this.m_ObjectReferenceParameter = (Object) null;
+      this.m_FloatParameter = 0.0f;
+      this.m_IntParameter = 0;
+      this.m_MessageOptions = 0;
+      this.m_Source = AnimationEventSource.NoSource;
+      this.m_StateSender = (AnimationState) null;
+    }
 
-		internal string m_StringParameter;
+    [Obsolete("Use stringParameter instead")]
+    public string data
+    {
+      get
+      {
+        return this.m_StringParameter;
+      }
+      set
+      {
+        this.m_StringParameter = value;
+      }
+    }
 
-		internal Object m_ObjectReferenceParameter;
+    /// <summary>
+    ///   <para>String parameter that is stored in the event and will be sent to the function.</para>
+    /// </summary>
+    public string stringParameter
+    {
+      get
+      {
+        return this.m_StringParameter;
+      }
+      set
+      {
+        this.m_StringParameter = value;
+      }
+    }
 
-		internal float m_FloatParameter;
+    /// <summary>
+    ///   <para>Float parameter that is stored in the event and will be sent to the function.</para>
+    /// </summary>
+    public float floatParameter
+    {
+      get
+      {
+        return this.m_FloatParameter;
+      }
+      set
+      {
+        this.m_FloatParameter = value;
+      }
+    }
 
-		internal int m_IntParameter;
+    /// <summary>
+    ///   <para>Int parameter that is stored in the event and will be sent to the function.</para>
+    /// </summary>
+    public int intParameter
+    {
+      get
+      {
+        return this.m_IntParameter;
+      }
+      set
+      {
+        this.m_IntParameter = value;
+      }
+    }
 
-		internal int m_MessageOptions;
+    /// <summary>
+    ///   <para>Object reference parameter that is stored in the event and will be sent to the function.</para>
+    /// </summary>
+    public Object objectReferenceParameter
+    {
+      get
+      {
+        return this.m_ObjectReferenceParameter;
+      }
+      set
+      {
+        this.m_ObjectReferenceParameter = value;
+      }
+    }
 
-		internal AnimationEventSource m_Source;
+    /// <summary>
+    ///   <para>The name of the function that will be called.</para>
+    /// </summary>
+    public string functionName
+    {
+      get
+      {
+        return this.m_FunctionName;
+      }
+      set
+      {
+        this.m_FunctionName = value;
+      }
+    }
 
-		internal AnimationState m_StateSender;
+    /// <summary>
+    ///   <para>The time at which the event will be fired off.</para>
+    /// </summary>
+    public float time
+    {
+      get
+      {
+        return this.m_Time;
+      }
+      set
+      {
+        this.m_Time = value;
+      }
+    }
 
-		internal AnimatorStateInfo m_AnimatorStateInfo;
+    /// <summary>
+    ///   <para>Function call options.</para>
+    /// </summary>
+    public SendMessageOptions messageOptions
+    {
+      get
+      {
+        return (SendMessageOptions) this.m_MessageOptions;
+      }
+      set
+      {
+        this.m_MessageOptions = (int) value;
+      }
+    }
 
-		internal AnimatorClipInfo m_AnimatorClipInfo;
+    /// <summary>
+    ///   <para>Returns true if this Animation event has been fired by an Animation component.</para>
+    /// </summary>
+    public bool isFiredByLegacy
+    {
+      get
+      {
+        return this.m_Source == AnimationEventSource.Legacy;
+      }
+    }
 
-		[Obsolete("Use stringParameter instead")]
-		public string data
-		{
-			get
-			{
-				return this.m_StringParameter;
-			}
-			set
-			{
-				this.m_StringParameter = value;
-			}
-		}
+    /// <summary>
+    ///   <para>Returns true if this Animation event has been fired by an Animator component.</para>
+    /// </summary>
+    public bool isFiredByAnimator
+    {
+      get
+      {
+        return this.m_Source == AnimationEventSource.Animator;
+      }
+    }
 
-		public string stringParameter
-		{
-			get
-			{
-				return this.m_StringParameter;
-			}
-			set
-			{
-				this.m_StringParameter = value;
-			}
-		}
+    /// <summary>
+    ///   <para>The animation state that fired this event (Read Only).</para>
+    /// </summary>
+    public AnimationState animationState
+    {
+      get
+      {
+        if (!this.isFiredByLegacy)
+          Debug.LogError((object) "AnimationEvent was not fired by Animation component, you shouldn't use AnimationEvent.animationState");
+        return this.m_StateSender;
+      }
+    }
 
-		public float floatParameter
-		{
-			get
-			{
-				return this.m_FloatParameter;
-			}
-			set
-			{
-				this.m_FloatParameter = value;
-			}
-		}
+    /// <summary>
+    ///   <para>The animator state info related to this event (Read Only).</para>
+    /// </summary>
+    public AnimatorStateInfo animatorStateInfo
+    {
+      get
+      {
+        if (!this.isFiredByAnimator)
+          Debug.LogError((object) "AnimationEvent was not fired by Animator component, you shouldn't use AnimationEvent.animatorStateInfo");
+        return this.m_AnimatorStateInfo;
+      }
+    }
 
-		public int intParameter
-		{
-			get
-			{
-				return this.m_IntParameter;
-			}
-			set
-			{
-				this.m_IntParameter = value;
-			}
-		}
+    /// <summary>
+    ///   <para>The animator clip info related to this event (Read Only).</para>
+    /// </summary>
+    public AnimatorClipInfo animatorClipInfo
+    {
+      get
+      {
+        if (!this.isFiredByAnimator)
+          Debug.LogError((object) "AnimationEvent was not fired by Animator component, you shouldn't use AnimationEvent.animatorClipInfo");
+        return this.m_AnimatorClipInfo;
+      }
+    }
 
-		public Object objectReferenceParameter
-		{
-			get
-			{
-				return this.m_ObjectReferenceParameter;
-			}
-			set
-			{
-				this.m_ObjectReferenceParameter = value;
-			}
-		}
-
-		public string functionName
-		{
-			get
-			{
-				return this.m_FunctionName;
-			}
-			set
-			{
-				this.m_FunctionName = value;
-			}
-		}
-
-		public float time
-		{
-			get
-			{
-				return this.m_Time;
-			}
-			set
-			{
-				this.m_Time = value;
-			}
-		}
-
-		public SendMessageOptions messageOptions
-		{
-			get
-			{
-				return (SendMessageOptions)this.m_MessageOptions;
-			}
-			set
-			{
-				this.m_MessageOptions = (int)value;
-			}
-		}
-
-		public bool isFiredByLegacy
-		{
-			get
-			{
-				return this.m_Source == AnimationEventSource.Legacy;
-			}
-		}
-
-		public bool isFiredByAnimator
-		{
-			get
-			{
-				return this.m_Source == AnimationEventSource.Animator;
-			}
-		}
-
-		public AnimationState animationState
-		{
-			get
-			{
-				if (!this.isFiredByLegacy)
-				{
-					Debug.LogError("AnimationEvent was not fired by Animation component, you shouldn't use AnimationEvent.animationState");
-				}
-				return this.m_StateSender;
-			}
-		}
-
-		public AnimatorStateInfo animatorStateInfo
-		{
-			get
-			{
-				if (!this.isFiredByAnimator)
-				{
-					Debug.LogError("AnimationEvent was not fired by Animator component, you shouldn't use AnimationEvent.animatorStateInfo");
-				}
-				return this.m_AnimatorStateInfo;
-			}
-		}
-
-		public AnimatorClipInfo animatorClipInfo
-		{
-			get
-			{
-				if (!this.isFiredByAnimator)
-				{
-					Debug.LogError("AnimationEvent was not fired by Animator component, you shouldn't use AnimationEvent.animatorClipInfo");
-				}
-				return this.m_AnimatorClipInfo;
-			}
-		}
-
-		public AnimationEvent()
-		{
-			this.m_Time = 0f;
-			this.m_FunctionName = "";
-			this.m_StringParameter = "";
-			this.m_ObjectReferenceParameter = null;
-			this.m_FloatParameter = 0f;
-			this.m_IntParameter = 0;
-			this.m_MessageOptions = 0;
-			this.m_Source = AnimationEventSource.NoSource;
-			this.m_StateSender = null;
-		}
-
-		internal int GetHash()
-		{
-			int hashCode = this.functionName.GetHashCode();
-			return 33 * hashCode + this.time.GetHashCode();
-		}
-	}
+    internal int GetHash()
+    {
+      return 33 * this.functionName.GetHashCode() + this.time.GetHashCode();
+    }
+  }
 }

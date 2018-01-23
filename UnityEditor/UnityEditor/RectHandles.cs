@@ -1,318 +1,248 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.RectHandles
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class RectHandles
-	{
-		private class Styles
-		{
-			public readonly GUIStyle dragdot = "U2D.dragDot";
+  internal class RectHandles
+  {
+    private static Vector3[] s_TempVectors = new Vector3[0];
+    private static RectHandles.Styles s_Styles;
+    private static int s_LastCursorId;
 
-			public readonly GUIStyle pivotdot = "U2D.pivotDot";
+    internal static bool RaycastGUIPointToWorldHit(Vector2 guiPoint, Plane plane, out Vector3 hit)
+    {
+      Ray worldRay = HandleUtility.GUIPointToWorldRay(guiPoint);
+      float enter = 0.0f;
+      bool flag = plane.Raycast(worldRay, out enter);
+      hit = !flag ? Vector3.zero : worldRay.GetPoint(enter);
+      return flag;
+    }
 
-			public readonly GUIStyle dragdotactive = "U2D.dragDotActive";
+    internal static void DetectCursorChange(int id)
+    {
+      if (HandleUtility.nearestControl == id)
+      {
+        RectHandles.s_LastCursorId = id;
+        Event.current.Use();
+      }
+      else
+      {
+        if (RectHandles.s_LastCursorId != id)
+          return;
+        RectHandles.s_LastCursorId = 0;
+        Event.current.Use();
+      }
+    }
 
-			public readonly GUIStyle pivotdotactive = "U2D.pivotDotActive";
-		}
+    internal static Vector3 SideSlider(int id, Vector3 position, Vector3 sideVector, Vector3 direction, float size, Handles.CapFunction capFunction, float snap)
+    {
+      return RectHandles.SideSlider(id, position, sideVector, direction, size, capFunction, snap, 0.0f);
+    }
 
-		private static RectHandles.Styles s_Styles;
+    internal static Vector3 SideSlider(int id, Vector3 position, Vector3 sideVector, Vector3 direction, float size, Handles.CapFunction capFunction, float snap, float bias)
+    {
+      Event current = Event.current;
+      Vector3 normalized1 = Vector3.Cross(sideVector, direction).normalized;
+      Vector3 vector3_1 = Handles.Slider2D(id, position, normalized1, direction, sideVector, 0.0f, capFunction, Vector2.one * snap);
+      Vector3 vector3_2 = position + Vector3.Project(vector3_1 - position, direction);
+      switch (current.type)
+      {
+        case EventType.MouseMove:
+          RectHandles.DetectCursorChange(id);
+          break;
+        case EventType.Repaint:
+          if (HandleUtility.nearestControl == id && GUIUtility.hotControl == 0 || GUIUtility.hotControl == id)
+          {
+            RectHandles.HandleDirectionalCursor(position, normalized1, direction);
+            break;
+          }
+          break;
+        case EventType.Layout:
+          Vector3 normalized2 = sideVector.normalized;
+          HandleUtility.AddControl(id, HandleUtility.DistanceToLine(position + sideVector * 0.5f - normalized2 * size * 2f, position - sideVector * 0.5f + normalized2 * size * 2f) - bias);
+          break;
+      }
+      return vector3_2;
+    }
 
-		private static int s_LastCursorId;
+    internal static Vector3 CornerSlider(int id, Vector3 cornerPos, Vector3 handleDir, Vector3 outwardsDir1, Vector3 outwardsDir2, float handleSize, Handles.CapFunction drawFunc, Vector2 snap)
+    {
+      Event current = Event.current;
+      Vector3 vector3 = Handles.Slider2D(id, cornerPos, handleDir, outwardsDir1, outwardsDir2, handleSize, drawFunc, snap);
+      switch (current.type)
+      {
+        case EventType.MouseMove:
+          RectHandles.DetectCursorChange(id);
+          break;
+        case EventType.Repaint:
+          if (HandleUtility.nearestControl == id && GUIUtility.hotControl == 0 || GUIUtility.hotControl == id)
+          {
+            RectHandles.HandleDirectionalCursor(cornerPos, handleDir, outwardsDir1 + outwardsDir2);
+            break;
+          }
+          break;
+      }
+      return vector3;
+    }
 
-		private static Vector3[] s_TempVectors = new Vector3[0];
+    private static void HandleDirectionalCursor(Vector3 handlePosition, Vector3 handlePlaneNormal, Vector3 direction)
+    {
+      Vector2 mousePosition = Event.current.mousePosition;
+      Plane plane = new Plane(handlePlaneNormal, handlePosition);
+      Vector3 hit;
+      if (!RectHandles.RaycastGUIPointToWorldHit(mousePosition, plane, out hit))
+        return;
+      Vector2 screenSpaceDir = RectHandles.WorldToScreenSpaceDir(hit, direction);
+      EditorGUIUtility.AddCursorRect(new Rect(mousePosition.x - 100f, mousePosition.y - 100f, 200f, 200f), RectHandles.GetScaleCursor(screenSpaceDir));
+    }
 
-		internal static bool RaycastGUIPointToWorldHit(Vector2 guiPoint, Plane plane, out Vector3 hit)
-		{
-			Ray ray = HandleUtility.GUIPointToWorldRay(guiPoint);
-			float distance = 0f;
-			bool flag = plane.Raycast(ray, out distance);
-			hit = ((!flag) ? Vector3.zero : ray.GetPoint(distance));
-			return flag;
-		}
+    public static float AngleAroundAxis(Vector3 dirA, Vector3 dirB, Vector3 axis)
+    {
+      dirA = Vector3.ProjectOnPlane(dirA, axis);
+      dirB = Vector3.ProjectOnPlane(dirB, axis);
+      return Vector3.Angle(dirA, dirB) * ((double) Vector3.Dot(axis, Vector3.Cross(dirA, dirB)) >= 0.0 ? 1f : -1f);
+    }
 
-		internal static void DetectCursorChange(int id)
-		{
-			if (HandleUtility.nearestControl == id)
-			{
-				RectHandles.s_LastCursorId = id;
-				Event.current.Use();
-			}
-			else if (RectHandles.s_LastCursorId == id)
-			{
-				RectHandles.s_LastCursorId = 0;
-				Event.current.Use();
-			}
-		}
+    public static float RotationSlider(int id, Vector3 cornerPos, float rotation, Vector3 pivot, Vector3 handleDir, Vector3 outwardsDir1, Vector3 outwardsDir2, float handleSize, Handles.CapFunction drawFunc, Vector2 snap)
+    {
+      Vector3 vector3_1 = outwardsDir1 + outwardsDir2;
+      Vector2 guiPoint = HandleUtility.WorldToGUIPoint(cornerPos);
+      Vector2 vector2 = HandleUtility.WorldToGUIPoint(cornerPos + vector3_1) - guiPoint;
+      vector2 = vector2.normalized * 15f;
+      RectHandles.RaycastGUIPointToWorldHit(guiPoint + vector2, new Plane(handleDir, cornerPos), out cornerPos);
+      Event current = Event.current;
+      Vector3 vector3_2 = Handles.Slider2D(id, cornerPos, handleDir, outwardsDir1, outwardsDir2, handleSize, drawFunc, Vector2.zero);
+      if (current.type == EventType.MouseMove)
+        RectHandles.DetectCursorChange(id);
+      if (current.type == EventType.Repaint && (HandleUtility.nearestControl == id && GUIUtility.hotControl == 0 || GUIUtility.hotControl == id))
+        EditorGUIUtility.AddCursorRect(new Rect(current.mousePosition.x - 100f, current.mousePosition.y - 100f, 200f, 200f), MouseCursor.RotateArrow);
+      return rotation - RectHandles.AngleAroundAxis(vector3_2 - pivot, cornerPos - pivot, handleDir);
+    }
 
-		internal static Vector3 SideSlider(int id, Vector3 position, Vector3 sideVector, Vector3 direction, float size, Handles.CapFunction capFunction, float snap)
-		{
-			return RectHandles.SideSlider(id, position, sideVector, direction, size, capFunction, snap, 0f);
-		}
+    private static Vector2 WorldToScreenSpaceDir(Vector3 worldPos, Vector3 worldDir)
+    {
+      Vector3 guiPoint = (Vector3) HandleUtility.WorldToGUIPoint(worldPos);
+      Vector2 vector2 = (Vector2) ((Vector3) HandleUtility.WorldToGUIPoint(worldPos + worldDir) - guiPoint);
+      vector2.y *= -1f;
+      return vector2;
+    }
 
-		internal static Vector3 SideSlider(int id, Vector3 position, Vector3 sideVector, Vector3 direction, float size, Handles.CapFunction capFunction, float snap, float bias)
-		{
-			Event current = Event.current;
-			Vector3 normalized = Vector3.Cross(sideVector, direction).normalized;
-			Vector3 vector = Handles.Slider2D(id, position, normalized, direction, sideVector, 0f, capFunction, Vector2.one * snap);
-			vector = position + Vector3.Project(vector - position, direction);
-			EventType type = current.type;
-			if (type != EventType.Layout)
-			{
-				if (type != EventType.MouseMove)
-				{
-					if (type == EventType.Repaint)
-					{
-						if ((HandleUtility.nearestControl == id && GUIUtility.hotControl == 0) || GUIUtility.hotControl == id)
-						{
-							RectHandles.HandleDirectionalCursor(position, normalized, direction);
-						}
-					}
-				}
-				else
-				{
-					RectHandles.DetectCursorChange(id);
-				}
-			}
-			else
-			{
-				Vector3 normalized2 = sideVector.normalized;
-				HandleUtility.AddControl(id, HandleUtility.DistanceToLine(position + sideVector * 0.5f - normalized2 * size * 2f, position - sideVector * 0.5f + normalized2 * size * 2f) - bias);
-			}
-			return vector;
-		}
+    private static MouseCursor GetScaleCursor(Vector2 direction)
+    {
+      float num = Mathf.Atan2(direction.x, direction.y) * 57.29578f;
+      if ((double) num < 0.0)
+        num = 360f + num;
+      if ((double) num < 27.5)
+        return MouseCursor.ResizeVertical;
+      if ((double) num < 72.5)
+        return MouseCursor.ResizeUpRight;
+      if ((double) num < 117.5)
+        return MouseCursor.ResizeHorizontal;
+      if ((double) num < 162.5)
+        return MouseCursor.ResizeUpLeft;
+      if ((double) num < 207.5)
+        return MouseCursor.ResizeVertical;
+      if ((double) num < 252.5)
+        return MouseCursor.ResizeUpRight;
+      if ((double) num < 297.5)
+        return MouseCursor.ResizeHorizontal;
+      return (double) num < 342.5 ? MouseCursor.ResizeUpLeft : MouseCursor.ResizeVertical;
+    }
 
-		internal static Vector3 CornerSlider(int id, Vector3 cornerPos, Vector3 handleDir, Vector3 outwardsDir1, Vector3 outwardsDir2, float handleSize, Handles.CapFunction drawFunc, Vector2 snap)
-		{
-			Event current = Event.current;
-			Vector3 result = Handles.Slider2D(id, cornerPos, handleDir, outwardsDir1, outwardsDir2, handleSize, drawFunc, snap);
-			EventType type = current.type;
-			if (type != EventType.MouseMove)
-			{
-				if (type == EventType.Repaint)
-				{
-					if ((HandleUtility.nearestControl == id && GUIUtility.hotControl == 0) || GUIUtility.hotControl == id)
-					{
-						RectHandles.HandleDirectionalCursor(cornerPos, handleDir, outwardsDir1 + outwardsDir2);
-					}
-				}
-			}
-			else
-			{
-				RectHandles.DetectCursorChange(id);
-			}
-			return result;
-		}
+    public static void RectScalingHandleCap(int controlID, Vector3 position, Quaternion rotation, float size, EventType eventType)
+    {
+      if (RectHandles.s_Styles == null)
+        RectHandles.s_Styles = new RectHandles.Styles();
+      if (eventType != EventType.Layout)
+      {
+        if (eventType != EventType.Repaint)
+          return;
+        RectHandles.DrawImageBasedCap(controlID, position, rotation, size, RectHandles.s_Styles.dragdot, RectHandles.s_Styles.dragdotactive);
+      }
+      else
+        HandleUtility.AddControl(controlID, HandleUtility.DistanceToCircle(position, size * 0.5f));
+    }
 
-		private static void HandleDirectionalCursor(Vector3 handlePosition, Vector3 handlePlaneNormal, Vector3 direction)
-		{
-			Vector2 mousePosition = Event.current.mousePosition;
-			Plane plane = new Plane(handlePlaneNormal, handlePosition);
-			Vector3 worldPos;
-			if (RectHandles.RaycastGUIPointToWorldHit(mousePosition, plane, out worldPos))
-			{
-				Vector2 direction2 = RectHandles.WorldToScreenSpaceDir(worldPos, direction);
-				Rect position = new Rect(mousePosition.x - 100f, mousePosition.y - 100f, 200f, 200f);
-				EditorGUIUtility.AddCursorRect(position, RectHandles.GetScaleCursor(direction2));
-			}
-		}
+    public static void PivotHandleCap(int controlID, Vector3 position, Quaternion rotation, float size, EventType eventType)
+    {
+      if (RectHandles.s_Styles == null)
+        RectHandles.s_Styles = new RectHandles.Styles();
+      if (eventType != EventType.Layout)
+      {
+        if (eventType != EventType.Repaint)
+          return;
+        RectHandles.DrawImageBasedCap(controlID, position, rotation, size, RectHandles.s_Styles.pivotdot, RectHandles.s_Styles.pivotdotactive);
+      }
+      else
+        HandleUtility.AddControl(controlID, HandleUtility.DistanceToCircle(position, size * 0.5f));
+    }
 
-		public static float AngleAroundAxis(Vector3 dirA, Vector3 dirB, Vector3 axis)
-		{
-			dirA = Vector3.ProjectOnPlane(dirA, axis);
-			dirB = Vector3.ProjectOnPlane(dirB, axis);
-			float num = Vector3.Angle(dirA, dirB);
-			return num * (float)((Vector3.Dot(axis, Vector3.Cross(dirA, dirB)) >= 0f) ? 1 : -1);
-		}
+    private static void DrawImageBasedCap(int controlID, Vector3 position, Quaternion rotation, float size, GUIStyle normal, GUIStyle active)
+    {
+      if ((bool) ((Object) Camera.current) && (double) Vector3.Dot(position - Camera.current.transform.position, Camera.current.transform.forward) < 0.0)
+        return;
+      Vector3 guiPoint = (Vector3) HandleUtility.WorldToGUIPoint(position);
+      Handles.BeginGUI();
+      float fixedWidth = normal.fixedWidth;
+      float fixedHeight = normal.fixedHeight;
+      Rect position1 = new Rect(guiPoint.x - fixedWidth / 2f, guiPoint.y - fixedHeight / 2f, fixedWidth, fixedHeight);
+      if (GUIUtility.hotControl == controlID)
+        active.Draw(position1, GUIContent.none, controlID);
+      else
+        normal.Draw(position1, GUIContent.none, controlID);
+      Handles.EndGUI();
+    }
 
-		public static float RotationSlider(int id, Vector3 cornerPos, float rotation, Vector3 pivot, Vector3 handleDir, Vector3 outwardsDir1, Vector3 outwardsDir2, float handleSize, Handles.CapFunction drawFunc, Vector2 snap)
-		{
-			Vector3 b = outwardsDir1 + outwardsDir2;
-			Vector2 vector = HandleUtility.WorldToGUIPoint(cornerPos);
-			Vector2 b2 = (HandleUtility.WorldToGUIPoint(cornerPos + b) - vector).normalized * 15f;
-			RectHandles.RaycastGUIPointToWorldHit(vector + b2, new Plane(handleDir, cornerPos), out cornerPos);
-			Event current = Event.current;
-			Vector3 a = Handles.Slider2D(id, cornerPos, handleDir, outwardsDir1, outwardsDir2, handleSize, drawFunc, Vector2.zero);
-			if (current.type == EventType.MouseMove)
-			{
-				RectHandles.DetectCursorChange(id);
-			}
-			if (current.type == EventType.Repaint)
-			{
-				if ((HandleUtility.nearestControl == id && GUIUtility.hotControl == 0) || GUIUtility.hotControl == id)
-				{
-					Rect position = new Rect(current.mousePosition.x - 100f, current.mousePosition.y - 100f, 200f, 200f);
-					EditorGUIUtility.AddCursorRect(position, MouseCursor.RotateArrow);
-				}
-			}
-			return rotation - RectHandles.AngleAroundAxis(a - pivot, cornerPos - pivot, handleDir);
-		}
+    public static void RenderRectWithShadow(bool active, params Vector3[] corners)
+    {
+      Vector3[] vector3Array = new Vector3[5]{ corners[0], corners[1], corners[2], corners[3], corners[0] };
+      Color color = Handles.color;
+      Handles.color = new Color(1f, 1f, 1f, !active ? 0.5f : 1f);
+      RectHandles.DrawPolyLineWithShadow(new Color(0.0f, 0.0f, 0.0f, !active ? 0.5f : 1f), new Vector2(1f, -1f), vector3Array);
+      Handles.color = color;
+    }
 
-		private static Vector2 WorldToScreenSpaceDir(Vector3 worldPos, Vector3 worldDir)
-		{
-			Vector3 b = HandleUtility.WorldToGUIPoint(worldPos);
-			Vector3 a = HandleUtility.WorldToGUIPoint(worldPos + worldDir);
-			Vector2 result = a - b;
-			result.y *= -1f;
-			return result;
-		}
+    public static void DrawPolyLineWithShadow(Color shadowColor, Vector2 screenOffset, params Vector3[] points)
+    {
+      Camera current = Camera.current;
+      if (!(bool) ((Object) current) || Event.current.type != EventType.Repaint)
+        return;
+      if (RectHandles.s_TempVectors.Length != points.Length)
+        RectHandles.s_TempVectors = new Vector3[points.Length];
+      for (int index = 0; index < points.Length; ++index)
+        RectHandles.s_TempVectors[index] = current.ScreenToWorldPoint(current.WorldToScreenPoint(points[index]) + (Vector3) screenOffset);
+      Color color = Handles.color;
+      shadowColor.a *= color.a;
+      Handles.color = shadowColor;
+      Handles.DrawPolyLine(RectHandles.s_TempVectors);
+      Handles.color = color;
+      Handles.DrawPolyLine(points);
+    }
 
-		private static MouseCursor GetScaleCursor(Vector2 direction)
-		{
-			float num = Mathf.Atan2(direction.x, direction.y) * 57.29578f;
-			if (num < 0f)
-			{
-				num = 360f + num;
-			}
-			MouseCursor result;
-			if (num < 27.5f)
-			{
-				result = MouseCursor.ResizeVertical;
-			}
-			else if (num < 72.5f)
-			{
-				result = MouseCursor.ResizeUpRight;
-			}
-			else if (num < 117.5f)
-			{
-				result = MouseCursor.ResizeHorizontal;
-			}
-			else if (num < 162.5f)
-			{
-				result = MouseCursor.ResizeUpLeft;
-			}
-			else if (num < 207.5f)
-			{
-				result = MouseCursor.ResizeVertical;
-			}
-			else if (num < 252.5f)
-			{
-				result = MouseCursor.ResizeUpRight;
-			}
-			else if (num < 297.5f)
-			{
-				result = MouseCursor.ResizeHorizontal;
-			}
-			else if (num < 342.5f)
-			{
-				result = MouseCursor.ResizeUpLeft;
-			}
-			else
-			{
-				result = MouseCursor.ResizeVertical;
-			}
-			return result;
-		}
+    public static void DrawDottedLineWithShadow(Color shadowColor, Vector2 screenOffset, Vector3 p1, Vector3 p2, float screenSpaceSize)
+    {
+      Camera current = Camera.current;
+      if (!(bool) ((Object) current) || Event.current.type != EventType.Repaint)
+        return;
+      Color color = Handles.color;
+      shadowColor.a *= color.a;
+      Handles.color = shadowColor;
+      Handles.DrawDottedLine(current.ScreenToWorldPoint(current.WorldToScreenPoint(p1) + (Vector3) screenOffset), current.ScreenToWorldPoint(current.WorldToScreenPoint(p2) + (Vector3) screenOffset), screenSpaceSize);
+      Handles.color = color;
+      Handles.DrawDottedLine(p1, p2, screenSpaceSize);
+    }
 
-		public static void RectScalingHandleCap(int controlID, Vector3 position, Quaternion rotation, float size, EventType eventType)
-		{
-			if (RectHandles.s_Styles == null)
-			{
-				RectHandles.s_Styles = new RectHandles.Styles();
-			}
-			if (eventType != EventType.Layout)
-			{
-				if (eventType == EventType.Repaint)
-				{
-					RectHandles.DrawImageBasedCap(controlID, position, rotation, size, RectHandles.s_Styles.dragdot, RectHandles.s_Styles.dragdotactive);
-				}
-			}
-			else
-			{
-				HandleUtility.AddControl(controlID, HandleUtility.DistanceToCircle(position, size * 0.5f));
-			}
-		}
-
-		public static void PivotHandleCap(int controlID, Vector3 position, Quaternion rotation, float size, EventType eventType)
-		{
-			if (RectHandles.s_Styles == null)
-			{
-				RectHandles.s_Styles = new RectHandles.Styles();
-			}
-			if (eventType != EventType.Layout)
-			{
-				if (eventType == EventType.Repaint)
-				{
-					RectHandles.DrawImageBasedCap(controlID, position, rotation, size, RectHandles.s_Styles.pivotdot, RectHandles.s_Styles.pivotdotactive);
-				}
-			}
-			else
-			{
-				HandleUtility.AddControl(controlID, HandleUtility.DistanceToCircle(position, size * 0.5f));
-			}
-		}
-
-		private static void DrawImageBasedCap(int controlID, Vector3 position, Quaternion rotation, float size, GUIStyle normal, GUIStyle active)
-		{
-			if (!Camera.current || Vector3.Dot(position - Camera.current.transform.position, Camera.current.transform.forward) >= 0f)
-			{
-				Vector3 vector = HandleUtility.WorldToGUIPoint(position);
-				Handles.BeginGUI();
-				float fixedWidth = normal.fixedWidth;
-				float fixedHeight = normal.fixedHeight;
-				Rect position2 = new Rect(vector.x - fixedWidth / 2f, vector.y - fixedHeight / 2f, fixedWidth, fixedHeight);
-				if (GUIUtility.hotControl == controlID)
-				{
-					active.Draw(position2, GUIContent.none, controlID);
-				}
-				else
-				{
-					normal.Draw(position2, GUIContent.none, controlID);
-				}
-				Handles.EndGUI();
-			}
-		}
-
-		public static void RenderRectWithShadow(bool active, params Vector3[] corners)
-		{
-			Vector3[] points = new Vector3[]
-			{
-				corners[0],
-				corners[1],
-				corners[2],
-				corners[3],
-				corners[0]
-			};
-			Color color = Handles.color;
-			Handles.color = new Color(1f, 1f, 1f, (!active) ? 0.5f : 1f);
-			RectHandles.DrawPolyLineWithShadow(new Color(0f, 0f, 0f, (!active) ? 0.5f : 1f), new Vector2(1f, -1f), points);
-			Handles.color = color;
-		}
-
-		public static void DrawPolyLineWithShadow(Color shadowColor, Vector2 screenOffset, params Vector3[] points)
-		{
-			Camera current = Camera.current;
-			if (current && Event.current.type == EventType.Repaint)
-			{
-				if (RectHandles.s_TempVectors.Length != points.Length)
-				{
-					RectHandles.s_TempVectors = new Vector3[points.Length];
-				}
-				for (int i = 0; i < points.Length; i++)
-				{
-					RectHandles.s_TempVectors[i] = current.ScreenToWorldPoint(current.WorldToScreenPoint(points[i]) + screenOffset);
-				}
-				Color color = Handles.color;
-				shadowColor.a *= color.a;
-				Handles.color = shadowColor;
-				Handles.DrawPolyLine(RectHandles.s_TempVectors);
-				Handles.color = color;
-				Handles.DrawPolyLine(points);
-			}
-		}
-
-		public static void DrawDottedLineWithShadow(Color shadowColor, Vector2 screenOffset, Vector3 p1, Vector3 p2, float screenSpaceSize)
-		{
-			Camera current = Camera.current;
-			if (current && Event.current.type == EventType.Repaint)
-			{
-				Color color = Handles.color;
-				shadowColor.a *= color.a;
-				Handles.color = shadowColor;
-				Handles.DrawDottedLine(current.ScreenToWorldPoint(current.WorldToScreenPoint(p1) + screenOffset), current.ScreenToWorldPoint(current.WorldToScreenPoint(p2) + screenOffset), screenSpaceSize);
-				Handles.color = color;
-				Handles.DrawDottedLine(p1, p2, screenSpaceSize);
-			}
-		}
-	}
+    private class Styles
+    {
+      public readonly GUIStyle dragdot = (GUIStyle) "U2D.dragDot";
+      public readonly GUIStyle pivotdot = (GUIStyle) "U2D.pivotDot";
+      public readonly GUIStyle dragdotactive = (GUIStyle) "U2D.dragDotActive";
+      public readonly GUIStyle pivotdotactive = (GUIStyle) "U2D.pivotDotActive";
+    }
+  }
 }

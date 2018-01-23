@@ -1,0 +1,31 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.Experimental.UIElements.EventHandlerExtensions
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
+namespace UnityEngine.Experimental.UIElements
+{
+  public static class EventHandlerExtensions
+  {
+    public static void TakeCapture(this IEventHandler handler)
+    {
+      UIElementsUtility.eventDispatcher.TakeCapture(handler);
+    }
+
+    public static bool HasCapture(this IEventHandler handler)
+    {
+      return UIElementsUtility.eventDispatcher.capture == handler;
+    }
+
+    public static void ReleaseCapture(this IEventHandler handler)
+    {
+      UIElementsUtility.eventDispatcher.ReleaseCapture(handler);
+    }
+
+    public static void RemoveCapture(this IEventHandler handler)
+    {
+      UIElementsUtility.eventDispatcher.RemoveCapture();
+    }
+  }
+}

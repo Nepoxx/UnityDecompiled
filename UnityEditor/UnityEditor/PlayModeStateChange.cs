@@ -1,0 +1,21 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.PlayModeStateChange
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
+namespace UnityEditor
+{
+  /// <summary>
+  ///         <para>Enumeration specifying a change in the Editor's play mode state.
+  /// 
+  /// See Also: PauseState, EditorApplication.playModeStateChanged, EditorApplication.isPlaying.</para>
+  ///       </summary>
+  public enum PlayModeStateChange
+  {
+    EnteredEditMode,
+    ExitingEditMode,
+    EnteredPlayMode,
+    ExitingPlayMode,
+  }
+}

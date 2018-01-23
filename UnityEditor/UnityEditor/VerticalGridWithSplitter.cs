@@ -1,181 +1,135 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.VerticalGridWithSplitter
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class VerticalGridWithSplitter
-	{
-		private int m_Columns = 1;
+  internal class VerticalGridWithSplitter
+  {
+    private int m_Columns = 1;
+    private int m_Rows;
+    private float m_Height;
+    private float m_HorizontalSpacing;
+    private int m_SplitAfterRow;
+    private float m_CurrentSplitHeight;
+    private float m_LastSplitUpdate;
+    private float m_TargetSplitHeight;
 
-		private int m_Rows;
+    public int columns
+    {
+      get
+      {
+        return this.m_Columns;
+      }
+    }
 
-		private float m_Height;
+    public int rows
+    {
+      get
+      {
+        return this.m_Rows;
+      }
+    }
 
-		private float m_HorizontalSpacing;
+    public float height
+    {
+      get
+      {
+        return this.m_Height;
+      }
+    }
 
-		private int m_SplitAfterRow;
+    public float horizontalSpacing
+    {
+      get
+      {
+        return this.m_HorizontalSpacing;
+      }
+    }
 
-		private float m_CurrentSplitHeight;
+    public float fixedWidth { get; set; }
 
-		private float m_LastSplitUpdate;
+    public Vector2 itemSize { get; set; }
 
-		private float m_TargetSplitHeight;
+    public float verticalSpacing { get; set; }
 
-		public int columns
-		{
-			get
-			{
-				return this.m_Columns;
-			}
-		}
+    public float minHorizontalSpacing { get; set; }
 
-		public int rows
-		{
-			get
-			{
-				return this.m_Rows;
-			}
-		}
+    public float topMargin { get; set; }
 
-		public float height
-		{
-			get
-			{
-				return this.m_Height;
-			}
-		}
+    public float bottomMargin { get; set; }
 
-		public float horizontalSpacing
-		{
-			get
-			{
-				return this.m_HorizontalSpacing;
-			}
-		}
+    public float rightMargin { get; set; }
 
-		public float fixedWidth
-		{
-			get;
-			set;
-		}
+    public float leftMargin { get; set; }
 
-		public Vector2 itemSize
-		{
-			get;
-			set;
-		}
+    public void InitNumRowsAndColumns(int itemCount, int maxNumRows)
+    {
+      this.m_Columns = (int) Mathf.Floor((float) (((double) this.fixedWidth - (double) this.leftMargin - (double) this.rightMargin) / ((double) this.itemSize.x + (double) this.minHorizontalSpacing)));
+      this.m_Columns = Mathf.Max(this.m_Columns, 1);
+      this.m_HorizontalSpacing = 0.0f;
+      if (this.m_Columns > 1)
+        this.m_HorizontalSpacing = (this.fixedWidth - ((float) this.m_Columns * this.itemSize.x + this.leftMargin + this.rightMargin)) / (float) (this.m_Columns - 1);
+      this.m_Rows = Mathf.Min(maxNumRows, (int) Mathf.Ceil((float) itemCount / (float) this.m_Columns));
+      this.m_Height = (float) this.m_Rows * (this.itemSize.y + this.verticalSpacing) - this.verticalSpacing + this.topMargin + this.bottomMargin;
+    }
 
-		public float verticalSpacing
-		{
-			get;
-			set;
-		}
+    public Rect CalcRect(int itemIdx, float yOffset)
+    {
+      float num = Mathf.Floor((float) (itemIdx / this.columns));
+      return new Rect(((float) itemIdx - num * (float) this.columns) * (this.itemSize.x + this.horizontalSpacing) + this.leftMargin, num * (this.itemSize.y + this.verticalSpacing) + this.topMargin + yOffset, this.itemSize.x, this.itemSize.y);
+    }
 
-		public float minHorizontalSpacing
-		{
-			get;
-			set;
-		}
+    public int GetMaxVisibleItems(float height)
+    {
+      return (int) Mathf.Ceil((float) (((double) height - (double) this.topMargin - (double) this.bottomMargin) / ((double) this.itemSize.y + (double) this.verticalSpacing))) * this.columns;
+    }
 
-		public float topMargin
-		{
-			get;
-			set;
-		}
+    public void ResetSplit()
+    {
+      this.m_SplitAfterRow = -1;
+      this.m_CurrentSplitHeight = 0.0f;
+      this.m_LastSplitUpdate = -1f;
+      this.m_TargetSplitHeight = 0.0f;
+    }
 
-		public float bottomMargin
-		{
-			get;
-			set;
-		}
+    public void OpenSplit(int splitAfterRowIndex, int numItems)
+    {
+      float num = (float) (int) Mathf.Ceil((float) numItems / (float) this.m_Columns) * (this.itemSize.y + this.verticalSpacing) - this.verticalSpacing + this.topMargin + this.bottomMargin;
+      this.m_SplitAfterRow = splitAfterRowIndex;
+      this.m_TargetSplitHeight = num;
+      this.m_LastSplitUpdate = Time.realtimeSinceStartup;
+    }
 
-		public float rightMargin
-		{
-			get;
-			set;
-		}
+    public Rect CalcSplitRect(int splitIndex, float yOffset)
+    {
+      return new Rect(0.0f, 0.0f, 0.0f, 0.0f);
+    }
 
-		public float leftMargin
-		{
-			get;
-			set;
-		}
+    public void CloseSplit()
+    {
+      this.m_TargetSplitHeight = 0.0f;
+    }
 
-		public void InitNumRowsAndColumns(int itemCount, int maxNumRows)
-		{
-			this.m_Columns = (int)Mathf.Floor((this.fixedWidth - this.leftMargin - this.rightMargin) / (this.itemSize.x + this.minHorizontalSpacing));
-			this.m_Columns = Mathf.Max(this.m_Columns, 1);
-			this.m_HorizontalSpacing = 0f;
-			if (this.m_Columns > 1)
-			{
-				this.m_HorizontalSpacing = (this.fixedWidth - ((float)this.m_Columns * this.itemSize.x + this.leftMargin + this.rightMargin)) / (float)(this.m_Columns - 1);
-			}
-			this.m_Rows = Mathf.Min(maxNumRows, (int)Mathf.Ceil((float)itemCount / (float)this.m_Columns));
-			this.m_Height = (float)this.m_Rows * (this.itemSize.y + this.verticalSpacing) - this.verticalSpacing + this.topMargin + this.bottomMargin;
-		}
-
-		public Rect CalcRect(int itemIdx, float yOffset)
-		{
-			float num = Mathf.Floor((float)(itemIdx / this.columns));
-			float num2 = (float)itemIdx - num * (float)this.columns;
-			return new Rect(num2 * (this.itemSize.x + this.horizontalSpacing) + this.leftMargin, num * (this.itemSize.y + this.verticalSpacing) + this.topMargin + yOffset, this.itemSize.x, this.itemSize.y);
-		}
-
-		public int GetMaxVisibleItems(float height)
-		{
-			int num = (int)Mathf.Ceil((height - this.topMargin - this.bottomMargin) / (this.itemSize.y + this.verticalSpacing));
-			return num * this.columns;
-		}
-
-		public void ResetSplit()
-		{
-			this.m_SplitAfterRow = -1;
-			this.m_CurrentSplitHeight = 0f;
-			this.m_LastSplitUpdate = -1f;
-			this.m_TargetSplitHeight = 0f;
-		}
-
-		public void OpenSplit(int splitAfterRowIndex, int numItems)
-		{
-			int num = (int)Mathf.Ceil((float)numItems / (float)this.m_Columns);
-			float targetSplitHeight = (float)num * (this.itemSize.y + this.verticalSpacing) - this.verticalSpacing + this.topMargin + this.bottomMargin;
-			this.m_SplitAfterRow = splitAfterRowIndex;
-			this.m_TargetSplitHeight = targetSplitHeight;
-			this.m_LastSplitUpdate = Time.realtimeSinceStartup;
-		}
-
-		public Rect CalcSplitRect(int splitIndex, float yOffset)
-		{
-			Rect result = new Rect(0f, 0f, 0f, 0f);
-			return result;
-		}
-
-		public void CloseSplit()
-		{
-			this.m_TargetSplitHeight = 0f;
-		}
-
-		public bool UpdateSplitAnimationOnGUI()
-		{
-			bool result;
-			if (this.m_SplitAfterRow != -1)
-			{
-				float num = Time.realtimeSinceStartup - this.m_LastSplitUpdate;
-				this.m_CurrentSplitHeight = num * this.m_TargetSplitHeight;
-				this.m_LastSplitUpdate = Time.realtimeSinceStartup;
-				if (this.m_CurrentSplitHeight != this.m_TargetSplitHeight && Event.current.type == EventType.Repaint)
-				{
-					this.m_CurrentSplitHeight = Mathf.MoveTowards(this.m_CurrentSplitHeight, this.m_TargetSplitHeight, 0.03f);
-					if (this.m_CurrentSplitHeight == 0f && this.m_TargetSplitHeight == 0f)
-					{
-						this.ResetSplit();
-					}
-					result = true;
-					return result;
-				}
-			}
-			result = false;
-			return result;
-		}
-	}
+    public bool UpdateSplitAnimationOnGUI()
+    {
+      if (this.m_SplitAfterRow != -1)
+      {
+        this.m_CurrentSplitHeight = (Time.realtimeSinceStartup - this.m_LastSplitUpdate) * this.m_TargetSplitHeight;
+        this.m_LastSplitUpdate = Time.realtimeSinceStartup;
+        if ((double) this.m_CurrentSplitHeight != (double) this.m_TargetSplitHeight && Event.current.type == EventType.Repaint)
+        {
+          this.m_CurrentSplitHeight = Mathf.MoveTowards(this.m_CurrentSplitHeight, this.m_TargetSplitHeight, 0.03f);
+          if ((double) this.m_CurrentSplitHeight == 0.0 && (double) this.m_TargetSplitHeight == 0.0)
+            this.ResetSplit();
+          return true;
+        }
+      }
+      return false;
+    }
+  }
 }

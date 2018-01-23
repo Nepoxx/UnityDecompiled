@@ -1,179 +1,173 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.DetailPrototype
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System.Runtime.InteropServices;
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[UsedByNativeCode]
-	[StructLayout(LayoutKind.Sequential)]
-	public sealed class DetailPrototype
-	{
-		private GameObject m_Prototype = null;
+  [UsedByNativeCode]
+  [StructLayout(LayoutKind.Sequential)]
+  public sealed class DetailPrototype
+  {
+    internal GameObject m_Prototype = (GameObject) null;
+    internal Texture2D m_PrototypeTexture = (Texture2D) null;
+    internal Color m_HealthyColor = new Color(0.2627451f, 0.9764706f, 0.1647059f, 1f);
+    internal Color m_DryColor = new Color(0.8039216f, 0.7372549f, 0.1019608f, 1f);
+    internal float m_MinWidth = 1f;
+    internal float m_MaxWidth = 2f;
+    internal float m_MinHeight = 1f;
+    internal float m_MaxHeight = 2f;
+    internal float m_NoiseSpread = 0.1f;
+    internal float m_BendFactor = 0.1f;
+    internal int m_RenderMode = 2;
+    internal int m_UsePrototypeMesh = 0;
 
-		private Texture2D m_PrototypeTexture = null;
+    public GameObject prototype
+    {
+      get
+      {
+        return this.m_Prototype;
+      }
+      set
+      {
+        this.m_Prototype = value;
+      }
+    }
 
-		private Color m_HealthyColor = new Color(0.2627451f, 0.9764706f, 0.164705887f, 1f);
+    public Texture2D prototypeTexture
+    {
+      get
+      {
+        return this.m_PrototypeTexture;
+      }
+      set
+      {
+        this.m_PrototypeTexture = value;
+      }
+    }
 
-		private Color m_DryColor = new Color(0.8039216f, 0.7372549f, 0.101960786f, 1f);
+    public float minWidth
+    {
+      get
+      {
+        return this.m_MinWidth;
+      }
+      set
+      {
+        this.m_MinWidth = value;
+      }
+    }
 
-		private float m_MinWidth = 1f;
+    public float maxWidth
+    {
+      get
+      {
+        return this.m_MaxWidth;
+      }
+      set
+      {
+        this.m_MaxWidth = value;
+      }
+    }
 
-		private float m_MaxWidth = 2f;
+    public float minHeight
+    {
+      get
+      {
+        return this.m_MinHeight;
+      }
+      set
+      {
+        this.m_MinHeight = value;
+      }
+    }
 
-		private float m_MinHeight = 1f;
+    public float maxHeight
+    {
+      get
+      {
+        return this.m_MaxHeight;
+      }
+      set
+      {
+        this.m_MaxHeight = value;
+      }
+    }
 
-		private float m_MaxHeight = 2f;
+    public float noiseSpread
+    {
+      get
+      {
+        return this.m_NoiseSpread;
+      }
+      set
+      {
+        this.m_NoiseSpread = value;
+      }
+    }
 
-		private float m_NoiseSpread = 0.1f;
+    public float bendFactor
+    {
+      get
+      {
+        return this.m_BendFactor;
+      }
+      set
+      {
+        this.m_BendFactor = value;
+      }
+    }
 
-		private float m_BendFactor = 0.1f;
+    public Color healthyColor
+    {
+      get
+      {
+        return this.m_HealthyColor;
+      }
+      set
+      {
+        this.m_HealthyColor = value;
+      }
+    }
 
-		private int m_RenderMode = 2;
+    public Color dryColor
+    {
+      get
+      {
+        return this.m_DryColor;
+      }
+      set
+      {
+        this.m_DryColor = value;
+      }
+    }
 
-		private int m_UsePrototypeMesh = 0;
+    public DetailRenderMode renderMode
+    {
+      get
+      {
+        return (DetailRenderMode) this.m_RenderMode;
+      }
+      set
+      {
+        this.m_RenderMode = (int) value;
+      }
+    }
 
-		public GameObject prototype
-		{
-			get
-			{
-				return this.m_Prototype;
-			}
-			set
-			{
-				this.m_Prototype = value;
-			}
-		}
-
-		public Texture2D prototypeTexture
-		{
-			get
-			{
-				return this.m_PrototypeTexture;
-			}
-			set
-			{
-				this.m_PrototypeTexture = value;
-			}
-		}
-
-		public float minWidth
-		{
-			get
-			{
-				return this.m_MinWidth;
-			}
-			set
-			{
-				this.m_MinWidth = value;
-			}
-		}
-
-		public float maxWidth
-		{
-			get
-			{
-				return this.m_MaxWidth;
-			}
-			set
-			{
-				this.m_MaxWidth = value;
-			}
-		}
-
-		public float minHeight
-		{
-			get
-			{
-				return this.m_MinHeight;
-			}
-			set
-			{
-				this.m_MinHeight = value;
-			}
-		}
-
-		public float maxHeight
-		{
-			get
-			{
-				return this.m_MaxHeight;
-			}
-			set
-			{
-				this.m_MaxHeight = value;
-			}
-		}
-
-		public float noiseSpread
-		{
-			get
-			{
-				return this.m_NoiseSpread;
-			}
-			set
-			{
-				this.m_NoiseSpread = value;
-			}
-		}
-
-		public float bendFactor
-		{
-			get
-			{
-				return this.m_BendFactor;
-			}
-			set
-			{
-				this.m_BendFactor = value;
-			}
-		}
-
-		public Color healthyColor
-		{
-			get
-			{
-				return this.m_HealthyColor;
-			}
-			set
-			{
-				this.m_HealthyColor = value;
-			}
-		}
-
-		public Color dryColor
-		{
-			get
-			{
-				return this.m_DryColor;
-			}
-			set
-			{
-				this.m_DryColor = value;
-			}
-		}
-
-		public DetailRenderMode renderMode
-		{
-			get
-			{
-				return (DetailRenderMode)this.m_RenderMode;
-			}
-			set
-			{
-				this.m_RenderMode = (int)value;
-			}
-		}
-
-		public bool usePrototypeMesh
-		{
-			get
-			{
-				return this.m_UsePrototypeMesh != 0;
-			}
-			set
-			{
-				this.m_UsePrototypeMesh = ((!value) ? 0 : 1);
-			}
-		}
-	}
+    public bool usePrototypeMesh
+    {
+      get
+      {
+        return this.m_UsePrototypeMesh != 0;
+      }
+      set
+      {
+        this.m_UsePrototypeMesh = !value ? 0 : 1;
+      }
+    }
+  }
 }

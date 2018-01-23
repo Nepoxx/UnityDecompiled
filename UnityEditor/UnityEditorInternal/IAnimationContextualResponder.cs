@@ -1,37 +1,42 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.IAnimationContextualResponder
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEditor;
 using UnityEngine;
 
 namespace UnityEditorInternal
 {
-	internal interface IAnimationContextualResponder
-	{
-		bool IsAnimatable(PropertyModification[] modifications);
+  internal interface IAnimationContextualResponder
+  {
+    bool IsAnimatable(PropertyModification[] modifications);
 
-		bool IsEditable(UnityEngine.Object targetObject);
+    bool IsEditable(Object targetObject);
 
-		bool KeyExists(PropertyModification[] modifications);
+    bool KeyExists(PropertyModification[] modifications);
 
-		bool CandidateExists(PropertyModification[] modifications);
+    bool CandidateExists(PropertyModification[] modifications);
 
-		bool CurveExists(PropertyModification[] modifications);
+    bool CurveExists(PropertyModification[] modifications);
 
-		bool HasAnyCandidates();
+    bool HasAnyCandidates();
 
-		bool HasAnyCurves();
+    bool HasAnyCurves();
 
-		void AddKey(PropertyModification[] modifications);
+    void AddKey(PropertyModification[] modifications);
 
-		void RemoveKey(PropertyModification[] modifications);
+    void RemoveKey(PropertyModification[] modifications);
 
-		void RemoveCurve(PropertyModification[] modifications);
+    void RemoveCurve(PropertyModification[] modifications);
 
-		void AddCandidateKeys();
+    void AddCandidateKeys();
 
-		void AddAnimatedKeys();
+    void AddAnimatedKeys();
 
-		void GoToNextKeyframe(PropertyModification[] modifications);
+    void GoToNextKeyframe(PropertyModification[] modifications);
 
-		void GoToPreviousKeyframe(PropertyModification[] modifications);
-	}
+    void GoToPreviousKeyframe(PropertyModification[] modifications);
+  }
 }

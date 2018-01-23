@@ -1,18 +1,23 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.TransformSorting
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class TransformSorting : HierarchySorting
-	{
-		private readonly GUIContent m_Content = new GUIContent(EditorGUIUtility.FindTexture("DefaultSorting"), "Transform Child Order");
+  internal class TransformSorting : HierarchySorting
+  {
+    private readonly GUIContent m_Content = new GUIContent((Texture) EditorGUIUtility.FindTexture("DefaultSorting"), "Transform Child Order");
 
-		public override GUIContent content
-		{
-			get
-			{
-				return this.m_Content;
-			}
-		}
-	}
+    public override GUIContent content
+    {
+      get
+      {
+        return this.m_Content;
+      }
+    }
+  }
 }

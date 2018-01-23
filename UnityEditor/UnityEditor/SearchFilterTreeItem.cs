@@ -1,23 +1,29 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.SearchFilterTreeItem
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEditor.IMGUI.Controls;
 
 namespace UnityEditor
 {
-	internal class SearchFilterTreeItem : TreeViewItem
-	{
-		private bool m_IsFolder;
+  internal class SearchFilterTreeItem : TreeViewItem
+  {
+    private bool m_IsFolder;
 
-		public bool isFolder
-		{
-			get
-			{
-				return this.m_IsFolder;
-			}
-		}
+    public SearchFilterTreeItem(int id, int depth, TreeViewItem parent, string displayName, bool isFolder)
+      : base(id, depth, parent, displayName)
+    {
+      this.m_IsFolder = isFolder;
+    }
 
-		public SearchFilterTreeItem(int id, int depth, TreeViewItem parent, string displayName, bool isFolder) : base(id, depth, parent, displayName)
-		{
-			this.m_IsFolder = isFolder;
-		}
-	}
+    public bool isFolder
+    {
+      get
+      {
+        return this.m_IsFolder;
+      }
+    }
+  }
 }

@@ -1,110 +1,98 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.ComputeShaderInspector
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace UnityEditor
 {
-	[CustomEditor(typeof(ComputeShader))]
-	internal class ComputeShaderInspector : Editor
-	{
-		private class KernelInfo
-		{
-			internal string name;
+  [CustomEditor(typeof (ComputeShader))]
+  internal class ComputeShaderInspector : Editor
+  {
+    private Vector2 m_ScrollPosition = Vector2.zero;
+    private const float kSpace = 5f;
 
-			internal string platforms;
-		}
+    private static List<ComputeShaderInspector.KernelInfo> GetKernelDisplayInfo(ComputeShader cs)
+    {
+      List<ComputeShaderInspector.KernelInfo> kernelInfoList = new List<ComputeShaderInspector.KernelInfo>();
+      int shaderPlatformCount = ShaderUtil.GetComputeShaderPlatformCount(cs);
+      for (int platformIndex = 0; platformIndex < shaderPlatformCount; ++platformIndex)
+      {
+        GraphicsDeviceType shaderPlatformType = ShaderUtil.GetComputeShaderPlatformType(cs, platformIndex);
+        int platformKernelCount = ShaderUtil.GetComputeShaderPlatformKernelCount(cs, platformIndex);
+        for (int kernelIndex = 0; kernelIndex < platformKernelCount; ++kernelIndex)
+        {
+          string platformKernelName = ShaderUtil.GetComputeShaderPlatformKernelName(cs, platformIndex, kernelIndex);
+          bool flag = false;
+          foreach (ComputeShaderInspector.KernelInfo kernelInfo in kernelInfoList)
+          {
+            if (kernelInfo.name == platformKernelName)
+            {
+              kernelInfo.platforms += (string) (object) ' ';
+              kernelInfo.platforms += shaderPlatformType.ToString();
+              flag = true;
+            }
+          }
+          if (!flag)
+            kernelInfoList.Add(new ComputeShaderInspector.KernelInfo()
+            {
+              name = platformKernelName,
+              platforms = shaderPlatformType.ToString()
+            });
+        }
+      }
+      return kernelInfoList;
+    }
 
-		internal class Styles
-		{
-			public static GUIContent showCompiled = EditorGUIUtility.TextContent("Show compiled code");
+    public override void OnInspectorGUI()
+    {
+      ComputeShader target = this.target as ComputeShader;
+      if ((Object) target == (Object) null)
+        return;
+      GUI.enabled = true;
+      EditorGUI.indentLevel = 0;
+      this.ShowKernelInfoSection(target);
+      this.ShowCompiledCodeSection(target);
+      this.ShowShaderErrors(target);
+    }
 
-			public static GUIContent kernelsHeading = EditorGUIUtility.TextContent("Kernels:");
-		}
+    private void ShowKernelInfoSection(ComputeShader cs)
+    {
+      GUILayout.Label(ComputeShaderInspector.Styles.kernelsHeading, EditorStyles.boldLabel, new GUILayoutOption[0]);
+      foreach (ComputeShaderInspector.KernelInfo kernelInfo in ComputeShaderInspector.GetKernelDisplayInfo(cs))
+        EditorGUILayout.LabelField(kernelInfo.name, kernelInfo.platforms, new GUILayoutOption[0]);
+    }
 
-		private const float kSpace = 5f;
+    private void ShowCompiledCodeSection(ComputeShader cs)
+    {
+      GUILayout.Space(5f);
+      if (!GUILayout.Button(ComputeShaderInspector.Styles.showCompiled, EditorStyles.miniButton, new GUILayoutOption[1]{ GUILayout.ExpandWidth(false) }))
+        return;
+      ShaderUtil.OpenCompiledComputeShader(cs, true);
+      GUIUtility.ExitGUI();
+    }
 
-		private Vector2 m_ScrollPosition = Vector2.zero;
+    private void ShowShaderErrors(ComputeShader s)
+    {
+      if (ShaderUtil.GetComputeShaderErrorCount(s) < 1)
+        return;
+      ShaderInspector.ShaderErrorListUI((Object) s, ShaderUtil.GetComputeShaderErrors(s), ref this.m_ScrollPosition);
+    }
 
-		private static List<ComputeShaderInspector.KernelInfo> GetKernelDisplayInfo(ComputeShader cs)
-		{
-			List<ComputeShaderInspector.KernelInfo> list = new List<ComputeShaderInspector.KernelInfo>();
-			int computeShaderPlatformCount = ShaderUtil.GetComputeShaderPlatformCount(cs);
-			for (int i = 0; i < computeShaderPlatformCount; i++)
-			{
-				GraphicsDeviceType computeShaderPlatformType = ShaderUtil.GetComputeShaderPlatformType(cs, i);
-				int computeShaderPlatformKernelCount = ShaderUtil.GetComputeShaderPlatformKernelCount(cs, i);
-				for (int j = 0; j < computeShaderPlatformKernelCount; j++)
-				{
-					string computeShaderPlatformKernelName = ShaderUtil.GetComputeShaderPlatformKernelName(cs, i, j);
-					bool flag = false;
-					foreach (ComputeShaderInspector.KernelInfo current in list)
-					{
-						if (current.name == computeShaderPlatformKernelName)
-						{
-							ComputeShaderInspector.KernelInfo expr_6C = current;
-							expr_6C.platforms += ' ';
-							ComputeShaderInspector.KernelInfo expr_85 = current;
-							expr_85.platforms += computeShaderPlatformType.ToString();
-							flag = true;
-						}
-					}
-					if (!flag)
-					{
-						list.Add(new ComputeShaderInspector.KernelInfo
-						{
-							name = computeShaderPlatformKernelName,
-							platforms = computeShaderPlatformType.ToString()
-						});
-					}
-				}
-			}
-			return list;
-		}
+    private class KernelInfo
+    {
+      internal string name;
+      internal string platforms;
+    }
 
-		public override void OnInspectorGUI()
-		{
-			ComputeShader computeShader = base.target as ComputeShader;
-			if (!(computeShader == null))
-			{
-				GUI.enabled = true;
-				EditorGUI.indentLevel = 0;
-				this.ShowKernelInfoSection(computeShader);
-				this.ShowCompiledCodeSection(computeShader);
-				this.ShowShaderErrors(computeShader);
-			}
-		}
-
-		private void ShowKernelInfoSection(ComputeShader cs)
-		{
-			GUILayout.Label(ComputeShaderInspector.Styles.kernelsHeading, EditorStyles.boldLabel, new GUILayoutOption[0]);
-			List<ComputeShaderInspector.KernelInfo> kernelDisplayInfo = ComputeShaderInspector.GetKernelDisplayInfo(cs);
-			foreach (ComputeShaderInspector.KernelInfo current in kernelDisplayInfo)
-			{
-				EditorGUILayout.LabelField(current.name, current.platforms, new GUILayoutOption[0]);
-			}
-		}
-
-		private void ShowCompiledCodeSection(ComputeShader cs)
-		{
-			GUILayout.Space(5f);
-			if (GUILayout.Button(ComputeShaderInspector.Styles.showCompiled, EditorStyles.miniButton, new GUILayoutOption[]
-			{
-				GUILayout.ExpandWidth(false)
-			}))
-			{
-				ShaderUtil.OpenCompiledComputeShader(cs, true);
-				GUIUtility.ExitGUI();
-			}
-		}
-
-		private void ShowShaderErrors(ComputeShader s)
-		{
-			int computeShaderErrorCount = ShaderUtil.GetComputeShaderErrorCount(s);
-			if (computeShaderErrorCount >= 1)
-			{
-				ShaderInspector.ShaderErrorListUI(s, ShaderUtil.GetComputeShaderErrors(s), ref this.m_ScrollPosition);
-			}
-		}
-	}
+    internal class Styles
+    {
+      public static GUIContent showCompiled = EditorGUIUtility.TextContent("Show compiled code");
+      public static GUIContent kernelsHeading = EditorGUIUtility.TextContent("Kernels:");
+    }
+  }
 }

@@ -1,250 +1,233 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.BaseInspectView
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal abstract class BaseInspectView : IBaseInspectView
-	{
-		private class Styles
-		{
-			public GUIStyle centeredLabel = new GUIStyle("PR Label");
+  internal abstract class BaseInspectView : IBaseInspectView
+  {
+    [NonSerialized]
+    private readonly ListViewState m_ListViewState = new ListViewState();
+    private Vector2 m_InstructionDetailsScrollPos = new Vector2();
+    private readonly SplitterState m_InstructionDetailStacktraceSplitter = new SplitterState(new float[2]{ 80f, 20f }, new int[2]{ 100, 100 }, (int[]) null);
+    private GUIViewDebuggerWindow m_DebuggerWindow;
 
-			public Styles()
-			{
-				this.centeredLabel.alignment = TextAnchor.MiddleCenter;
-				this.centeredLabel.padding.right = 0;
-				this.centeredLabel.padding.left = 0;
-			}
-		}
+    public BaseInspectView(GUIViewDebuggerWindow guiViewDebuggerWindow)
+    {
+      this.m_DebuggerWindow = guiViewDebuggerWindow;
+    }
 
-		private BaseInspectView.Styles m_Styles;
+    protected ListViewState listViewState
+    {
+      get
+      {
+        return this.m_ListViewState;
+      }
+    }
 
-		protected GUIViewDebuggerWindow m_GuiViewDebuggerWindow;
+    protected GUIViewDebuggerWindow debuggerWindow
+    {
+      get
+      {
+        return this.m_DebuggerWindow;
+      }
+    }
 
-		[NonSerialized]
-		public readonly ListViewState m_ListViewState = new ListViewState();
+    public abstract void UpdateInstructions();
 
-		protected Vector2 m_InstructionDetailsScrollPos = default(Vector2);
+    public virtual void DrawInstructionList()
+    {
+      Event current1 = Event.current;
+      this.m_ListViewState.totalRows = this.GetInstructionCount();
+      EditorGUILayout.BeginVertical(GUIViewDebuggerWindow.Styles.listBackgroundStyle, new GUILayoutOption[0]);
+      GUILayout.Label(BaseInspectView.Styles.instructionsLabel);
+      int controlId = GUIUtility.GetControlID(FocusType.Keyboard);
+      IEnumerator enumerator = ListViewGUI.ListView(this.m_ListViewState, GUIViewDebuggerWindow.Styles.listBackgroundStyle, new GUILayoutOption[0]).GetEnumerator();
+      try
+      {
+        while (enumerator.MoveNext())
+        {
+          ListViewElement current2 = (ListViewElement) enumerator.Current;
+          if (current1.type == EventType.MouseDown && current1.button == 0 && (current2.position.Contains(current1.mousePosition) && current1.clickCount == 2))
+            this.OnDoubleClickInstruction(current2.row);
+          if (current1.type == EventType.Repaint && current2.row < this.GetInstructionCount())
+            this.DoDrawInstruction(current2, controlId);
+        }
+      }
+      finally
+      {
+        IDisposable disposable;
+        if ((disposable = enumerator as IDisposable) != null)
+          disposable.Dispose();
+      }
+      EditorGUILayout.EndVertical();
+    }
 
-		protected readonly SplitterState m_InstructionDetailStacktraceSplitter = new SplitterState(new float[]
-		{
-			80f,
-			20f
-		}, new int[]
-		{
-			100,
-			100
-		}, null);
+    public virtual void DrawSelectedInstructionDetails()
+    {
+      if (this.m_ListViewState.selectionChanged)
+        this.OnSelectedInstructionChanged(this.m_ListViewState.row);
+      else if (this.m_ListViewState.row >= this.GetInstructionCount())
+        this.OnSelectedInstructionChanged(-1);
+      if (!this.isInstructionSelected)
+      {
+        this.DoDrawNothingSelected();
+      }
+      else
+      {
+        SplitterGUILayout.BeginVerticalSplit(this.m_InstructionDetailStacktraceSplitter);
+        this.m_InstructionDetailsScrollPos = EditorGUILayout.BeginScrollView(this.m_InstructionDetailsScrollPos, GUIViewDebuggerWindow.Styles.boxStyle, new GUILayoutOption[0]);
+        this.DoDrawSelectedInstructionDetails(this.m_ListViewState.row);
+        EditorGUILayout.EndScrollView();
+        this.DrawInspectedStacktrace();
+        SplitterGUILayout.EndVerticalSplit();
+      }
+    }
 
-		private BaseInspectView.Styles styles
-		{
-			get
-			{
-				if (this.m_Styles == null)
-				{
-					this.m_Styles = new BaseInspectView.Styles();
-				}
-				return this.m_Styles;
-			}
-		}
+    public abstract void ShowOverlay();
 
-		public BaseInspectView(GUIViewDebuggerWindow guiViewDebuggerWindow)
-		{
-			this.m_GuiViewDebuggerWindow = guiViewDebuggerWindow;
-		}
+    public virtual void SelectRow(int index)
+    {
+      this.m_ListViewState.row = index;
+      this.m_ListViewState.selectionChanged = true;
+    }
 
-		public virtual void DrawInstructionList()
-		{
-			Event current = Event.current;
-			this.m_ListViewState.totalRows = this.GetInstructionCount();
-			EditorGUILayout.BeginVertical(GUIViewDebuggerWindow.s_Styles.listBackgroundStyle, new GUILayoutOption[0]);
-			GUILayout.Label("Instructions", new GUILayoutOption[0]);
-			int controlID = GUIUtility.GetControlID(FocusType.Keyboard);
-			IEnumerator enumerator = ListViewGUI.ListView(this.m_ListViewState, GUIViewDebuggerWindow.s_Styles.listBackgroundStyle, new GUILayoutOption[0]).GetEnumerator();
-			try
-			{
-				while (enumerator.MoveNext())
-				{
-					ListViewElement el = (ListViewElement)enumerator.Current;
-					if (current.type == EventType.MouseDown && current.button == 0 && el.position.Contains(current.mousePosition))
-					{
-						if (current.clickCount == 2)
-						{
-							this.OnDoubleClickInstruction(el.row);
-						}
-					}
-					if (current.type == EventType.Repaint)
-					{
-						this.DoDrawInstruction(el, controlID);
-					}
-				}
-			}
-			finally
-			{
-				IDisposable disposable;
-				if ((disposable = (enumerator as IDisposable)) != null)
-				{
-					disposable.Dispose();
-				}
-			}
-			EditorGUILayout.EndVertical();
-		}
+    public virtual void ClearRowSelection()
+    {
+      this.m_ListViewState.row = -1;
+      this.m_ListViewState.selectionChanged = true;
+    }
 
-		public abstract void UpdateInstructions();
+    protected abstract int GetInstructionCount();
 
-		protected abstract int GetInstructionCount();
+    protected abstract void DoDrawInstruction(ListViewElement el, int controlId);
 
-		protected abstract void DoDrawInstruction(ListViewElement el, int controlId);
+    protected abstract void DrawInspectedStacktrace();
 
-		internal abstract string GetInstructionListName(int index);
+    protected virtual bool isInstructionSelected
+    {
+      get
+      {
+        return this.m_ListViewState.row >= 0 && this.m_ListViewState.row < this.GetInstructionCount();
+      }
+    }
 
-		internal abstract void OnDoubleClickInstruction(int index);
+    protected void DrawStackFrameList(StackFrame[] stackframes)
+    {
+      if (stackframes == null)
+        return;
+      foreach (StackFrame stackframe in stackframes)
+      {
+        if (!string.IsNullOrEmpty(stackframe.sourceFile))
+          GUILayout.Label(string.Format("{0} [{1}:{2}]", (object) stackframe.signature, (object) stackframe.sourceFile, (object) stackframe.lineNumber), GUIViewDebuggerWindow.Styles.stackframeStyle, new GUILayoutOption[0]);
+      }
+    }
 
-		public virtual void DrawSelectedInstructionDetails()
-		{
-			if (this.m_ListViewState.selectionChanged)
-			{
-				this.OnSelectedInstructionChanged(this.m_ListViewState.row);
-			}
-			if (!this.HasSelectedinstruction())
-			{
-				this.DoDrawNothingSelected();
-			}
-			else
-			{
-				SplitterGUILayout.BeginVerticalSplit(this.m_InstructionDetailStacktraceSplitter, new GUILayoutOption[0]);
-				this.m_InstructionDetailsScrollPos = EditorGUILayout.BeginScrollView(this.m_InstructionDetailsScrollPos, GUIViewDebuggerWindow.s_Styles.boxStyle, new GUILayoutOption[0]);
-				this.DoDrawSelectedInstructionDetails(this.m_ListViewState.row);
-				EditorGUILayout.EndScrollView();
-				this.DrawInspectedStacktrace();
-				SplitterGUILayout.EndVerticalSplit();
-			}
-		}
+    protected void DrawInspectedRect(Rect instructionRect)
+    {
+      Rect rect1 = GUILayoutUtility.GetRect(0.0f, 100f);
+      RectOffset rectOffset = new RectOffset(50, 100, Mathf.CeilToInt(34f), Mathf.CeilToInt(16f));
+      Rect position1 = rectOffset.Remove(rect1);
+      float imageAspect = instructionRect.width / instructionRect.height;
+      Rect outScreenRect = new Rect();
+      Rect outSourceRect = new Rect();
+      GUI.CalculateScaledTextureRects(position1, ScaleMode.ScaleToFit, imageAspect, ref outScreenRect, ref outSourceRect);
+      Rect position2 = outScreenRect;
+      position2.width = Mathf.Max(80f, position2.width);
+      position2.height = Mathf.Max(26f, position2.height);
+      Rect position3 = new Rect();
+      position3.height = 16f;
+      position3.width = (float) (rectOffset.left * 2);
+      position3.y = position2.y - (float) rectOffset.top;
+      position3.x = position2.x - position3.width / 2f;
+      Rect position4 = new Rect() { height = 16f, width = (float) (rectOffset.right * 2), y = position2.yMax };
+      position4.x = position2.xMax - position4.width / 2f;
+      Rect rect2 = new Rect() { x = position2.x, y = position3.yMax + 2f, width = position2.width, height = 16f };
+      Rect position5 = rect2;
+      position5.width = rect2.width / 3f;
+      position5.x = rect2.x + (float) (((double) rect2.width - (double) position5.width) / 2.0);
+      Rect rect3 = position2;
+      rect3.x = position2.xMax;
+      rect3.width = 16f;
+      Rect position6 = rect3;
+      position6.height = 16f;
+      position6.width = (float) rectOffset.right;
+      position6.y += (float) (((double) rect3.height - (double) position6.height) / 2.0);
+      GUI.Label(position3, string.Format("({0},{1})", (object) instructionRect.x, (object) instructionRect.y), BaseInspectView.Styles.centeredLabel);
+      Handles.color = new Color(1f, 1f, 1f, 0.5f);
+      Vector3 p1 = new Vector3(rect2.x, position5.y);
+      Vector3 p2 = new Vector3(rect2.x, position5.yMax);
+      Handles.DrawLine(p1, p2);
+      p1.x = p2.x = rect2.xMax;
+      Handles.DrawLine(p1, p2);
+      p1.x = rect2.x;
+      p1.y = p2.y = Mathf.Lerp(p1.y, p2.y, 0.5f);
+      p2.x = position5.x;
+      Handles.DrawLine(p1, p2);
+      p1.x = position5.xMax;
+      p2.x = rect2.xMax;
+      Handles.DrawLine(p1, p2);
+      GUI.Label(position5, instructionRect.width.ToString(), BaseInspectView.Styles.centeredLabel);
+      p1 = new Vector3(rect3.x, rect3.y);
+      p2 = new Vector3(rect3.xMax, rect3.y);
+      Handles.DrawLine(p1, p2);
+      p1.y = p2.y = rect3.yMax;
+      Handles.DrawLine(p1, p2);
+      p1.x = p2.x = Mathf.Lerp(p1.x, p2.x, 0.5f);
+      p1.y = rect3.y;
+      p2.y = position6.y;
+      Handles.DrawLine(p1, p2);
+      p1.y = position6.yMax;
+      p2.y = rect3.yMax;
+      Handles.DrawLine(p1, p2);
+      GUI.Label(position6, instructionRect.height.ToString());
+      GUI.Label(position4, string.Format("({0},{1})", (object) instructionRect.xMax, (object) instructionRect.yMax), BaseInspectView.Styles.centeredLabel);
+      GUI.Box(position2, GUIContent.none);
+    }
 
-		protected abstract void DrawInspectedStacktrace();
+    protected void DoSelectableInstructionDataField(string label, string instructionData)
+    {
+      Rect controlRect = EditorGUILayout.GetControlRect(true, new GUILayoutOption[0]);
+      EditorGUI.LabelField(controlRect, label);
+      controlRect.xMin += EditorGUIUtility.labelWidth;
+      EditorGUI.SelectableLabel(controlRect, instructionData);
+    }
 
-		internal abstract void DoDrawSelectedInstructionDetails(int index);
+    internal abstract void DoDrawSelectedInstructionDetails(int selectedInstructionIndex);
 
-		protected virtual bool HasSelectedinstruction()
-		{
-			return this.m_ListViewState.row >= 0;
-		}
+    internal abstract string GetInstructionListName(int index);
 
-		protected virtual void DoDrawNothingSelected()
-		{
-			EditorGUILayout.BeginVertical(new GUILayoutOption[0]);
-			GUILayout.FlexibleSpace();
-			GUILayout.Label("Select a Instruction on the left to see details", GUIViewDebuggerWindow.s_Styles.centeredText, new GUILayoutOption[0]);
-			GUILayout.FlexibleSpace();
-			EditorGUILayout.EndVertical();
-		}
+    internal abstract void OnDoubleClickInstruction(int index);
 
-		internal abstract void OnSelectedInstructionChanged(int newSelectionIndex);
+    internal abstract void OnSelectedInstructionChanged(int newSelectionIndex);
 
-		public virtual void Unselect()
-		{
-			this.m_ListViewState.row = -1;
-			this.m_ListViewState.selectionChanged = true;
-		}
+    private void DoDrawNothingSelected()
+    {
+      EditorGUILayout.BeginVertical();
+      GUILayout.FlexibleSpace();
+      GUILayout.Label(BaseInspectView.Styles.emptyViewLabel, GUIViewDebuggerWindow.Styles.centeredText, new GUILayoutOption[0]);
+      GUILayout.FlexibleSpace();
+      EditorGUILayout.EndVertical();
+    }
 
-		public virtual void SelectRow(int index)
-		{
-			this.m_ListViewState.row = index;
-			this.m_ListViewState.selectionChanged = true;
-		}
+    protected static class Styles
+    {
+      public static readonly GUIContent instructionsLabel = new GUIContent("Instructions");
+      public static readonly GUIContent emptyViewLabel = new GUIContent("Select an Instruction on the left to see details");
+      public static readonly GUIStyle centeredLabel = new GUIStyle((GUIStyle) "PR Label");
 
-		public abstract void ShowOverlay();
-
-		protected void DrawStackFrameList(StackFrame[] stackframes)
-		{
-			if (stackframes != null)
-			{
-				for (int i = 0; i < stackframes.Length; i++)
-				{
-					StackFrame stackFrame = stackframes[i];
-					if (!string.IsNullOrEmpty(stackFrame.sourceFile))
-					{
-						GUILayout.Label(string.Format("{0} [{1}:{2}]", stackFrame.signature, stackFrame.sourceFile, stackFrame.lineNumber), GUIViewDebuggerWindow.s_Styles.stackframeStyle, new GUILayoutOption[0]);
-					}
-				}
-			}
-		}
-
-		protected void DrawInspectedRect(Rect instructionRect)
-		{
-			Rect rect = GUILayoutUtility.GetRect(0f, 100f);
-			int top = Mathf.CeilToInt(34f);
-			int bottom = Mathf.CeilToInt(16f);
-			int right = 100;
-			RectOffset rectOffset = new RectOffset(50, right, top, bottom);
-			Rect rect2 = rectOffset.Remove(rect);
-			float imageAspect = instructionRect.width / instructionRect.height;
-			Rect rect3 = default(Rect);
-			Rect rect4 = default(Rect);
-			GUI.CalculateScaledTextureRects(rect2, ScaleMode.ScaleToFit, imageAspect, ref rect3, ref rect4);
-			rect2 = rect3;
-			rect2.width = Mathf.Max(80f, rect2.width);
-			rect2.height = Mathf.Max(26f, rect2.height);
-			Rect position = default(Rect);
-			position.height = 16f;
-			position.width = (float)(rectOffset.left * 2);
-			position.y = rect2.y - (float)rectOffset.top;
-			position.x = rect2.x - position.width / 2f;
-			Rect position2 = new Rect
-			{
-				height = 16f,
-				width = (float)(rectOffset.right * 2),
-				y = rect2.yMax
-			};
-			position2.x = rect2.xMax - position2.width / 2f;
-			Rect rect5 = new Rect
-			{
-				x = rect2.x,
-				y = position.yMax + 2f,
-				width = rect2.width,
-				height = 16f
-			};
-			Rect position3 = rect5;
-			position3.width = rect5.width / 3f;
-			position3.x = rect5.x + (rect5.width - position3.width) / 2f;
-			Rect rect6 = rect2;
-			rect6.x = rect2.xMax;
-			rect6.width = 16f;
-			Rect position4 = rect6;
-			position4.height = 16f;
-			position4.width = (float)rectOffset.right;
-			position4.y += (rect6.height - position4.height) / 2f;
-			GUI.Label(position, string.Format("({0},{1})", instructionRect.x, instructionRect.y), this.styles.centeredLabel);
-			Handles.color = new Color(1f, 1f, 1f, 0.5f);
-			Vector3 p = new Vector3(rect5.x, position3.y);
-			Vector3 p2 = new Vector3(rect5.x, position3.yMax);
-			Handles.DrawLine(p, p2);
-			p.x = (p2.x = rect5.xMax);
-			Handles.DrawLine(p, p2);
-			p.x = rect5.x;
-			p.y = (p2.y = Mathf.Lerp(p.y, p2.y, 0.5f));
-			p2.x = position3.x;
-			Handles.DrawLine(p, p2);
-			p.x = position3.xMax;
-			p2.x = rect5.xMax;
-			Handles.DrawLine(p, p2);
-			GUI.Label(position3, instructionRect.width.ToString(), this.styles.centeredLabel);
-			p = new Vector3(rect6.x, rect6.y);
-			p2 = new Vector3(rect6.xMax, rect6.y);
-			Handles.DrawLine(p, p2);
-			p.y = (p2.y = rect6.yMax);
-			Handles.DrawLine(p, p2);
-			p.x = (p2.x = Mathf.Lerp(p.x, p2.x, 0.5f));
-			p.y = rect6.y;
-			p2.y = position4.y;
-			Handles.DrawLine(p, p2);
-			p.y = position4.yMax;
-			p2.y = rect6.yMax;
-			Handles.DrawLine(p, p2);
-			GUI.Label(position4, instructionRect.height.ToString());
-			GUI.Label(position2, string.Format("({0},{1})", instructionRect.xMax, instructionRect.yMax), this.styles.centeredLabel);
-			GUI.Box(rect2, GUIContent.none);
-		}
-	}
+      static Styles()
+      {
+        BaseInspectView.Styles.centeredLabel.alignment = TextAnchor.MiddleCenter;
+        BaseInspectView.Styles.centeredLabel.padding.right = 0;
+        BaseInspectView.Styles.centeredLabel.padding.left = 0;
+      }
+    }
+  }
 }

@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.FilteredHierarchy
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using UnityEditorInternal;
@@ -5,375 +11,297 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class FilteredHierarchy
-	{
-		public class FilterResult
-		{
-			public int instanceID;
+  internal class FilteredHierarchy
+  {
+    private SearchFilter m_SearchFilter = new SearchFilter();
+    private FilteredHierarchy.FilterResult[] m_Results = new FilteredHierarchy.FilterResult[0];
+    private FilteredHierarchy.FilterResult[] m_VisibleItems = new FilteredHierarchy.FilterResult[0];
+    private HierarchyType m_HierarchyType;
 
-			public string name;
+    public FilteredHierarchy(HierarchyType type)
+    {
+      this.m_HierarchyType = type;
+    }
 
-			public bool hasChildren;
+    public HierarchyType hierarchyType
+    {
+      get
+      {
+        return this.m_HierarchyType;
+      }
+    }
 
-			public int colorCode;
+    public FilteredHierarchy.FilterResult[] results
+    {
+      get
+      {
+        if (this.m_VisibleItems.Length > 0)
+          return this.m_VisibleItems;
+        return this.m_Results;
+      }
+    }
 
-			public bool isMainRepresentation;
+    public SearchFilter searchFilter
+    {
+      get
+      {
+        return this.m_SearchFilter;
+      }
+      set
+      {
+        if (!this.m_SearchFilter.SetNewFilter(value))
+          return;
+        this.ResultsChanged();
+      }
+    }
 
-			public bool hasFullPreviewImage;
+    public bool foldersFirst { get; set; }
 
-			public IconDrawStyle iconDrawStyle;
+    public void SetResults(int[] instanceIDs)
+    {
+      HierarchyProperty property = new HierarchyProperty(this.m_HierarchyType);
+      property.Reset();
+      Array.Resize<FilteredHierarchy.FilterResult>(ref this.m_Results, instanceIDs.Length);
+      for (int index = 0; index < instanceIDs.Length; ++index)
+      {
+        if (property.Find(instanceIDs[index], (int[]) null))
+          this.CopyPropertyData(ref this.m_Results[index], property);
+      }
+    }
 
-			public bool isFolder;
+    private void CopyPropertyData(ref FilteredHierarchy.FilterResult result, HierarchyProperty property)
+    {
+      if (result == null)
+        result = new FilteredHierarchy.FilterResult();
+      result.instanceID = property.instanceID;
+      result.name = property.name;
+      result.hasChildren = property.hasChildren;
+      result.colorCode = property.colorCode;
+      result.isMainRepresentation = property.isMainRepresentation;
+      result.hasFullPreviewImage = property.hasFullPreviewImage;
+      result.iconDrawStyle = property.iconDrawStyle;
+      result.isFolder = property.isFolder;
+      result.type = this.hierarchyType;
+      if (!property.isMainRepresentation)
+        result.icon = property.icon;
+      else if (property.isFolder && !property.hasChildren)
+        result.icon = EditorGUIUtility.FindTexture(EditorResourcesUtility.emptyFolderIconName);
+      else
+        result.icon = (Texture2D) null;
+    }
 
-			public HierarchyType type;
+    private void SearchAllAssets(HierarchyProperty property)
+    {
+      int num = Mathf.Min(property.CountRemaining((int[]) null), 3000);
+      property.Reset();
+      int length = this.m_Results.Length;
+      Array.Resize<FilteredHierarchy.FilterResult>(ref this.m_Results, this.m_Results.Length + num);
+      for (; property.Next((int[]) null) && length < this.m_Results.Length; ++length)
+        this.CopyPropertyData(ref this.m_Results[length], property);
+    }
 
-			private Texture2D m_Icon;
+    private void SearchInFolders(HierarchyProperty property)
+    {
+      List<FilteredHierarchy.FilterResult> filterResultList = new List<FilteredHierarchy.FilterResult>();
+      foreach (string baseFolder in ProjectWindowUtil.GetBaseFolders(this.m_SearchFilter.folders))
+      {
+        property.SetSearchFilter(new SearchFilter());
+        int mainAssetInstanceId = AssetDatabase.GetMainAssetInstanceID(baseFolder);
+        if (property.Find(mainAssetInstanceId, (int[]) null))
+        {
+          property.SetSearchFilter(this.m_SearchFilter);
+          int depth = property.depth;
+          int[] expanded = (int[]) null;
+          while (property.NextWithDepthCheck(expanded, depth + 1))
+          {
+            FilteredHierarchy.FilterResult result = new FilteredHierarchy.FilterResult();
+            this.CopyPropertyData(ref result, property);
+            filterResultList.Add(result);
+          }
+        }
+      }
+      this.m_Results = filterResultList.ToArray();
+    }
 
-			public Texture2D icon
-			{
-				get
-				{
-					Texture2D result;
-					if (this.m_Icon == null)
-					{
-						if (this.type == HierarchyType.Assets)
-						{
-							string assetPath = AssetDatabase.GetAssetPath(this.instanceID);
-							if (assetPath != null)
-							{
-								result = (AssetDatabase.GetCachedIcon(assetPath) as Texture2D);
-								return result;
-							}
-						}
-						else if (this.type == HierarchyType.GameObjects)
-						{
-							UnityEngine.Object obj = EditorUtility.InstanceIDToObject(this.instanceID);
-							this.m_Icon = AssetPreview.GetMiniThumbnail(obj);
-						}
-					}
-					result = this.m_Icon;
-					return result;
-				}
-				set
-				{
-					this.m_Icon = value;
-				}
-			}
+    private void FolderBrowsing(HierarchyProperty property)
+    {
+      List<FilteredHierarchy.FilterResult> filterResultList = new List<FilteredHierarchy.FilterResult>();
+      foreach (string folder in this.m_SearchFilter.folders)
+      {
+        int mainAssetInstanceId = AssetDatabase.GetMainAssetInstanceID(folder);
+        if (property.Find(mainAssetInstanceId, (int[]) null))
+        {
+          int depth = property.depth;
+          int[] array = new int[1]{ mainAssetInstanceId };
+          while (property.Next(array) && property.depth > depth)
+          {
+            FilteredHierarchy.FilterResult result = new FilteredHierarchy.FilterResult();
+            this.CopyPropertyData(ref result, property);
+            filterResultList.Add(result);
+            if (property.hasChildren && !property.isFolder)
+            {
+              Array.Resize<int>(ref array, array.Length + 1);
+              array[array.Length - 1] = property.instanceID;
+            }
+          }
+        }
+      }
+      this.m_Results = filterResultList.ToArray();
+    }
 
-			public string guid
-			{
-				get
-				{
-					string result;
-					if (this.type == HierarchyType.Assets)
-					{
-						string assetPath = AssetDatabase.GetAssetPath(this.instanceID);
-						if (assetPath != null)
-						{
-							result = AssetDatabase.AssetPathToGUID(assetPath);
-							return result;
-						}
-					}
-					result = null;
-					return result;
-				}
-			}
-		}
+    private void AddResults(HierarchyProperty property)
+    {
+      switch (this.m_SearchFilter.GetState())
+      {
+        case SearchFilter.State.EmptySearchFilter:
+          break;
+        case SearchFilter.State.FolderBrowsing:
+          this.FolderBrowsing(property);
+          break;
+        case SearchFilter.State.SearchingInAllAssets:
+          this.SearchAllAssets(property);
+          break;
+        case SearchFilter.State.SearchingInFolders:
+          this.SearchInFolders(property);
+          break;
+        case SearchFilter.State.SearchingInAssetStore:
+          break;
+        default:
+          Debug.LogError((object) "Unhandled enum!");
+          break;
+      }
+    }
 
-		private SearchFilter m_SearchFilter = new SearchFilter();
+    public void ResultsChanged()
+    {
+      this.m_Results = new FilteredHierarchy.FilterResult[0];
+      if (this.m_SearchFilter.GetState() != SearchFilter.State.EmptySearchFilter)
+      {
+        HierarchyProperty property = new HierarchyProperty(this.m_HierarchyType);
+        property.SetSearchFilter(this.m_SearchFilter);
+        this.AddResults(property);
+        if (this.m_SearchFilter.IsSearching())
+          Array.Sort<FilteredHierarchy.FilterResult>(this.m_Results, (Comparison<FilteredHierarchy.FilterResult>) ((result1, result2) => EditorUtility.NaturalCompare(result1.name, result2.name)));
+        if (!this.foldersFirst)
+          return;
+        for (int sourceIndex = 0; sourceIndex < this.m_Results.Length; ++sourceIndex)
+        {
+          if (!this.m_Results[sourceIndex].isFolder)
+          {
+            for (int index = sourceIndex + 1; index < this.m_Results.Length; ++index)
+            {
+              if (this.m_Results[index].isFolder)
+              {
+                FilteredHierarchy.FilterResult result = this.m_Results[index];
+                int length = index - sourceIndex;
+                Array.Copy((Array) this.m_Results, sourceIndex, (Array) this.m_Results, sourceIndex + 1, length);
+                this.m_Results[sourceIndex] = result;
+                break;
+              }
+            }
+          }
+        }
+      }
+      else if (this.m_HierarchyType == HierarchyType.GameObjects)
+        new HierarchyProperty(HierarchyType.GameObjects).SetSearchFilter(this.m_SearchFilter);
+    }
 
-		private FilteredHierarchy.FilterResult[] m_Results = new FilteredHierarchy.FilterResult[0];
+    public void RefreshVisibleItems(List<int> expandedInstanceIDs)
+    {
+      bool flag1 = this.m_SearchFilter.IsSearching();
+      List<FilteredHierarchy.FilterResult> filterResultList = new List<FilteredHierarchy.FilterResult>();
+      for (int mainRepresentionIndex = 0; mainRepresentionIndex < this.m_Results.Length; ++mainRepresentionIndex)
+      {
+        filterResultList.Add(this.m_Results[mainRepresentionIndex]);
+        if (this.m_Results[mainRepresentionIndex].isMainRepresentation && this.m_Results[mainRepresentionIndex].hasChildren && !this.m_Results[mainRepresentionIndex].isFolder)
+        {
+          bool flag2 = expandedInstanceIDs.IndexOf(this.m_Results[mainRepresentionIndex].instanceID) >= 0 || flag1;
+          int num = this.AddSubItemsOfMainRepresentation(mainRepresentionIndex, !flag2 ? (List<FilteredHierarchy.FilterResult>) null : filterResultList);
+          mainRepresentionIndex += num;
+        }
+      }
+      this.m_VisibleItems = filterResultList.ToArray();
+    }
 
-		private FilteredHierarchy.FilterResult[] m_VisibleItems = new FilteredHierarchy.FilterResult[0];
+    public List<int> GetSubAssetInstanceIDs(int mainAssetInstanceID)
+    {
+      for (int index1 = 0; index1 < this.m_Results.Length; ++index1)
+      {
+        if (this.m_Results[index1].instanceID == mainAssetInstanceID)
+        {
+          List<int> intList = new List<int>();
+          for (int index2 = index1 + 1; index2 < this.m_Results.Length && !this.m_Results[index2].isMainRepresentation; ++index2)
+            intList.Add(this.m_Results[index2].instanceID);
+          return intList;
+        }
+      }
+      Debug.LogError((object) ("Not main rep " + (object) mainAssetInstanceID));
+      return new List<int>();
+    }
 
-		private HierarchyType m_HierarchyType;
+    public int AddSubItemsOfMainRepresentation(int mainRepresentionIndex, List<FilteredHierarchy.FilterResult> visibleItems)
+    {
+      int num = 0;
+      int index = mainRepresentionIndex + 1;
+      while (index < this.m_Results.Length && !this.m_Results[index].isMainRepresentation)
+      {
+        if (visibleItems != null)
+          visibleItems.Add(this.m_Results[index]);
+        ++index;
+        ++num;
+      }
+      return num;
+    }
 
-		public HierarchyType hierarchyType
-		{
-			get
-			{
-				return this.m_HierarchyType;
-			}
-		}
+    public class FilterResult
+    {
+      public int instanceID;
+      public string name;
+      public bool hasChildren;
+      public int colorCode;
+      public bool isMainRepresentation;
+      public bool hasFullPreviewImage;
+      public IconDrawStyle iconDrawStyle;
+      public bool isFolder;
+      public HierarchyType type;
+      private Texture2D m_Icon;
 
-		public FilteredHierarchy.FilterResult[] results
-		{
-			get
-			{
-				FilteredHierarchy.FilterResult[] result;
-				if (this.m_VisibleItems.Length > 0)
-				{
-					result = this.m_VisibleItems;
-				}
-				else
-				{
-					result = this.m_Results;
-				}
-				return result;
-			}
-		}
+      public Texture2D icon
+      {
+        get
+        {
+          if ((UnityEngine.Object) this.m_Icon == (UnityEngine.Object) null)
+          {
+            if (this.type == HierarchyType.Assets || this.type == HierarchyType.Packages)
+            {
+              string assetPath = AssetDatabase.GetAssetPath(this.instanceID);
+              if (assetPath != null)
+                return AssetDatabase.GetCachedIcon(assetPath) as Texture2D;
+            }
+            else if (this.type == HierarchyType.GameObjects)
+              this.m_Icon = AssetPreview.GetMiniThumbnail(EditorUtility.InstanceIDToObject(this.instanceID));
+          }
+          return this.m_Icon;
+        }
+        set
+        {
+          this.m_Icon = value;
+        }
+      }
 
-		public SearchFilter searchFilter
-		{
-			get
-			{
-				return this.m_SearchFilter;
-			}
-			set
-			{
-				if (this.m_SearchFilter.SetNewFilter(value))
-				{
-					this.ResultsChanged();
-				}
-			}
-		}
-
-		public bool foldersFirst
-		{
-			get;
-			set;
-		}
-
-		public FilteredHierarchy(HierarchyType type)
-		{
-			this.m_HierarchyType = type;
-		}
-
-		public void SetResults(int[] instanceIDs)
-		{
-			HierarchyProperty hierarchyProperty = new HierarchyProperty(this.m_HierarchyType);
-			hierarchyProperty.Reset();
-			Array.Resize<FilteredHierarchy.FilterResult>(ref this.m_Results, instanceIDs.Length);
-			for (int i = 0; i < instanceIDs.Length; i++)
-			{
-				if (hierarchyProperty.Find(instanceIDs[i], null))
-				{
-					this.CopyPropertyData(ref this.m_Results[i], hierarchyProperty);
-				}
-			}
-		}
-
-		private void CopyPropertyData(ref FilteredHierarchy.FilterResult result, HierarchyProperty property)
-		{
-			if (result == null)
-			{
-				result = new FilteredHierarchy.FilterResult();
-			}
-			result.instanceID = property.instanceID;
-			result.name = property.name;
-			result.hasChildren = property.hasChildren;
-			result.colorCode = property.colorCode;
-			result.isMainRepresentation = property.isMainRepresentation;
-			result.hasFullPreviewImage = property.hasFullPreviewImage;
-			result.iconDrawStyle = property.iconDrawStyle;
-			result.isFolder = property.isFolder;
-			result.type = this.hierarchyType;
-			if (!property.isMainRepresentation)
-			{
-				result.icon = property.icon;
-			}
-			else if (property.isFolder && !property.hasChildren)
-			{
-				result.icon = EditorGUIUtility.FindTexture(EditorResourcesUtility.emptyFolderIconName);
-			}
-			else
-			{
-				result.icon = null;
-			}
-		}
-
-		private void SearchAllAssets(HierarchyProperty property)
-		{
-			int num = property.CountRemaining(null);
-			num = Mathf.Min(num, 3000);
-			property.Reset();
-			int num2 = this.m_Results.Length;
-			Array.Resize<FilteredHierarchy.FilterResult>(ref this.m_Results, this.m_Results.Length + num);
-			while (property.Next(null) && num2 < this.m_Results.Length)
-			{
-				this.CopyPropertyData(ref this.m_Results[num2], property);
-				num2++;
-			}
-		}
-
-		private void SearchInFolders(HierarchyProperty property)
-		{
-			List<FilteredHierarchy.FilterResult> list = new List<FilteredHierarchy.FilterResult>();
-			string[] baseFolders = ProjectWindowUtil.GetBaseFolders(this.m_SearchFilter.folders);
-			string[] array = baseFolders;
-			for (int i = 0; i < array.Length; i++)
-			{
-				string assetPath = array[i];
-				property.SetSearchFilter(new SearchFilter());
-				int mainAssetInstanceID = AssetDatabase.GetMainAssetInstanceID(assetPath);
-				if (property.Find(mainAssetInstanceID, null))
-				{
-					property.SetSearchFilter(this.m_SearchFilter);
-					int depth = property.depth;
-					int[] expanded = null;
-					while (property.NextWithDepthCheck(expanded, depth + 1))
-					{
-						FilteredHierarchy.FilterResult item = new FilteredHierarchy.FilterResult();
-						this.CopyPropertyData(ref item, property);
-						list.Add(item);
-					}
-				}
-			}
-			this.m_Results = list.ToArray();
-		}
-
-		private void FolderBrowsing(HierarchyProperty property)
-		{
-			List<FilteredHierarchy.FilterResult> list = new List<FilteredHierarchy.FilterResult>();
-			string[] folders = this.m_SearchFilter.folders;
-			for (int i = 0; i < folders.Length; i++)
-			{
-				string assetPath = folders[i];
-				int mainAssetInstanceID = AssetDatabase.GetMainAssetInstanceID(assetPath);
-				if (property.Find(mainAssetInstanceID, null))
-				{
-					int depth = property.depth;
-					int[] array = new int[]
-					{
-						mainAssetInstanceID
-					};
-					while (property.Next(array))
-					{
-						if (property.depth <= depth)
-						{
-							break;
-						}
-						FilteredHierarchy.FilterResult item = new FilteredHierarchy.FilterResult();
-						this.CopyPropertyData(ref item, property);
-						list.Add(item);
-						if (property.hasChildren && !property.isFolder)
-						{
-							Array.Resize<int>(ref array, array.Length + 1);
-							array[array.Length - 1] = property.instanceID;
-						}
-					}
-				}
-			}
-			this.m_Results = list.ToArray();
-		}
-
-		private void AddResults(HierarchyProperty property)
-		{
-			switch (this.m_SearchFilter.GetState())
-			{
-			case SearchFilter.State.EmptySearchFilter:
-				break;
-			case SearchFilter.State.FolderBrowsing:
-				this.FolderBrowsing(property);
-				break;
-			case SearchFilter.State.SearchingInAllAssets:
-				this.SearchAllAssets(property);
-				break;
-			case SearchFilter.State.SearchingInFolders:
-				this.SearchInFolders(property);
-				break;
-			case SearchFilter.State.SearchingInAssetStore:
-				break;
-			default:
-				Debug.LogError("Unhandled enum!");
-				break;
-			}
-		}
-
-		public void ResultsChanged()
-		{
-			this.m_Results = new FilteredHierarchy.FilterResult[0];
-			if (this.m_SearchFilter.GetState() != SearchFilter.State.EmptySearchFilter)
-			{
-				HierarchyProperty hierarchyProperty = new HierarchyProperty(this.m_HierarchyType);
-				hierarchyProperty.SetSearchFilter(this.m_SearchFilter);
-				this.AddResults(hierarchyProperty);
-				if (this.m_SearchFilter.IsSearching())
-				{
-					Array.Sort<FilteredHierarchy.FilterResult>(this.m_Results, (FilteredHierarchy.FilterResult result1, FilteredHierarchy.FilterResult result2) => EditorUtility.NaturalCompare(result1.name, result2.name));
-				}
-				if (this.foldersFirst)
-				{
-					for (int i = 0; i < this.m_Results.Length; i++)
-					{
-						if (!this.m_Results[i].isFolder)
-						{
-							for (int j = i + 1; j < this.m_Results.Length; j++)
-							{
-								if (this.m_Results[j].isFolder)
-								{
-									FilteredHierarchy.FilterResult filterResult = this.m_Results[j];
-									int length = j - i;
-									Array.Copy(this.m_Results, i, this.m_Results, i + 1, length);
-									this.m_Results[i] = filterResult;
-									break;
-								}
-							}
-						}
-					}
-				}
-			}
-			else if (this.m_HierarchyType == HierarchyType.GameObjects)
-			{
-				HierarchyProperty hierarchyProperty2 = new HierarchyProperty(HierarchyType.GameObjects);
-				hierarchyProperty2.SetSearchFilter(this.m_SearchFilter);
-			}
-		}
-
-		public void RefreshVisibleItems(List<int> expandedInstanceIDs)
-		{
-			bool flag = this.m_SearchFilter.IsSearching();
-			List<FilteredHierarchy.FilterResult> list = new List<FilteredHierarchy.FilterResult>();
-			for (int i = 0; i < this.m_Results.Length; i++)
-			{
-				list.Add(this.m_Results[i]);
-				if (this.m_Results[i].isMainRepresentation && this.m_Results[i].hasChildren && !this.m_Results[i].isFolder)
-				{
-					bool flag2 = expandedInstanceIDs.IndexOf(this.m_Results[i].instanceID) >= 0 || flag;
-					int num = this.AddSubItemsOfMainRepresentation(i, (!flag2) ? null : list);
-					i += num;
-				}
-			}
-			this.m_VisibleItems = list.ToArray();
-		}
-
-		public List<int> GetSubAssetInstanceIDs(int mainAssetInstanceID)
-		{
-			List<int> result;
-			for (int i = 0; i < this.m_Results.Length; i++)
-			{
-				if (this.m_Results[i].instanceID == mainAssetInstanceID)
-				{
-					List<int> list = new List<int>();
-					int num = i + 1;
-					while (num < this.m_Results.Length && !this.m_Results[num].isMainRepresentation)
-					{
-						list.Add(this.m_Results[num].instanceID);
-						num++;
-					}
-					result = list;
-					return result;
-				}
-			}
-			Debug.LogError("Not main rep " + mainAssetInstanceID);
-			result = new List<int>();
-			return result;
-		}
-
-		public int AddSubItemsOfMainRepresentation(int mainRepresentionIndex, List<FilteredHierarchy.FilterResult> visibleItems)
-		{
-			int num = 0;
-			int num2 = mainRepresentionIndex + 1;
-			while (num2 < this.m_Results.Length && !this.m_Results[num2].isMainRepresentation)
-			{
-				if (visibleItems != null)
-				{
-					visibleItems.Add(this.m_Results[num2]);
-				}
-				num2++;
-				num++;
-			}
-			return num;
-		}
-	}
+      public string guid
+      {
+        get
+        {
+          if (this.type == HierarchyType.Assets || this.type == HierarchyType.Packages)
+          {
+            string assetPath = AssetDatabase.GetAssetPath(this.instanceID);
+            if (assetPath != null)
+              return AssetDatabase.AssetPathToGUID(assetPath);
+          }
+          return (string) null;
+        }
+      }
+    }
+  }
 }

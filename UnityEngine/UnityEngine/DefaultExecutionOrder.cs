@@ -1,20 +1,23 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.DefaultExecutionOrder
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
+
 using System;
 using UnityEngine.Scripting;
 
 namespace UnityEngine
 {
-	[AttributeUsage(AttributeTargets.Class), UsedByNativeCode]
-	public class DefaultExecutionOrder : Attribute
-	{
-		public int order
-		{
-			get;
-			private set;
-		}
+  [UsedByNativeCode]
+  [AttributeUsage(AttributeTargets.Class)]
+  public class DefaultExecutionOrder : Attribute
+  {
+    public DefaultExecutionOrder(int order)
+    {
+      this.order = order;
+    }
 
-		public DefaultExecutionOrder(int order)
-		{
-			this.order = order;
-		}
-	}
+    public int order { get; private set; }
+  }
 }

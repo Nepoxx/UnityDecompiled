@@ -1,102 +1,94 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.TransformRotationGUI
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using UnityEngine;
 
 namespace UnityEditor
 {
-	[Serializable]
-	internal class TransformRotationGUI
-	{
-		private GUIContent rotationContent = new GUIContent("Rotation", "The local rotation of this Game Object relative to the parent.");
+  [Serializable]
+  internal class TransformRotationGUI
+  {
+    private static int s_FoldoutHash = "Foldout".GetHashCode();
+    private GUIContent rotationContent = new GUIContent("Rotation", "The local rotation of this Game Object relative to the parent.");
+    private Vector3 m_OldEulerAngles = new Vector3(1000000f, 1E+07f, 1000000f);
+    private RotationOrder m_OldRotationOrder = RotationOrder.OrderZXY;
+    private Vector3 m_EulerAngles;
+    private SerializedProperty m_Rotation;
+    private UnityEngine.Object[] targets;
 
-		private Vector3 m_EulerAngles;
+    public void OnEnable(SerializedProperty m_Rotation, GUIContent label)
+    {
+      this.m_Rotation = m_Rotation;
+      this.targets = m_Rotation.serializedObject.targetObjects;
+      this.m_OldRotationOrder = (this.targets[0] as Transform).rotationOrder;
+      this.rotationContent = label;
+    }
 
-		private Vector3 m_OldEulerAngles = new Vector3(1000000f, 1E+07f, 1000000f);
+    public void RotationField()
+    {
+      this.RotationField(false);
+    }
 
-		private RotationOrder m_OldRotationOrder = RotationOrder.OrderZXY;
-
-		private SerializedProperty m_Rotation;
-
-		private UnityEngine.Object[] targets;
-
-		private static int s_FoldoutHash = "Foldout".GetHashCode();
-
-		public void OnEnable(SerializedProperty m_Rotation, GUIContent label)
-		{
-			this.m_Rotation = m_Rotation;
-			this.targets = m_Rotation.serializedObject.targetObjects;
-			this.m_OldRotationOrder = (this.targets[0] as Transform).rotationOrder;
-			this.rotationContent = label;
-		}
-
-		public void RotationField()
-		{
-			this.RotationField(false);
-		}
-
-		public void RotationField(bool disabled)
-		{
-			Transform transform = this.targets[0] as Transform;
-			Vector3 localEulerAngles = transform.GetLocalEulerAngles(transform.rotationOrder);
-			if (this.m_OldEulerAngles.x != localEulerAngles.x || this.m_OldEulerAngles.y != localEulerAngles.y || this.m_OldEulerAngles.z != localEulerAngles.z || this.m_OldRotationOrder != transform.rotationOrder)
-			{
-				this.m_EulerAngles = transform.GetLocalEulerAngles(transform.rotationOrder);
-				this.m_OldRotationOrder = transform.rotationOrder;
-			}
-			bool flag = false;
-			bool flag2 = false;
-			for (int i = 1; i < this.targets.Length; i++)
-			{
-				Transform transform2 = this.targets[i] as Transform;
-				Vector3 localEulerAngles2 = transform2.GetLocalEulerAngles(transform2.rotationOrder);
-				flag |= (localEulerAngles2.x != localEulerAngles.x || localEulerAngles2.y != localEulerAngles.y || localEulerAngles2.z != localEulerAngles.z);
-				flag2 |= (transform2.rotationOrder != transform.rotationOrder);
-			}
-			Rect rect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight * (float)((!EditorGUIUtility.wideMode) ? 2 : 1), new GUILayoutOption[0]);
-			GUIContent gUIContent = EditorGUI.BeginProperty(rect, this.rotationContent, this.m_Rotation);
-			EditorGUI.showMixedValue = flag;
-			EditorGUI.BeginChangeCheck();
-			int controlID = GUIUtility.GetControlID(TransformRotationGUI.s_FoldoutHash, FocusType.Keyboard, rect);
-			if (AnimationMode.InAnimationMode() && transform.rotationOrder != RotationOrder.OrderZXY)
-			{
-				string text;
-				if (flag2)
-				{
-					text = "Mixed";
-				}
-				else
-				{
-					text = transform.rotationOrder.ToString();
-					text = text.Substring(text.Length - 3);
-				}
-				gUIContent.text = gUIContent.text + " (" + text + ")";
-			}
-			rect = EditorGUI.MultiFieldPrefixLabel(rect, controlID, gUIContent, 3);
-			rect.height = EditorGUIUtility.singleLineHeight;
-			using (new EditorGUI.DisabledScope(disabled))
-			{
-				this.m_EulerAngles = EditorGUI.Vector3Field(rect, GUIContent.none, this.m_EulerAngles);
-			}
-			if (EditorGUI.EndChangeCheck())
-			{
-				Undo.RecordObjects(this.targets, "Inspector");
-				UnityEngine.Object[] array = this.targets;
-				for (int j = 0; j < array.Length; j++)
-				{
-					Transform transform3 = (Transform)array[j];
-					transform3.SetLocalEulerAngles(this.m_EulerAngles, transform3.rotationOrder);
-					if (transform3.parent != null)
-					{
-						transform3.SendTransformChangedScale();
-					}
-				}
-				this.m_Rotation.serializedObject.SetIsDifferentCacheDirty();
-			}
-			EditorGUI.showMixedValue = false;
-			if (flag2)
-			{
-				EditorGUILayout.HelpBox("Transforms have different rotation orders, keyframes saved will have the same value but not the same local rotation", MessageType.Warning);
-			}
-			EditorGUI.EndProperty();
-		}
-	}
+    public void RotationField(bool disabled)
+    {
+      Transform target1 = this.targets[0] as Transform;
+      Vector3 localEulerAngles1 = target1.GetLocalEulerAngles(target1.rotationOrder);
+      if ((double) this.m_OldEulerAngles.x != (double) localEulerAngles1.x || (double) this.m_OldEulerAngles.y != (double) localEulerAngles1.y || ((double) this.m_OldEulerAngles.z != (double) localEulerAngles1.z || this.m_OldRotationOrder != target1.rotationOrder))
+      {
+        this.m_EulerAngles = target1.GetLocalEulerAngles(target1.rotationOrder);
+        this.m_OldRotationOrder = target1.rotationOrder;
+      }
+      bool flag1 = false;
+      bool flag2 = false;
+      for (int index = 1; index < this.targets.Length; ++index)
+      {
+        Transform target2 = this.targets[index] as Transform;
+        Vector3 localEulerAngles2 = target2.GetLocalEulerAngles(target2.rotationOrder);
+        flag1 = ((flag1 ? 1 : 0) | ((double) localEulerAngles2.x != (double) localEulerAngles1.x || (double) localEulerAngles2.y != (double) localEulerAngles1.y ? 1 : ((double) localEulerAngles2.z != (double) localEulerAngles1.z ? 1 : 0))) != 0;
+        flag2 |= target2.rotationOrder != target1.rotationOrder;
+      }
+      Rect controlRect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight * (!EditorGUIUtility.wideMode ? 2f : 1f), new GUILayoutOption[0]);
+      GUIContent label = EditorGUI.BeginProperty(controlRect, this.rotationContent, this.m_Rotation);
+      EditorGUI.showMixedValue = flag1;
+      EditorGUI.BeginChangeCheck();
+      int controlId = GUIUtility.GetControlID(TransformRotationGUI.s_FoldoutHash, FocusType.Keyboard, controlRect);
+      if (AnimationMode.InAnimationMode() && target1.rotationOrder != RotationOrder.OrderZXY)
+      {
+        string str1;
+        if (flag2)
+        {
+          str1 = "Mixed";
+        }
+        else
+        {
+          string str2 = target1.rotationOrder.ToString();
+          str1 = str2.Substring(str2.Length - 3);
+        }
+        label.text = label.text + " (" + str1 + ")";
+      }
+      Rect position = EditorGUI.MultiFieldPrefixLabel(controlRect, controlId, label, 3);
+      position.height = EditorGUIUtility.singleLineHeight;
+      using (new EditorGUI.DisabledScope(disabled))
+        this.m_EulerAngles = EditorGUI.Vector3Field(position, GUIContent.none, this.m_EulerAngles);
+      if (EditorGUI.EndChangeCheck())
+      {
+        Undo.RecordObjects(this.targets, "Inspector");
+        foreach (Transform target2 in this.targets)
+        {
+          target2.SetLocalEulerAngles(this.m_EulerAngles, target2.rotationOrder);
+          if ((UnityEngine.Object) target2.parent != (UnityEngine.Object) null)
+            target2.SendTransformChangedScale();
+        }
+        this.m_Rotation.serializedObject.SetIsDifferentCacheDirty();
+      }
+      EditorGUI.showMixedValue = false;
+      if (flag2)
+        EditorGUILayout.HelpBox("Transforms have different rotation orders, keyframes saved will have the same value but not the same local rotation", MessageType.Warning);
+      EditorGUI.EndProperty();
+    }
+  }
 }

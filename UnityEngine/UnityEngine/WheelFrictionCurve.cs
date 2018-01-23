@@ -1,77 +1,95 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEngine.WheelFrictionCurve
+// Assembly: UnityEngine, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: D290425A-E4B3-4E49-A420-29F09BB3F974
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEngine.dll
 
 namespace UnityEngine
 {
-	public struct WheelFrictionCurve
-	{
-		private float m_ExtremumSlip;
+  /// <summary>
+  ///   <para>WheelFrictionCurve is used by the WheelCollider to describe friction properties of the wheel tire.</para>
+  /// </summary>
+  public struct WheelFrictionCurve
+  {
+    private float m_ExtremumSlip;
+    private float m_ExtremumValue;
+    private float m_AsymptoteSlip;
+    private float m_AsymptoteValue;
+    private float m_Stiffness;
 
-		private float m_ExtremumValue;
+    /// <summary>
+    ///   <para>Extremum point slip (default 1).</para>
+    /// </summary>
+    public float extremumSlip
+    {
+      get
+      {
+        return this.m_ExtremumSlip;
+      }
+      set
+      {
+        this.m_ExtremumSlip = value;
+      }
+    }
 
-		private float m_AsymptoteSlip;
+    /// <summary>
+    ///   <para>Force at the extremum slip (default 20000).</para>
+    /// </summary>
+    public float extremumValue
+    {
+      get
+      {
+        return this.m_ExtremumValue;
+      }
+      set
+      {
+        this.m_ExtremumValue = value;
+      }
+    }
 
-		private float m_AsymptoteValue;
+    /// <summary>
+    ///   <para>Asymptote point slip (default 2).</para>
+    /// </summary>
+    public float asymptoteSlip
+    {
+      get
+      {
+        return this.m_AsymptoteSlip;
+      }
+      set
+      {
+        this.m_AsymptoteSlip = value;
+      }
+    }
 
-		private float m_Stiffness;
+    /// <summary>
+    ///   <para>Force at the asymptote slip (default 10000).</para>
+    /// </summary>
+    public float asymptoteValue
+    {
+      get
+      {
+        return this.m_AsymptoteValue;
+      }
+      set
+      {
+        this.m_AsymptoteValue = value;
+      }
+    }
 
-		public float extremumSlip
-		{
-			get
-			{
-				return this.m_ExtremumSlip;
-			}
-			set
-			{
-				this.m_ExtremumSlip = value;
-			}
-		}
-
-		public float extremumValue
-		{
-			get
-			{
-				return this.m_ExtremumValue;
-			}
-			set
-			{
-				this.m_ExtremumValue = value;
-			}
-		}
-
-		public float asymptoteSlip
-		{
-			get
-			{
-				return this.m_AsymptoteSlip;
-			}
-			set
-			{
-				this.m_AsymptoteSlip = value;
-			}
-		}
-
-		public float asymptoteValue
-		{
-			get
-			{
-				return this.m_AsymptoteValue;
-			}
-			set
-			{
-				this.m_AsymptoteValue = value;
-			}
-		}
-
-		public float stiffness
-		{
-			get
-			{
-				return this.m_Stiffness;
-			}
-			set
-			{
-				this.m_Stiffness = value;
-			}
-		}
-	}
+    /// <summary>
+    ///   <para>Multiplier for the extremumValue and asymptoteValue values (default 1).</para>
+    /// </summary>
+    public float stiffness
+    {
+      get
+      {
+        return this.m_Stiffness;
+      }
+      set
+      {
+        this.m_Stiffness = value;
+      }
+    }
+  }
 }

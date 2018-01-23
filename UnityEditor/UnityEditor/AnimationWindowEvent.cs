@@ -1,78 +1,78 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.AnimationWindowEvent
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class AnimationWindowEvent : ScriptableObject
-	{
-		public GameObject root;
+  internal class AnimationWindowEvent : ScriptableObject
+  {
+    public GameObject root;
+    public AnimationClip clip;
+    public AnimationClipInfoProperties clipInfo;
+    public int eventIndex;
 
-		public AnimationClip clip;
+    public static AnimationWindowEvent CreateAndEdit(GameObject root, AnimationClip clip, float time)
+    {
+      AnimationEvent evt = new AnimationEvent();
+      evt.time = time;
+      AnimationEvent[] animationEvents = AnimationUtility.GetAnimationEvents(clip);
+      int num = AnimationWindowEvent.InsertAnimationEvent(ref animationEvents, clip, evt);
+      AnimationWindowEvent instance = ScriptableObject.CreateInstance<AnimationWindowEvent>();
+      instance.hideFlags = HideFlags.HideInHierarchy;
+      instance.name = "Animation Event";
+      instance.root = root;
+      instance.clip = clip;
+      instance.clipInfo = (AnimationClipInfoProperties) null;
+      instance.eventIndex = num;
+      return instance;
+    }
 
-		public AnimationClipInfoProperties clipInfo;
+    public static AnimationWindowEvent Edit(GameObject root, AnimationClip clip, int eventIndex)
+    {
+      AnimationWindowEvent instance = ScriptableObject.CreateInstance<AnimationWindowEvent>();
+      instance.hideFlags = HideFlags.HideInHierarchy;
+      instance.name = "Animation Event";
+      instance.root = root;
+      instance.clip = clip;
+      instance.clipInfo = (AnimationClipInfoProperties) null;
+      instance.eventIndex = eventIndex;
+      return instance;
+    }
 
-		public int eventIndex;
+    public static AnimationWindowEvent Edit(AnimationClipInfoProperties clipInfo, int eventIndex)
+    {
+      AnimationWindowEvent instance = ScriptableObject.CreateInstance<AnimationWindowEvent>();
+      instance.hideFlags = HideFlags.HideInHierarchy;
+      instance.name = "Animation Event";
+      instance.root = (GameObject) null;
+      instance.clip = (AnimationClip) null;
+      instance.clipInfo = clipInfo;
+      instance.eventIndex = eventIndex;
+      return instance;
+    }
 
-		public static AnimationWindowEvent CreateAndEdit(GameObject root, AnimationClip clip, float time)
-		{
-			AnimationEvent animationEvent = new AnimationEvent();
-			animationEvent.time = time;
-			AnimationEvent[] animationEvents = AnimationUtility.GetAnimationEvents(clip);
-			int num = AnimationWindowEvent.InsertAnimationEvent(ref animationEvents, clip, animationEvent);
-			AnimationWindowEvent animationWindowEvent = ScriptableObject.CreateInstance<AnimationWindowEvent>();
-			animationWindowEvent.hideFlags = HideFlags.HideInHierarchy;
-			animationWindowEvent.name = "Animation Event";
-			animationWindowEvent.root = root;
-			animationWindowEvent.clip = clip;
-			animationWindowEvent.clipInfo = null;
-			animationWindowEvent.eventIndex = num;
-			return animationWindowEvent;
-		}
-
-		public static AnimationWindowEvent Edit(GameObject root, AnimationClip clip, int eventIndex)
-		{
-			AnimationWindowEvent animationWindowEvent = ScriptableObject.CreateInstance<AnimationWindowEvent>();
-			animationWindowEvent.hideFlags = HideFlags.HideInHierarchy;
-			animationWindowEvent.name = "Animation Event";
-			animationWindowEvent.root = root;
-			animationWindowEvent.clip = clip;
-			animationWindowEvent.clipInfo = null;
-			animationWindowEvent.eventIndex = eventIndex;
-			return animationWindowEvent;
-		}
-
-		public static AnimationWindowEvent Edit(AnimationClipInfoProperties clipInfo, int eventIndex)
-		{
-			AnimationWindowEvent animationWindowEvent = ScriptableObject.CreateInstance<AnimationWindowEvent>();
-			animationWindowEvent.hideFlags = HideFlags.HideInHierarchy;
-			animationWindowEvent.name = "Animation Event";
-			animationWindowEvent.root = null;
-			animationWindowEvent.clip = null;
-			animationWindowEvent.clipInfo = clipInfo;
-			animationWindowEvent.eventIndex = eventIndex;
-			return animationWindowEvent;
-		}
-
-		private static int InsertAnimationEvent(ref AnimationEvent[] events, AnimationClip clip, AnimationEvent evt)
-		{
-			Undo.RegisterCompleteObjectUndo(clip, "Add Event");
-			int num = events.Length;
-			for (int i = 0; i < events.Length; i++)
-			{
-				if (events[i].time > evt.time)
-				{
-					num = i;
-					break;
-				}
-			}
-			ArrayUtility.Insert<AnimationEvent>(ref events, num, evt);
-			AnimationUtility.SetAnimationEvents(clip, events);
-			events = AnimationUtility.GetAnimationEvents(clip);
-			if (events[num].time != evt.time || events[num].functionName != evt.functionName)
-			{
-				Debug.LogError("Failed insertion");
-			}
-			return num;
-		}
-	}
+    private static int InsertAnimationEvent(ref AnimationEvent[] events, AnimationClip clip, AnimationEvent evt)
+    {
+      Undo.RegisterCompleteObjectUndo((Object) clip, "Add Event");
+      int index1 = events.Length;
+      for (int index2 = 0; index2 < events.Length; ++index2)
+      {
+        if ((double) events[index2].time > (double) evt.time)
+        {
+          index1 = index2;
+          break;
+        }
+      }
+      ArrayUtility.Insert<AnimationEvent>(ref events, index1, evt);
+      AnimationUtility.SetAnimationEvents(clip, events);
+      events = AnimationUtility.GetAnimationEvents(clip);
+      if ((double) events[index1].time != (double) evt.time || events[index1].functionName != evt.functionName)
+        Debug.LogError((object) "Failed insertion");
+      return index1;
+    }
+  }
 }

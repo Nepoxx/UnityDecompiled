@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.FileUtil
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,381 +14,421 @@ using UnityEngine.Scripting;
 
 namespace UnityEditor
 {
-	public sealed class FileUtil
-	{
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern bool DeleteFileOrDirectory(string path);
+  /// <summary>
+  ///   <para>Lets you do move, copy, delete operations over files or directories.</para>
+  /// </summary>
+  public sealed class FileUtil
+  {
+    /// <summary>
+    ///   <para>Deletes a file or a directory given a path.</para>
+    /// </summary>
+    /// <param name="path"></param>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern bool DeleteFileOrDirectory(string path);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void CopyFileOrDirectory(string from, string to);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern bool PathExists(string path);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void CopyFileOrDirectoryFollowSymlinks(string from, string to);
+    /// <summary>
+    ///   <para>Copies a file or a directory.</para>
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="dest"></param>
+    public static void CopyFileOrDirectory(string source, string dest)
+    {
+      FileUtil.CheckForValidSourceAndDestinationArgumentsAndRaiseAnExceptionWhenNullOrEmpty(source, dest);
+      if (FileUtil.PathExists(dest))
+        throw new IOException(string.Format("Failed to Copy File / Directory from '{0}' to '{1}': destination path already exists.", (object) source, (object) dest));
+      if (!FileUtil.CopyFileOrDirectoryInternal(source, dest))
+        throw new IOException(string.Format("Failed to Copy File / Directory from '{0}' to '{1}'.", (object) source, (object) dest));
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern void MoveFileOrDirectory(string from, string to);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern bool CopyFileOrDirectoryInternal(string source, string dest);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern string GetUniqueTempPathInProject();
+    /// <summary>
+    ///   <para>Copies the file or directory.</para>
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="dest"></param>
+    public static void CopyFileOrDirectoryFollowSymlinks(string source, string dest)
+    {
+      FileUtil.CheckForValidSourceAndDestinationArgumentsAndRaiseAnExceptionWhenNullOrEmpty(source, dest);
+      if (FileUtil.PathExists(dest))
+        throw new IOException(string.Format("Failed to Copy File / Directory from '{0}' to '{1}': destination path already exists.", (object) source, (object) dest));
+      if (!FileUtil.CopyFileOrDirectoryFollowSymlinksInternal(source, dest))
+        throw new IOException(string.Format("Failed to Copy File / Directory from '{0}' to '{1}'.", (object) source, (object) dest));
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal static extern string GetActualPathName(string path);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern bool CopyFileOrDirectoryFollowSymlinksInternal(string source, string dest);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		public static extern string GetProjectRelativePath(string path);
+    /// <summary>
+    ///   <para>Moves a file or a directory from a given path to another path.</para>
+    /// </summary>
+    /// <param name="source"></param>
+    /// <param name="dest"></param>
+    public static void MoveFileOrDirectory(string source, string dest)
+    {
+      FileUtil.CheckForValidSourceAndDestinationArgumentsAndRaiseAnExceptionWhenNullOrEmpty(source, dest);
+      if (FileUtil.PathExists(dest))
+        throw new IOException(string.Format("Failed to Copy File / Directory from '{0}' to '{1}': destination path already exists.", (object) source, (object) dest));
+      if (!FileUtil.MoveFileOrDirectoryInternal(source, dest))
+        throw new IOException(string.Format("Failed to Move File / Directory from '{0}' to '{1}'.", (object) source, (object) dest));
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal static extern string GetLastPathNameComponent(string path);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    private static extern bool MoveFileOrDirectoryInternal(string source, string dest);
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal static extern string DeleteLastPathNameComponent(string path);
+    private static void CheckForValidSourceAndDestinationArgumentsAndRaiseAnExceptionWhenNullOrEmpty(string source, string dest)
+    {
+      if (source == null)
+        throw new ArgumentNullException(nameof (source));
+      if (dest == null)
+        throw new ArgumentNullException(nameof (dest));
+      if (source == string.Empty)
+        throw new ArgumentException(nameof (source), "The source path cannot be empty.");
+      if (dest == string.Empty)
+        throw new ArgumentException(nameof (dest), "The destination path cannot be empty.");
+    }
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal static extern string GetPathExtension(string path);
+    /// <summary>
+    ///   <para>Returns a unique path in the Temp folder within your current project.</para>
+    /// </summary>
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern string GetUniqueTempPathInProject();
 
-		[GeneratedByOldBindingsGenerator]
-		[MethodImpl(MethodImplOptions.InternalCall)]
-		internal static extern string GetPathWithoutExtension(string path);
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern string GetActualPathName(string path);
 
-		public static void ReplaceFile(string src, string dst)
-		{
-			if (File.Exists(dst))
-			{
-				FileUtil.DeleteFileOrDirectory(dst);
-			}
-			FileUtil.CopyFileOrDirectory(src, dst);
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    public static extern string GetProjectRelativePath(string path);
 
-		public static void ReplaceDirectory(string src, string dst)
-		{
-			if (Directory.Exists(dst))
-			{
-				FileUtil.DeleteFileOrDirectory(dst);
-			}
-			FileUtil.CopyFileOrDirectory(src, dst);
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern string GetLastPathNameComponent(string path);
 
-		internal static void ReplaceText(string path, params string[] input)
-		{
-			path = FileUtil.NiceWinPath(path);
-			string[] array = File.ReadAllLines(path);
-			for (int i = 0; i < input.Length; i += 2)
-			{
-				for (int j = 0; j < array.Length; j++)
-				{
-					array[j] = array[j].Replace(input[i], input[i + 1]);
-				}
-			}
-			File.WriteAllLines(path, array);
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern string DeleteLastPathNameComponent(string path);
 
-		internal static bool ReplaceTextRegex(string path, params string[] input)
-		{
-			bool result = false;
-			path = FileUtil.NiceWinPath(path);
-			string[] array = File.ReadAllLines(path);
-			for (int i = 0; i < input.Length; i += 2)
-			{
-				for (int j = 0; j < array.Length; j++)
-				{
-					string text = array[j];
-					array[j] = Regex.Replace(text, input[i], input[i + 1]);
-					if (text != array[j])
-					{
-						result = true;
-					}
-				}
-			}
-			File.WriteAllLines(path, array);
-			return result;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern string GetPathExtension(string path);
 
-		internal static bool AppendTextAfter(string path, string find, string append)
-		{
-			bool result = false;
-			path = FileUtil.NiceWinPath(path);
-			List<string> list = new List<string>(File.ReadAllLines(path));
-			for (int i = 0; i < list.Count; i++)
-			{
-				if (list[i].Contains(find))
-				{
-					list.Insert(i + 1, append);
-					result = true;
-					break;
-				}
-			}
-			File.WriteAllLines(path, list.ToArray());
-			return result;
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern string GetPathWithoutExtension(string path);
 
-		internal static void CopyDirectoryRecursive(string source, string target)
-		{
-			FileUtil.CopyDirectoryRecursive(source, target, false, false);
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern string ResolveSymlinks(string path);
 
-		internal static void CopyDirectoryRecursiveIgnoreMeta(string source, string target)
-		{
-			FileUtil.CopyDirectoryRecursive(source, target, false, true);
-		}
+    [GeneratedByOldBindingsGenerator]
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    internal static extern bool IsSymlink(string path);
 
-		internal static void CopyDirectoryRecursive(string source, string target, bool overwrite)
-		{
-			FileUtil.CopyDirectoryRecursive(source, target, overwrite, false);
-		}
+    /// <summary>
+    ///   <para>Replaces a file.</para>
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="dst"></param>
+    public static void ReplaceFile(string src, string dst)
+    {
+      if (File.Exists(dst))
+        FileUtil.DeleteFileOrDirectory(dst);
+      FileUtil.CopyFileOrDirectory(src, dst);
+    }
 
-		internal static void CopyDirectory(string source, string target, bool overwrite)
-		{
-			FileUtil.CopyDirectoryFiltered(source, target, overwrite, (string f) => true, false);
-		}
+    /// <summary>
+    ///   <para>Replaces a directory.</para>
+    /// </summary>
+    /// <param name="src"></param>
+    /// <param name="dst"></param>
+    public static void ReplaceDirectory(string src, string dst)
+    {
+      if (Directory.Exists(dst))
+        FileUtil.DeleteFileOrDirectory(dst);
+      FileUtil.CopyFileOrDirectory(src, dst);
+    }
 
-		internal static void CopyDirectoryRecursive(string source, string target, bool overwrite, bool ignoreMeta)
-		{
-			FileUtil.CopyDirectoryRecursiveFiltered(source, target, overwrite, (!ignoreMeta) ? null : "\\.meta$");
-		}
+    internal static void ReplaceText(string path, params string[] input)
+    {
+      path = FileUtil.NiceWinPath(path);
+      string[] contents = File.ReadAllLines(path);
+      int index1 = 0;
+      while (index1 < input.Length)
+      {
+        for (int index2 = 0; index2 < contents.Length; ++index2)
+          contents[index2] = contents[index2].Replace(input[index1], input[index1 + 1]);
+        index1 += 2;
+      }
+      File.WriteAllLines(path, contents);
+    }
 
-		internal static void CopyDirectoryRecursiveForPostprocess(string source, string target, bool overwrite)
-		{
-			FileUtil.CopyDirectoryRecursiveFiltered(source, target, overwrite, ".*/\\.+|\\.meta$");
-		}
+    internal static bool ReplaceTextRegex(string path, params string[] input)
+    {
+      bool flag = false;
+      path = FileUtil.NiceWinPath(path);
+      string[] contents = File.ReadAllLines(path);
+      int index1 = 0;
+      while (index1 < input.Length)
+      {
+        for (int index2 = 0; index2 < contents.Length; ++index2)
+        {
+          string input1 = contents[index2];
+          contents[index2] = Regex.Replace(input1, input[index1], input[index1 + 1]);
+          if (input1 != contents[index2])
+            flag = true;
+        }
+        index1 += 2;
+      }
+      File.WriteAllLines(path, contents);
+      return flag;
+    }
 
-		internal static void CopyDirectoryRecursiveFiltered(string source, string target, bool overwrite, string regExExcludeFilter)
-		{
-			FileUtil.CopyDirectoryFiltered(source, target, overwrite, regExExcludeFilter, true);
-		}
+    internal static bool AppendTextAfter(string path, string find, string append)
+    {
+      bool flag = false;
+      path = FileUtil.NiceWinPath(path);
+      List<string> stringList = new List<string>((IEnumerable<string>) File.ReadAllLines(path));
+      for (int index = 0; index < stringList.Count; ++index)
+      {
+        if (stringList[index].Contains(find))
+        {
+          stringList.Insert(index + 1, append);
+          flag = true;
+          break;
+        }
+      }
+      File.WriteAllLines(path, stringList.ToArray());
+      return flag;
+    }
 
-		internal static void CopyDirectoryFiltered(string source, string target, bool overwrite, string regExExcludeFilter, bool recursive)
-		{
-			Regex exclude = null;
-			try
-			{
-				if (regExExcludeFilter != null)
-				{
-					exclude = new Regex(regExExcludeFilter);
-				}
-			}
-			catch (ArgumentException)
-			{
-				Debug.Log("CopyDirectoryRecursive: Pattern '" + regExExcludeFilter + "' is not a correct Regular Expression. Not excluding any files.");
-				return;
-			}
-			Func<string, bool> includeCallback = (string file) => exclude == null || !exclude.IsMatch(file);
-			FileUtil.CopyDirectoryFiltered(source, target, overwrite, includeCallback, recursive);
-		}
+    internal static void CopyDirectoryRecursive(string source, string target)
+    {
+      FileUtil.CopyDirectoryRecursive(source, target, false, false);
+    }
 
-		internal static void CopyDirectoryFiltered(string source, string target, bool overwrite, Func<string, bool> includeCallback, bool recursive)
-		{
-			if (!Directory.Exists(target))
-			{
-				Directory.CreateDirectory(target);
-				overwrite = false;
-			}
-			string[] files = Directory.GetFiles(source);
-			for (int i = 0; i < files.Length; i++)
-			{
-				string text = files[i];
-				if (includeCallback(text))
-				{
-					string fileName = Path.GetFileName(text);
-					string to = Path.Combine(target, fileName);
-					FileUtil.UnityFileCopy(text, to, overwrite);
-				}
-			}
-			if (recursive)
-			{
-				string[] directories = Directory.GetDirectories(source);
-				for (int j = 0; j < directories.Length; j++)
-				{
-					string text2 = directories[j];
-					if (includeCallback(text2))
-					{
-						string fileName2 = Path.GetFileName(text2);
-						FileUtil.CopyDirectoryFiltered(Path.Combine(source, fileName2), Path.Combine(target, fileName2), overwrite, includeCallback, recursive);
-					}
-				}
-			}
-		}
+    internal static void CopyDirectoryRecursiveIgnoreMeta(string source, string target)
+    {
+      FileUtil.CopyDirectoryRecursive(source, target, false, true);
+    }
 
-		internal static void UnityDirectoryDelete(string path)
-		{
-			FileUtil.UnityDirectoryDelete(path, false);
-		}
+    internal static void CopyDirectoryRecursive(string source, string target, bool overwrite)
+    {
+      FileUtil.CopyDirectoryRecursive(source, target, overwrite, false);
+    }
 
-		internal static void UnityDirectoryDelete(string path, bool recursive)
-		{
-			Directory.Delete(FileUtil.NiceWinPath(path), recursive);
-		}
+    internal static void CopyDirectory(string source, string target, bool overwrite)
+    {
+      FileUtil.CopyDirectoryFiltered(source, target, overwrite, (Func<string, bool>) (f => true), false);
+    }
 
-		internal static void UnityDirectoryRemoveReadonlyAttribute(string target_dir)
-		{
-			string[] files = Directory.GetFiles(target_dir);
-			string[] directories = Directory.GetDirectories(target_dir);
-			string[] array = files;
-			for (int i = 0; i < array.Length; i++)
-			{
-				string path = array[i];
-				File.SetAttributes(path, FileAttributes.Normal);
-			}
-			string[] array2 = directories;
-			for (int j = 0; j < array2.Length; j++)
-			{
-				string target_dir2 = array2[j];
-				FileUtil.UnityDirectoryRemoveReadonlyAttribute(target_dir2);
-			}
-		}
+    internal static void CopyDirectoryRecursive(string source, string target, bool overwrite, bool ignoreMeta)
+    {
+      FileUtil.CopyDirectoryRecursiveFiltered(source, target, overwrite, !ignoreMeta ? (string) null : "\\.meta$");
+    }
 
-		internal static void MoveFileIfExists(string src, string dst)
-		{
-			if (File.Exists(src))
-			{
-				FileUtil.DeleteFileOrDirectory(dst);
-				FileUtil.MoveFileOrDirectory(src, dst);
-				File.SetLastWriteTime(dst, DateTime.Now);
-			}
-		}
+    internal static void CopyDirectoryRecursiveForPostprocess(string source, string target, bool overwrite)
+    {
+      FileUtil.CopyDirectoryRecursiveFiltered(source, target, overwrite, ".*/\\.+|\\.meta$");
+    }
 
-		internal static void CopyFileIfExists(string src, string dst, bool overwrite)
-		{
-			if (File.Exists(src))
-			{
-				FileUtil.UnityFileCopy(src, dst, overwrite);
-			}
-		}
+    internal static void CopyDirectoryRecursiveFiltered(string source, string target, bool overwrite, string regExExcludeFilter)
+    {
+      FileUtil.CopyDirectoryFiltered(source, target, overwrite, regExExcludeFilter, true);
+    }
 
-		internal static void UnityFileCopy(string from, string to, bool overwrite)
-		{
-			File.Copy(FileUtil.NiceWinPath(from), FileUtil.NiceWinPath(to), overwrite);
-		}
+    internal static void CopyDirectoryFiltered(string source, string target, bool overwrite, string regExExcludeFilter, bool recursive)
+    {
+      // ISSUE: object of a compiler-generated type is created
+      // ISSUE: variable of a compiler-generated type
+      FileUtil.\u003CCopyDirectoryFiltered\u003Ec__AnonStorey0 filteredCAnonStorey0 = new FileUtil.\u003CCopyDirectoryFiltered\u003Ec__AnonStorey0();
+      // ISSUE: reference to a compiler-generated field
+      filteredCAnonStorey0.exclude = (Regex) null;
+      try
+      {
+        if (regExExcludeFilter != null)
+        {
+          // ISSUE: reference to a compiler-generated field
+          filteredCAnonStorey0.exclude = new Regex(regExExcludeFilter);
+        }
+      }
+      catch (ArgumentException ex)
+      {
+        Debug.Log((object) ("CopyDirectoryRecursive: Pattern '" + regExExcludeFilter + "' is not a correct Regular Expression. Not excluding any files."));
+        return;
+      }
+      // ISSUE: reference to a compiler-generated method
+      Func<string, bool> includeCallback = new Func<string, bool>(filteredCAnonStorey0.\u003C\u003Em__0);
+      FileUtil.CopyDirectoryFiltered(source, target, overwrite, includeCallback, recursive);
+    }
 
-		internal static string NiceWinPath(string unityPath)
-		{
-			return (Application.platform != RuntimePlatform.WindowsEditor) ? unityPath : unityPath.Replace("/", "\\");
-		}
+    internal static void CopyDirectoryFiltered(string source, string target, bool overwrite, Func<string, bool> includeCallback, bool recursive)
+    {
+      if (!Directory.Exists(target))
+      {
+        Directory.CreateDirectory(target);
+        overwrite = false;
+      }
+      foreach (string file in Directory.GetFiles(source))
+      {
+        if (includeCallback(file))
+        {
+          string fileName = Path.GetFileName(file);
+          string to = Path.Combine(target, fileName);
+          FileUtil.UnityFileCopy(file, to, overwrite);
+        }
+      }
+      if (!recursive)
+        return;
+      foreach (string directory in Directory.GetDirectories(source))
+      {
+        if (includeCallback(directory))
+        {
+          string fileName = Path.GetFileName(directory);
+          FileUtil.CopyDirectoryFiltered(Path.Combine(source, fileName), Path.Combine(target, fileName), overwrite, includeCallback, recursive);
+        }
+      }
+    }
 
-		internal static string UnityGetFileNameWithoutExtension(string path)
-		{
-			return Path.GetFileNameWithoutExtension(path.Replace("//", "\\\\")).Replace("\\\\", "//");
-		}
+    internal static void UnityDirectoryDelete(string path)
+    {
+      FileUtil.UnityDirectoryDelete(path, false);
+    }
 
-		internal static string UnityGetFileName(string path)
-		{
-			return Path.GetFileName(path.Replace("//", "\\\\")).Replace("\\\\", "//");
-		}
+    internal static void UnityDirectoryDelete(string path, bool recursive)
+    {
+      Directory.Delete(FileUtil.NiceWinPath(path), recursive);
+    }
 
-		internal static string UnityGetDirectoryName(string path)
-		{
-			return Path.GetDirectoryName(path.Replace("//", "\\\\")).Replace("\\\\", "//");
-		}
+    internal static void UnityDirectoryRemoveReadonlyAttribute(string target_dir)
+    {
+      string[] files = Directory.GetFiles(target_dir);
+      string[] directories = Directory.GetDirectories(target_dir);
+      foreach (string path in files)
+        File.SetAttributes(path, FileAttributes.Normal);
+      foreach (string target_dir1 in directories)
+        FileUtil.UnityDirectoryRemoveReadonlyAttribute(target_dir1);
+    }
 
-		internal static void UnityFileCopy(string from, string to)
-		{
-			FileUtil.UnityFileCopy(from, to, false);
-		}
+    internal static void MoveFileIfExists(string src, string dst)
+    {
+      if (!File.Exists(src))
+        return;
+      FileUtil.DeleteFileOrDirectory(dst);
+      FileUtil.MoveFileOrDirectory(src, dst);
+      File.SetLastWriteTime(dst, DateTime.Now);
+    }
 
-		internal static void CreateOrCleanDirectory(string dir)
-		{
-			if (Directory.Exists(dir))
-			{
-				Directory.Delete(dir, true);
-			}
-			Directory.CreateDirectory(dir);
-		}
+    internal static void CopyFileIfExists(string src, string dst, bool overwrite)
+    {
+      if (!File.Exists(src))
+        return;
+      FileUtil.UnityFileCopy(src, dst, overwrite);
+    }
 
-		internal static string RemovePathPrefix(string fullPath, string prefix)
-		{
-			string[] array = fullPath.Split(new char[]
-			{
-				Path.DirectorySeparatorChar
-			});
-			string[] array2 = prefix.Split(new char[]
-			{
-				Path.DirectorySeparatorChar
-			});
-			int num = 0;
-			if (array[0] == string.Empty)
-			{
-				num = 1;
-			}
-			while (num < array.Length && num < array2.Length && array[num] == array2[num])
-			{
-				num++;
-			}
-			string result;
-			if (num == array.Length)
-			{
-				result = "";
-			}
-			else
-			{
-				result = string.Join(Path.DirectorySeparatorChar.ToString(), array, num, array.Length - num);
-			}
-			return result;
-		}
+    internal static void UnityFileCopy(string from, string to, bool overwrite)
+    {
+      File.Copy(FileUtil.NiceWinPath(from), FileUtil.NiceWinPath(to), overwrite);
+    }
 
-		internal static string CombinePaths(params string[] paths)
-		{
-			string result;
-			if (paths == null)
-			{
-				result = string.Empty;
-			}
-			else
-			{
-				result = string.Join(Path.DirectorySeparatorChar.ToString(), paths);
-			}
-			return result;
-		}
+    internal static string NiceWinPath(string unityPath)
+    {
+      return Application.platform != RuntimePlatform.WindowsEditor ? unityPath : unityPath.Replace("/", "\\");
+    }
 
-		internal static List<string> GetAllFilesRecursive(string path)
-		{
-			List<string> files = new List<string>();
-			FileUtil.WalkFilesystemRecursively(path, delegate(string p)
-			{
-				files.Add(p);
-			}, (string p) => true);
-			return files;
-		}
+    internal static string UnityGetFileNameWithoutExtension(string path)
+    {
+      return Path.GetFileNameWithoutExtension(path.Replace("//", "\\\\")).Replace("\\\\", "//");
+    }
 
-		internal static void WalkFilesystemRecursively(string path, Action<string> fileCallback, Func<string, bool> directoryCallback)
-		{
-			string[] files = Directory.GetFiles(path);
-			for (int i = 0; i < files.Length; i++)
-			{
-				string obj = files[i];
-				fileCallback(obj);
-			}
-			string[] directories = Directory.GetDirectories(path);
-			for (int j = 0; j < directories.Length; j++)
-			{
-				string text = directories[j];
-				if (directoryCallback(text))
-				{
-					FileUtil.WalkFilesystemRecursively(text, fileCallback, directoryCallback);
-				}
-			}
-		}
+    internal static string UnityGetFileName(string path)
+    {
+      return Path.GetFileName(path.Replace("//", "\\\\")).Replace("\\\\", "//");
+    }
 
-		internal static long GetDirectorySize(string path)
-		{
-			string[] files = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
-			long num = 0L;
-			string[] array = files;
-			for (int i = 0; i < array.Length; i++)
-			{
-				string fileName = array[i];
-				FileInfo fileInfo = new FileInfo(fileName);
-				num += fileInfo.Length;
-			}
-			return num;
-		}
-	}
+    internal static string UnityGetDirectoryName(string path)
+    {
+      return Path.GetDirectoryName(path.Replace("//", "\\\\")).Replace("\\\\", "//");
+    }
+
+    internal static void UnityFileCopy(string from, string to)
+    {
+      FileUtil.UnityFileCopy(from, to, false);
+    }
+
+    internal static void CreateOrCleanDirectory(string dir)
+    {
+      if (Directory.Exists(dir))
+        Directory.Delete(dir, true);
+      Directory.CreateDirectory(dir);
+    }
+
+    internal static string RemovePathPrefix(string fullPath, string prefix)
+    {
+      string[] strArray1 = fullPath.Split(Path.DirectorySeparatorChar);
+      string[] strArray2 = prefix.Split(Path.DirectorySeparatorChar);
+      int startIndex = 0;
+      if (strArray1[0] == string.Empty)
+        startIndex = 1;
+      while (startIndex < strArray1.Length && startIndex < strArray2.Length && strArray1[startIndex] == strArray2[startIndex])
+        ++startIndex;
+      if (startIndex == strArray1.Length)
+        return "";
+      return string.Join(Path.DirectorySeparatorChar.ToString(), strArray1, startIndex, strArray1.Length - startIndex);
+    }
+
+    internal static string CombinePaths(params string[] paths)
+    {
+      if (paths == null)
+        return string.Empty;
+      return string.Join(Path.DirectorySeparatorChar.ToString(), paths);
+    }
+
+    internal static List<string> GetAllFilesRecursive(string path)
+    {
+      // ISSUE: object of a compiler-generated type is created
+      // ISSUE: variable of a compiler-generated type
+      FileUtil.\u003CGetAllFilesRecursive\u003Ec__AnonStorey1 recursiveCAnonStorey1 = new FileUtil.\u003CGetAllFilesRecursive\u003Ec__AnonStorey1();
+      // ISSUE: reference to a compiler-generated field
+      recursiveCAnonStorey1.files = new List<string>();
+      // ISSUE: reference to a compiler-generated method
+      FileUtil.WalkFilesystemRecursively(path, new Action<string>(recursiveCAnonStorey1.\u003C\u003Em__0), (Func<string, bool>) (p => true));
+      // ISSUE: reference to a compiler-generated field
+      return recursiveCAnonStorey1.files;
+    }
+
+    internal static void WalkFilesystemRecursively(string path, Action<string> fileCallback, Func<string, bool> directoryCallback)
+    {
+      foreach (string file in Directory.GetFiles(path))
+        fileCallback(file);
+      foreach (string directory in Directory.GetDirectories(path))
+      {
+        if (directoryCallback(directory))
+          FileUtil.WalkFilesystemRecursively(directory, fileCallback, directoryCallback);
+      }
+    }
+
+    internal static long GetDirectorySize(string path)
+    {
+      string[] files = Directory.GetFiles(path, "*.*", SearchOption.AllDirectories);
+      long num = 0;
+      foreach (string fileName in files)
+      {
+        FileInfo fileInfo = new FileInfo(fileName);
+        num += fileInfo.Length;
+      }
+      return num;
+    }
+  }
 }

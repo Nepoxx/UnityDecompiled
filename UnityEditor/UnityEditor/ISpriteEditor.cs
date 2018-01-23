@@ -1,57 +1,45 @@
-using System;
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.ISpriteEditor
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
+using UnityEditor.Experimental.U2D;
 using UnityEngine;
 using UnityEngine.U2D.Interface;
 
 namespace UnityEditor
 {
-	internal interface ISpriteEditor
-	{
-		ISpriteRectCache spriteRects
-		{
-			get;
-		}
+  internal interface ISpriteEditor
+  {
+    ISpriteRectCache spriteRects { get; }
 
-		SpriteRect selectedSpriteRect
-		{
-			get;
-			set;
-		}
+    SpriteRect selectedSpriteRect { get; set; }
 
-		bool enableMouseMoveEvent
-		{
-			set;
-		}
+    bool enableMouseMoveEvent { set; }
 
-		bool editingDisabled
-		{
-			get;
-		}
+    bool editingDisabled { get; }
 
-		Rect windowDimension
-		{
-			get;
-		}
+    Rect windowDimension { get; }
 
-		ITexture2D selectedTexture
-		{
-			get;
-		}
+    ITexture2D selectedTexture { get; }
 
-		ITexture2D previewTexture
-		{
-			get;
-		}
+    ITexture2D previewTexture { get; }
 
-		void HandleSpriteSelection();
+    ISpriteEditorDataProvider spriteEditorDataProvider { get; }
 
-		void RequestRepaint();
+    void HandleSpriteSelection();
 
-		void SetDataModified();
+    void RequestRepaint();
 
-		void DisplayProgressBar(string title, string content, float progress);
+    void SetDataModified();
 
-		void ClearProgressBar();
+    void DisplayProgressBar(string title, string content, float progress);
 
-		ITexture2D GetReadableTexture2D();
-	}
+    void ClearProgressBar();
+
+    ITexture2D GetReadableTexture2D();
+
+    void ApplyOrRevertModification(bool apply);
+  }
 }

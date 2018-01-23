@@ -1,145 +1,111 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditorInternal.DopeLine
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace UnityEditorInternal
 {
-	internal class DopeLine
-	{
-		private int m_HierarchyNodeID;
+  internal class DopeLine
+  {
+    public static GUIStyle dopekeyStyle = (GUIStyle) "Dopesheetkeyframe";
+    private int m_HierarchyNodeID;
+    private AnimationWindowCurve[] m_Curves;
+    private List<AnimationWindowKeyframe> m_Keys;
+    public Rect position;
+    public System.Type objectType;
+    public bool tallMode;
+    public bool hasChildren;
+    public bool isMasterDopeline;
 
-		private AnimationWindowCurve[] m_Curves;
+    public DopeLine(int hierarchyNodeID, AnimationWindowCurve[] curves)
+    {
+      this.m_HierarchyNodeID = hierarchyNodeID;
+      this.m_Curves = curves;
+    }
 
-		private List<AnimationWindowKeyframe> m_Keys;
+    public System.Type valueType
+    {
+      get
+      {
+        if (this.m_Curves.Length <= 0)
+          return (System.Type) null;
+        System.Type valueType = this.m_Curves[0].valueType;
+        for (int index = 1; index < this.m_Curves.Length; ++index)
+        {
+          if (this.m_Curves[index].valueType != valueType)
+            return (System.Type) null;
+        }
+        return valueType;
+      }
+    }
 
-		public static GUIStyle dopekeyStyle = "Dopesheetkeyframe";
+    public bool isPptrDopeline
+    {
+      get
+      {
+        if (this.m_Curves.Length <= 0)
+          return false;
+        for (int index = 0; index < this.m_Curves.Length; ++index)
+        {
+          if (!this.m_Curves[index].isPPtrCurve)
+            return false;
+        }
+        return true;
+      }
+    }
 
-		public Rect position;
+    public bool isEditable
+    {
+      get
+      {
+        if (this.m_Curves.Length > 0)
+          return !Array.Exists<AnimationWindowCurve>(this.m_Curves, (Predicate<AnimationWindowCurve>) (curve => !curve.animationIsEditable));
+        return false;
+      }
+    }
 
-		public Type objectType;
+    public int hierarchyNodeID
+    {
+      get
+      {
+        return this.m_HierarchyNodeID;
+      }
+    }
 
-		public bool tallMode;
+    public AnimationWindowCurve[] curves
+    {
+      get
+      {
+        return this.m_Curves;
+      }
+    }
 
-		public bool hasChildren;
+    public List<AnimationWindowKeyframe> keys
+    {
+      get
+      {
+        if (this.m_Keys == null)
+        {
+          this.m_Keys = new List<AnimationWindowKeyframe>();
+          foreach (AnimationWindowCurve curve in this.m_Curves)
+          {
+            foreach (AnimationWindowKeyframe keyframe in curve.m_Keyframes)
+              this.m_Keys.Add(keyframe);
+          }
+          this.m_Keys.Sort((Comparison<AnimationWindowKeyframe>) ((a, b) => a.time.CompareTo(b.time)));
+        }
+        return this.m_Keys;
+      }
+    }
 
-		public bool isMasterDopeline;
-
-		public Type valueType
-		{
-			get
-			{
-				Type result;
-				if (this.m_Curves.Length > 0)
-				{
-					Type valueType = this.m_Curves[0].valueType;
-					for (int i = 1; i < this.m_Curves.Length; i++)
-					{
-						if (this.m_Curves[i].valueType != valueType)
-						{
-							result = null;
-							return result;
-						}
-					}
-					result = valueType;
-				}
-				else
-				{
-					result = null;
-				}
-				return result;
-			}
-		}
-
-		public bool isPptrDopeline
-		{
-			get
-			{
-				bool result;
-				if (this.m_Curves.Length > 0)
-				{
-					for (int i = 0; i < this.m_Curves.Length; i++)
-					{
-						if (!this.m_Curves[i].isPPtrCurve)
-						{
-							result = false;
-							return result;
-						}
-					}
-					result = true;
-				}
-				else
-				{
-					result = false;
-				}
-				return result;
-			}
-		}
-
-		public bool isEditable
-		{
-			get
-			{
-				bool result;
-				if (this.m_Curves.Length > 0)
-				{
-					bool flag = Array.Exists<AnimationWindowCurve>(this.m_Curves, (AnimationWindowCurve curve) => !curve.animationIsEditable);
-					result = !flag;
-				}
-				else
-				{
-					result = false;
-				}
-				return result;
-			}
-		}
-
-		public int hierarchyNodeID
-		{
-			get
-			{
-				return this.m_HierarchyNodeID;
-			}
-		}
-
-		public AnimationWindowCurve[] curves
-		{
-			get
-			{
-				return this.m_Curves;
-			}
-		}
-
-		public List<AnimationWindowKeyframe> keys
-		{
-			get
-			{
-				if (this.m_Keys == null)
-				{
-					this.m_Keys = new List<AnimationWindowKeyframe>();
-					AnimationWindowCurve[] curves = this.m_Curves;
-					for (int i = 0; i < curves.Length; i++)
-					{
-						AnimationWindowCurve animationWindowCurve = curves[i];
-						foreach (AnimationWindowKeyframe current in animationWindowCurve.m_Keyframes)
-						{
-							this.m_Keys.Add(current);
-						}
-					}
-					this.m_Keys.Sort((AnimationWindowKeyframe a, AnimationWindowKeyframe b) => a.time.CompareTo(b.time));
-				}
-				return this.m_Keys;
-			}
-		}
-
-		public DopeLine(int hierarchyNodeID, AnimationWindowCurve[] curves)
-		{
-			this.m_HierarchyNodeID = hierarchyNodeID;
-			this.m_Curves = curves;
-		}
-
-		public void InvalidateKeyframes()
-		{
-			this.m_Keys = null;
-		}
-	}
+    public void InvalidateKeyframes()
+    {
+      this.m_Keys = (List<AnimationWindowKeyframe>) null;
+    }
+  }
 }

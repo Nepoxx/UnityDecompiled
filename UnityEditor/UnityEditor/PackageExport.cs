@@ -1,3 +1,9 @@
+﻿// Decompiled with JetBrains decompiler
+// Type: UnityEditor.PackageExport
+// Assembly: UnityEditor, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+// MVID: 53BAA40C-AA1D-48D3-AA10-3FCF36D212BC
+// Assembly location: C:\Program Files\Unity 5\Editor\Data\Managed\UnityEditor.dll
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,279 +13,213 @@ using UnityEngine;
 
 namespace UnityEditor
 {
-	internal class PackageExport : EditorWindow
-	{
-		internal static class Styles
-		{
-			public static GUIStyle title;
+  internal class PackageExport : EditorWindow
+  {
+    [SerializeField]
+    private bool m_IncludeDependencies = true;
+    [NonSerialized]
+    private bool m_DidScheduleUpdate = false;
+    [SerializeField]
+    private ExportPackageItem[] m_ExportPackageItems;
+    [SerializeField]
+    private TreeViewState m_TreeViewState;
+    [NonSerialized]
+    private PackageExportTreeView m_Tree;
 
-			public static GUIStyle bottomBarBg;
+    public PackageExport()
+    {
+      this.position = new Rect(100f, 100f, 400f, 300f);
+      this.minSize = new Vector2(350f, 350f);
+    }
 
-			public static GUIStyle topBarBg;
+    public ExportPackageItem[] items
+    {
+      get
+      {
+        return this.m_ExportPackageItems;
+      }
+    }
 
-			public static GUIStyle loadingTextStyle;
+    internal static void ShowExportPackage()
+    {
+      EditorWindow.GetWindow<PackageExport>(true, "Exporting package");
+    }
 
-			public static GUIContent allText;
+    internal static IEnumerable<ExportPackageItem> GetAssetItemsForExport(ICollection<string> guids, bool includeDependencies)
+    {
+      if (guids.Count == 0)
+        guids = (ICollection<string>) new HashSet<string>((IEnumerable<string>) AssetDatabase.CollectAllChildren(AssetDatabase.assetFolderGUID, new string[0]));
+      ExportPackageItem[] exportPackageItemArray = PackageUtility.BuildExportPackageItemsList(guids.ToArray<string>(), includeDependencies);
+      if (includeDependencies && ((IEnumerable<ExportPackageItem>) exportPackageItemArray).Any<ExportPackageItem>((Func<ExportPackageItem, bool>) (asset => InternalEditorUtility.IsScriptOrAssembly(asset.assetPath))))
+        exportPackageItemArray = PackageUtility.BuildExportPackageItemsList(guids.Union<string>(InternalEditorUtility.GetAllScriptGUIDs()).ToArray<string>(), includeDependencies);
+      return (IEnumerable<ExportPackageItem>) ((IEnumerable<ExportPackageItem>) exportPackageItemArray).Where<ExportPackageItem>((Func<ExportPackageItem, bool>) (val => val.assetPath != "Assets")).ToArray<ExportPackageItem>();
+    }
 
-			public static GUIContent noneText;
+    private void RefreshAssetList()
+    {
+      this.m_ExportPackageItems = (ExportPackageItem[]) null;
+    }
 
-			public static GUIContent includeDependenciesText;
+    private bool HasValidAssetList()
+    {
+      return this.m_ExportPackageItems != null;
+    }
 
-			public static GUIContent header;
+    private bool CheckAssetExportList()
+    {
+      if (this.m_ExportPackageItems.Length != 0)
+        return false;
+      GUILayout.Space(20f);
+      GUILayout.BeginVertical(EditorStyles.helpBox, new GUILayoutOption[0]);
+      GUILayout.Label("Nothing to export!", EditorStyles.boldLabel, new GUILayoutOption[0]);
+      GUILayout.Label("No assets to export were found in your project.", (GUIStyle) "WordWrappedLabel", new GUILayoutOption[0]);
+      GUILayout.BeginHorizontal();
+      GUILayout.FlexibleSpace();
+      if (GUILayout.Button("OK"))
+      {
+        this.Close();
+        GUIUtility.ExitGUI();
+      }
+      GUILayout.EndHorizontal();
+      GUILayout.EndVertical();
+      return true;
+    }
 
-			static Styles()
-			{
-				PackageExport.Styles.title = new GUIStyle(EditorStyles.largeLabel);
-				PackageExport.Styles.bottomBarBg = "ProjectBrowserBottomBarBg";
-				PackageExport.Styles.topBarBg = new GUIStyle("ProjectBrowserHeaderBgTop");
-				PackageExport.Styles.loadingTextStyle = new GUIStyle(EditorStyles.label);
-				PackageExport.Styles.allText = EditorGUIUtility.TextContent("All");
-				PackageExport.Styles.noneText = EditorGUIUtility.TextContent("None");
-				PackageExport.Styles.includeDependenciesText = EditorGUIUtility.TextContent("Include dependencies");
-				PackageExport.Styles.header = new GUIContent("Items to Export");
-				PackageExport.Styles.topBarBg.fixedHeight = 0f;
-				RectOffset arg_AA_0 = PackageExport.Styles.topBarBg.border;
-				int num = 2;
-				PackageExport.Styles.topBarBg.border.bottom = num;
-				arg_AA_0.top = num;
-				PackageExport.Styles.title.fontStyle = FontStyle.Bold;
-				PackageExport.Styles.title.alignment = TextAnchor.MiddleLeft;
-				PackageExport.Styles.loadingTextStyle.alignment = TextAnchor.MiddleCenter;
-			}
-		}
+    public void OnDestroy()
+    {
+      this.UnscheduleBuildAssetList();
+    }
 
-		[SerializeField]
-		private ExportPackageItem[] m_ExportPackageItems;
+    public void OnGUI()
+    {
+      if (!this.HasValidAssetList())
+        this.ScheduleBuildAssetList();
+      else if (this.CheckAssetExportList())
+        return;
+      using (new EditorGUI.DisabledScope(!this.HasValidAssetList()))
+        this.TopArea();
+      this.TreeViewArea(!this.HasValidAssetList());
+      using (new EditorGUI.DisabledScope(!this.HasValidAssetList()))
+        this.BottomArea();
+    }
 
-		[SerializeField]
-		private bool m_IncludeDependencies = true;
+    private void TopArea()
+    {
+      Rect rect = GUILayoutUtility.GetRect(this.position.width, 53f);
+      GUI.Label(rect, GUIContent.none, PackageExport.Styles.topBarBg);
+      GUI.Label(new Rect(rect.x + 5f, rect.yMin, rect.width, rect.height), PackageExport.Styles.header, PackageExport.Styles.title);
+    }
 
-		[SerializeField]
-		private TreeViewState m_TreeViewState;
+    private void BottomArea()
+    {
+      GUILayout.BeginVertical(PackageExport.Styles.bottomBarBg, new GUILayoutOption[0]);
+      GUILayout.Space(8f);
+      GUILayout.BeginHorizontal();
+      GUILayout.Space(10f);
+      if (GUILayout.Button(PackageExport.Styles.allText, new GUILayoutOption[1]{ GUILayout.Width(50f) }))
+        this.m_Tree.SetAllEnabled(PackageExportTreeView.EnabledState.All);
+      if (GUILayout.Button(PackageExport.Styles.noneText, new GUILayoutOption[1]{ GUILayout.Width(50f) }))
+        this.m_Tree.SetAllEnabled(PackageExportTreeView.EnabledState.None);
+      GUILayout.Space(10f);
+      EditorGUI.BeginChangeCheck();
+      this.m_IncludeDependencies = GUILayout.Toggle(this.m_IncludeDependencies, PackageExport.Styles.includeDependenciesText);
+      if (EditorGUI.EndChangeCheck())
+        this.RefreshAssetList();
+      GUILayout.FlexibleSpace();
+      if (GUILayout.Button(EditorGUIUtility.TextContent("Export...")))
+      {
+        this.Export();
+        GUIUtility.ExitGUI();
+      }
+      GUILayout.Space(10f);
+      GUILayout.EndHorizontal();
+      GUILayout.Space(5f);
+      GUILayout.EndVertical();
+    }
 
-		[NonSerialized]
-		private PackageExportTreeView m_Tree;
+    private void TreeViewArea(bool showLoadingScreen)
+    {
+      Rect rect = GUILayoutUtility.GetRect(1f, 9999f, 1f, 99999f);
+      if (showLoadingScreen)
+      {
+        GUI.Label(rect, "Loading...", PackageExport.Styles.loadingTextStyle);
+      }
+      else
+      {
+        if (this.m_ExportPackageItems == null || this.m_ExportPackageItems.Length <= 0)
+          return;
+        if (this.m_TreeViewState == null)
+          this.m_TreeViewState = new TreeViewState();
+        if (this.m_Tree == null)
+          this.m_Tree = new PackageExportTreeView(this, this.m_TreeViewState, new Rect());
+        this.m_Tree.OnGUI(rect);
+      }
+    }
 
-		[NonSerialized]
-		private bool m_DidScheduleUpdate = false;
+    private void Export()
+    {
+      string fileName = EditorUtility.SaveFilePanel("Export package ...", "", "", "unitypackage");
+      if (!(fileName != ""))
+        return;
+      List<string> stringList = new List<string>();
+      foreach (ExportPackageItem exportPackageItem in this.m_ExportPackageItems)
+      {
+        if (exportPackageItem.enabledStatus > 0)
+          stringList.Add(exportPackageItem.guid);
+      }
+      PackageUtility.ExportPackage(stringList.ToArray(), fileName);
+      this.Close();
+      GUIUtility.ExitGUI();
+    }
 
-		public ExportPackageItem[] items
-		{
-			get
-			{
-				return this.m_ExportPackageItems;
-			}
-		}
+    private void ScheduleBuildAssetList()
+    {
+      if (this.m_DidScheduleUpdate)
+        return;
+      EditorApplication.update += new EditorApplication.CallbackFunction(this.BuildAssetList);
+      this.m_DidScheduleUpdate = true;
+    }
 
-		public PackageExport()
-		{
-			base.position = new Rect(100f, 100f, 400f, 300f);
-			base.minSize = new Vector2(350f, 350f);
-		}
+    private void UnscheduleBuildAssetList()
+    {
+      if (!this.m_DidScheduleUpdate)
+        return;
+      this.m_DidScheduleUpdate = false;
+      EditorApplication.update -= new EditorApplication.CallbackFunction(this.BuildAssetList);
+    }
 
-		internal static void ShowExportPackage()
-		{
-			EditorWindow.GetWindow<PackageExport>(true, "Exporting package");
-		}
+    private void BuildAssetList()
+    {
+      this.UnscheduleBuildAssetList();
+      this.m_ExportPackageItems = PackageExport.GetAssetItemsForExport((ICollection<string>) Selection.assetGUIDsDeepSelection, this.m_IncludeDependencies).ToArray<ExportPackageItem>();
+      this.m_Tree = (PackageExportTreeView) null;
+      this.m_TreeViewState = (TreeViewState) null;
+      this.Repaint();
+    }
 
-		internal static IEnumerable<ExportPackageItem> GetAssetItemsForExport(ICollection<string> guids, bool includeDependencies)
-		{
-			if (guids.Count == 0)
-			{
-				string[] collection = new string[0];
-				guids = new HashSet<string>(AssetDatabase.CollectAllChildren(AssetDatabase.assetFolderGUID, collection));
-			}
-			ExportPackageItem[] source = PackageUtility.BuildExportPackageItemsList(guids.ToArray<string>(), includeDependencies);
-			if (includeDependencies)
-			{
-				if (source.Any((ExportPackageItem asset) => InternalEditorUtility.IsScriptOrAssembly(asset.assetPath)))
-				{
-					source = PackageUtility.BuildExportPackageItemsList(guids.Union(InternalEditorUtility.GetAllScriptGUIDs()).ToArray<string>(), includeDependencies);
-				}
-			}
-			return (from val in source
-			where val.assetPath != "Assets"
-			select val).ToArray<ExportPackageItem>();
-		}
+    internal static class Styles
+    {
+      public static GUIStyle title = new GUIStyle(EditorStyles.largeLabel);
+      public static GUIStyle bottomBarBg = (GUIStyle) "ProjectBrowserBottomBarBg";
+      public static GUIStyle topBarBg = new GUIStyle((GUIStyle) "ProjectBrowserHeaderBgTop");
+      public static GUIStyle loadingTextStyle = new GUIStyle(EditorStyles.label);
+      public static GUIContent allText = EditorGUIUtility.TextContent("All");
+      public static GUIContent noneText = EditorGUIUtility.TextContent("None");
+      public static GUIContent includeDependenciesText = EditorGUIUtility.TextContent("Include dependencies");
+      public static GUIContent header = new GUIContent("Items to Export");
 
-		private void RefreshAssetList()
-		{
-			this.m_ExportPackageItems = null;
-		}
-
-		private bool HasValidAssetList()
-		{
-			return this.m_ExportPackageItems != null;
-		}
-
-		private bool CheckAssetExportList()
-		{
-			bool result;
-			if (this.m_ExportPackageItems.Length == 0)
-			{
-				GUILayout.Space(20f);
-				GUILayout.BeginVertical(EditorStyles.helpBox, new GUILayoutOption[0]);
-				GUILayout.Label("Nothing to export!", EditorStyles.boldLabel, new GUILayoutOption[0]);
-				GUILayout.Label("No assets to export were found in your project.", "WordWrappedLabel", new GUILayoutOption[0]);
-				GUILayout.BeginHorizontal(new GUILayoutOption[0]);
-				GUILayout.FlexibleSpace();
-				if (GUILayout.Button("OK", new GUILayoutOption[0]))
-				{
-					base.Close();
-					GUIUtility.ExitGUI();
-				}
-				GUILayout.EndHorizontal();
-				GUILayout.EndVertical();
-				result = true;
-			}
-			else
-			{
-				result = false;
-			}
-			return result;
-		}
-
-		public void OnDestroy()
-		{
-			this.UnscheduleBuildAssetList();
-		}
-
-		public void OnGUI()
-		{
-			if (!this.HasValidAssetList())
-			{
-				this.ScheduleBuildAssetList();
-			}
-			else if (this.CheckAssetExportList())
-			{
-				return;
-			}
-			using (new EditorGUI.DisabledScope(!this.HasValidAssetList()))
-			{
-				this.TopArea();
-			}
-			this.TreeViewArea(!this.HasValidAssetList());
-			using (new EditorGUI.DisabledScope(!this.HasValidAssetList()))
-			{
-				this.BottomArea();
-			}
-		}
-
-		private void TopArea()
-		{
-			float height = 53f;
-			Rect rect = GUILayoutUtility.GetRect(base.position.width, height);
-			GUI.Label(rect, GUIContent.none, PackageExport.Styles.topBarBg);
-			Rect position = new Rect(rect.x + 5f, rect.yMin, rect.width, rect.height);
-			GUI.Label(position, PackageExport.Styles.header, PackageExport.Styles.title);
-		}
-
-		private void BottomArea()
-		{
-			GUILayout.BeginVertical(PackageExport.Styles.bottomBarBg, new GUILayoutOption[0]);
-			GUILayout.Space(8f);
-			GUILayout.BeginHorizontal(new GUILayoutOption[0]);
-			GUILayout.Space(10f);
-			if (GUILayout.Button(PackageExport.Styles.allText, new GUILayoutOption[]
-			{
-				GUILayout.Width(50f)
-			}))
-			{
-				this.m_Tree.SetAllEnabled(PackageExportTreeView.EnabledState.All);
-			}
-			if (GUILayout.Button(PackageExport.Styles.noneText, new GUILayoutOption[]
-			{
-				GUILayout.Width(50f)
-			}))
-			{
-				this.m_Tree.SetAllEnabled(PackageExportTreeView.EnabledState.None);
-			}
-			GUILayout.Space(10f);
-			EditorGUI.BeginChangeCheck();
-			this.m_IncludeDependencies = GUILayout.Toggle(this.m_IncludeDependencies, PackageExport.Styles.includeDependenciesText, new GUILayoutOption[0]);
-			if (EditorGUI.EndChangeCheck())
-			{
-				this.RefreshAssetList();
-			}
-			GUILayout.FlexibleSpace();
-			if (GUILayout.Button(EditorGUIUtility.TextContent("Export..."), new GUILayoutOption[0]))
-			{
-				this.Export();
-				GUIUtility.ExitGUI();
-			}
-			GUILayout.Space(10f);
-			GUILayout.EndHorizontal();
-			GUILayout.Space(5f);
-			GUILayout.EndVertical();
-		}
-
-		private void TreeViewArea(bool showLoadingScreen)
-		{
-			Rect rect = GUILayoutUtility.GetRect(1f, 9999f, 1f, 99999f);
-			if (showLoadingScreen)
-			{
-				GUI.Label(rect, "Loading...", PackageExport.Styles.loadingTextStyle);
-			}
-			else if (this.m_ExportPackageItems != null && this.m_ExportPackageItems.Length > 0)
-			{
-				if (this.m_TreeViewState == null)
-				{
-					this.m_TreeViewState = new TreeViewState();
-				}
-				if (this.m_Tree == null)
-				{
-					this.m_Tree = new PackageExportTreeView(this, this.m_TreeViewState, default(Rect));
-				}
-				this.m_Tree.OnGUI(rect);
-			}
-		}
-
-		private void Export()
-		{
-			string text = EditorUtility.SaveFilePanel("Export package ...", "", "", "unitypackage");
-			if (text != "")
-			{
-				List<string> list = new List<string>();
-				ExportPackageItem[] exportPackageItems = this.m_ExportPackageItems;
-				for (int i = 0; i < exportPackageItems.Length; i++)
-				{
-					ExportPackageItem exportPackageItem = exportPackageItems[i];
-					if (exportPackageItem.enabledStatus > 0)
-					{
-						list.Add(exportPackageItem.guid);
-					}
-				}
-				PackageUtility.ExportPackage(list.ToArray(), text);
-				base.Close();
-				GUIUtility.ExitGUI();
-			}
-		}
-
-		private void ScheduleBuildAssetList()
-		{
-			if (!this.m_DidScheduleUpdate)
-			{
-				EditorApplication.update = (EditorApplication.CallbackFunction)Delegate.Combine(EditorApplication.update, new EditorApplication.CallbackFunction(this.BuildAssetList));
-				this.m_DidScheduleUpdate = true;
-			}
-		}
-
-		private void UnscheduleBuildAssetList()
-		{
-			if (this.m_DidScheduleUpdate)
-			{
-				this.m_DidScheduleUpdate = false;
-				EditorApplication.update = (EditorApplication.CallbackFunction)Delegate.Remove(EditorApplication.update, new EditorApplication.CallbackFunction(this.BuildAssetList));
-			}
-		}
-
-		private void BuildAssetList()
-		{
-			this.UnscheduleBuildAssetList();
-			this.m_ExportPackageItems = PackageExport.GetAssetItemsForExport(Selection.assetGUIDsDeepSelection, this.m_IncludeDependencies).ToArray<ExportPackageItem>();
-			this.m_Tree = null;
-			this.m_TreeViewState = null;
-			base.Repaint();
-		}
-	}
+      static Styles()
+      {
+        PackageExport.Styles.topBarBg.fixedHeight = 0.0f;
+        RectOffset border = PackageExport.Styles.topBarBg.border;
+        int num1 = 2;
+        PackageExport.Styles.topBarBg.border.bottom = num1;
+        int num2 = num1;
+        border.top = num2;
+        PackageExport.Styles.title.fontStyle = FontStyle.Bold;
+        PackageExport.Styles.title.alignment = TextAnchor.MiddleLeft;
+        PackageExport.Styles.loadingTextStyle.alignment = TextAnchor.MiddleCenter;
+      }
+    }
+  }
 }
