@@ -1,12 +1,15 @@
 # UnityDecompiled
 #### An unofficial repo of decompiled Unity dll files
 
-This was made by decompiling UnityEditor.dll and UnityEngine.dll using [ILSpy](http://ilspy.net)
+Unfortunately I had to remove the UnityDecompiled repo due to a request from Unity's legal team. 
 
-Current version: *2018.1.0b1* - other versions can be found in the [tags](https://github.com/MattRix/UnityDecompiled/tags)
-
-Feel free to either browse the code directly or [download it](https://github.com/MattRix/UnityDecompiled/archive/master.zip)
+If you'd like to decompile Unity yourself, find your local UnityEditor.dll and decompile it using either [ILSpy](http://ilspy.net) or [dotPeek](https://www.jetbrains.com/decompiler/)
 
 Note that Unity UI is open source. Get it from [https://bitbucket.org/Unity-Technologies/ui/](https://bitbucket.org/Unity-Technologies/ui/)
 
-Permission here: https://twitter.com/aras_p/status/568126504997138434
+Thanks to the community for all of your contributions over the past three years, it was a great resource while it lasted!
+
+-Matt
+
+
+
